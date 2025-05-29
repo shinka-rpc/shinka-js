@@ -1,0 +1,37 @@
+{
+  "version": "0.0.1",
+  "description": "Symmetric RPC bus",
+  "main": "index.js",
+  "scripts": {
+    "build": "lerna run --scope \"@shinka-rpc/*\" build",
+    "packall": "D=\"$PWD\"; mkdir -p pack && rm -f pack/*; for d in dist/*; do cd \"$d\"; npm pack --pack-destination \"$D\"/pack; cd \"$D\"; done",
+    "prepublishall": "npm run build",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "publishall": "node publishAll.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shinka-rpc/shinka-js.git"
+  },
+  "keywords": [
+    "rpc",
+    "background",
+    "worker",
+    "websocket",
+    "communication",
+    "remote"
+  ],
+  "author": "AI Kavalevich",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/shinka-rpc/shinka-js/issues"
+  },
+  "homepage": "https://github.com/shinka-rpc/shinka-js",
+  "dependencies": {
+    "lerna": "^8.2.2",
+    "typescript": "^5.8.3"
+  },
+  "workspaces": [
+    "./packages/*/"
+  ]
+}
