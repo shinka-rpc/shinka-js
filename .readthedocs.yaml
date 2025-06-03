@@ -9,4 +9,4 @@ build:
     build:
       html:
         - npm run docs:build
-        - mv ./docs/.vitepress/dist $READTHEDOCS_OUTPUT/html
+        - cp -R ./docs/.vitepress/dist $READTHEDOCS_OUTPUT/html
