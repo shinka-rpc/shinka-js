@@ -4,6 +4,9 @@ import { defineConfig } from "vitepress";
 export default defineConfig({
   title: "shinka-rpc",
   description: "Symmetric RPC bus",
+  base: process.env.READTHEDOCS_VERSION_NAME
+    ? `/${process.env.READTHEDOCS_VERSION_NAME}/`
+    : "/",
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
     nav: [
