@@ -28,8 +28,8 @@ const getPackageJSONVersion = async (path) => {
 
   try {
     await access(packageJSONPath, fsConstants.R_OK);
-  } catch {
-    return;
+  } catch (e) {
+    return console.error(e);
   }
 
   try {
@@ -39,26 +39,44 @@ const getPackageJSONVersion = async (path) => {
       name: packageJSON.name,
       version: packageJSON.version,
     };
-  } catch {
-    return;
+  } catch (e) {
+    return console.error(e);
   }
 };
 
 const getNPMVersion = async (name) => {
   const process = spawn("npm", ["info", name, "version"]);
-  const buffer = await new Promise((resolve, reject) =>
-    process.stdout.on("data", resolve),
-  );
-  const data = buffer.toString();
-  return data.trim();
+  try {
+    const buffer = await new Promise((resolve, reject) => {
+      process.stdout.on("data", resolve);
+      process.on("close", (code) => {
+        if (code != 0)
+          reject(
+            new Error(
+              `Process ${JSON.stringify(
+                process.spawnargs,
+              )} finished with non-zero code: ${code}`,
+              { code, spawnargs: process.spawnargs },
+            ),
+          );
+      });
+    });
+    const data = buffer.toString();
+    return data.trim();
+  } catch (e) {
+    console.error(e);
+  }
 };
 
 const handlePackageJSON = async (path) => {
   const ourData = await getPackageJSONVersion(path);
   if (ourData === undefined) return;
-  const npmVersion = await getNPMVersion(ourData.name);
-  if (compareVersions(ourData.version, npmVersion) > 0) {
-    return path;
+  try {
+    const npmVersion = await getNPMVersion(ourData.name);
+    if (npmVersion === undefined) return path;
+    if (compareVersions(ourData.version, npmVersion) > 0) return path;
+  } catch (e) {
+    console.error(e);
   }
 };
 
@@ -69,8 +87,8 @@ const handlePackageName = async (name) => {
     if (packageStats.isDirectory()) {
       return await handlePackageJSON(packagePath);
     }
-  } catch {
-    return;
+  } catch (e) {
+    return console.error(e);
   }
 };
 
@@ -81,7 +99,7 @@ const handlePackageName = async (name) => {
     dirHandlerPromices.push(promice);
   }
 
-  const results = Promise.all(dirHandlerPromices);
-  const toPublishPaths = (await results).filter(Boolean);
+  const results = await Promise.all(dirHandlerPromices);
+  const toPublishPaths = results.filter(Boolean);
   for (const toPublish of toPublishPaths) await publish(toPublish);
 })();

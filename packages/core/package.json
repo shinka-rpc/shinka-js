@@ -9,12 +9,12 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
-    "wrap-mutant",
-    "Typescript",
-    "mutation",
-    "performance",
-    "reference",
-    "wrap"
+    "rpc",
+    "background",
+    "worker",
+    "websocket",
+    "communication",
+    "remote"
   ],
   "repository": {
     "type": "git",

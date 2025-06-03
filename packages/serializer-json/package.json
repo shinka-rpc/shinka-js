@@ -1,5 +1,5 @@
 {
-  "name": "@shinka-rpc/util",
+  "name": "@shinka-rpc/serializer-json",
   "version": "0.0.1",
   "description": "",
   "main": "./src/index.ts",

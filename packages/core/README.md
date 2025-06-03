@@ -6,8 +6,8 @@ Symmetric RPC bus. This page explains basic concepts only.
 This package implements the main functionality of `@shinka-rpc`. Ironically the
 `core` know how to do everything but made so abstract that as is unable to do
 anything. So to make `@shinka-rpc` able to do things, you have to pass the
-**parametrizer** -- commonly very small function, returning 2 functions: `send`
-and `close`, and subscribing the instance to `onMessage`. Here you are able to
+**transport** -- commonly very small function, returning 2 functions: `send` and
+`close`, and subscribing the `bus` instance to `onMessage`. Here you are able to
 implement the custom one (or more) or use any already existing:
 
 - [@shinka-rpc/browser-extension](https://www.npmjs.com/package/@shinka-rpc/browser-extension) implements the RPC bus between the page and browser
