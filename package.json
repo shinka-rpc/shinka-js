@@ -39,6 +39,6 @@
   ],
   "devDependencies": {
     "compare-versions": "^6.1.1",
-    "vitepress": "^1.6.3"
+    "vitepress": "next"
   }
 }
