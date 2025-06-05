@@ -10,22 +10,36 @@ anything. So to make `@shinka-rpc` able to do things, you have to pass the
 `close`, and subscribing the `bus` instance to `onMessage`. Here you are able to
 implement the custom one (or more) or use any already existing:
 
-- [@shinka-rpc/browser-extension](https://www.npmjs.com/package/@shinka-rpc/browser-extension) implements the RPC bus between the page and browser
-extension environment
+- [@shinka-rpc/browser-extension](https://www.npmjs.com/package/@shinka-rpc/browser-extension)
+implements the RPC bus between the page and browser extension environment
 
-- TODO: [@shinka-rpc/iframe](https://www.npmjs.com/package/@shinka-rpc/iframe) implements the RPC bus between the main page and the page inside
+- TODO: [@shinka-rpc/iframe](https://www.npmjs.com/package/@shinka-rpc/iframe)
+implements the RPC bus between the main page and the page inside
 [iframe](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/iframe)
 
-- TODO: [@shinka-rpc/dedicated-worker](https://www.npmjs.com/package/@shinka-rpc/dedicated-worker) implements the RPC bus between the page and
+- TODO: [@shinka-rpc/dedicated-worker](https://www.npmjs.com/package/@shinka-rpc/dedicated-worker)
+implements the RPC bus between the page and
 [Worker](https://developer.mozilla.org/en-US/docs/Web/API/Worker)
 
-- [@shinka-rpc/shared-worker](https://www.npmjs.com/package/@shinka-rpc/shared-worker) implements the RPC bus between the page and
+- [@shinka-rpc/shared-worker](https://www.npmjs.com/package/@shinka-rpc/shared-worker)
+implements the RPC bus between the page and
 [SharedWorker](https://developer.mozilla.org/en-US/docs/Web/API/SharedWorker)
 
-- [@shinka-rpc/web-socket](https://www.npmjs.com/package/@shinka-rpc/web-socket) implements the RPC bus over the [WebSocket](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket)
+- [@shinka-rpc/web-socket](https://www.npmjs.com/package/@shinka-rpc/web-socket)
+implements the RPC bus over the
+[WebSocket](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket)
 
-- TODO: [@shinka-rpc/webrtc-data](https://www.npmjs.com/package/@shinka-rpc/webrtc) implements the RPC bus over the [RTCDataChannel](https://developer.mozilla.org/en-US/docs/Web/API/RTCDataChannel)
+- TODO: [@shinka-rpc/webrtc-data](https://www.npmjs.com/package/@shinka-rpc/webrtc)
+implements the RPC bus over the
+[RTCDataChannel](https://developer.mozilla.org/en-US/docs/Web/API/RTCDataChannel)
 
+Also there are some default serializers available:
+
+- [@shinka-rpc/serializer-json](https://www.npmjs.com/package/@shinka-rpc/serializer-json)
+
+- [@shinka-rpc/serializer-bson](https://www.npmjs.com/package/@shinka-rpc/serializer-bson)
+
+- [@shinka-rpc/serializer-msgspec](https://www.npmjs.com/package/@shinka-rpc/serializer-msgspec)
 
 The main advantage of `@shinka-rpc` is in re-using of the same `core` with all
 parametrizers. And when you decided to build many RPC communication buses, your

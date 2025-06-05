@@ -46,7 +46,6 @@ export class ClientBus extends CommonBus {
     key: DataEventKey,
     fn: (data: any, thisArg: this) => void,
   ) => void;
-  #willDieSent!: boolean;
   #sayHello!: boolean;
   #restartTimeout!: number;
 
@@ -71,7 +70,6 @@ export class ClientBus extends CommonBus {
     );
     this.onRequest = reqSet;
     this.onDataEvent = evSet;
-    this.#willDieSent = false;
     this.#sayHello = sayHello;
     this.#restartTimeout = restartTimeout;
   }
@@ -81,20 +79,10 @@ export class ClientBus extends CommonBus {
     if (this.#sayHello) this[HelloKey]();
   }
 
-  willDie = () => {
-    if (this.#willDieSent) return;
-    this[EventSendInnerKey](EventKeys.TERMINATE, null);
-    this.#willDieSent = true;
-  };
-
   maybeRestart = async () => {
     const timeout = this.#restartTimeout;
     if (!timeout || this[StoppedKey]) return;
     await sleep(timeout);
     await this.restart();
   };
-
-  registerBeforeUnload() {
-    self.addEventListener("beforeunload", this.willDie);
-  }
 }

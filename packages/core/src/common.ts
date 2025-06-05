@@ -53,6 +53,7 @@ export class CommonBus {
   extra!: Record<string, any>;
   [StoppedKey]!: boolean;
   #started!: boolean;
+  #willDieSent!: boolean;
 
   protected [LazyInitKey](
     factory: FactoryClient<typeof this>,
@@ -71,6 +72,7 @@ export class CommonBus {
     this.extra = {};
     this[StoppedKey] = false;
     this.#started = false;
+    this.#willDieSent = false;
     [this.request, this.#onResponseOuter, this.#onMessageRequestOuter] = reqrsp(
       this,
       MessageType.REQUEST_OUTER,
@@ -117,12 +119,17 @@ export class CommonBus {
 
   async stop() {
     this[StoppedKey] = true;
+    this.#willDieSent = false;
     await this.#stopInner();
   }
 
   async #stopInner() {
     this.#started = false;
-    this[RegistryKey].unregister(this);
+    try {
+      this[RegistryKey].unregister(this);
+    } catch {
+      console.trace();
+    }
     const close = this.#closeBus;
     this.#closeBus = undefined;
     this.#sendMessage = undefined;
@@ -156,9 +163,9 @@ export class CommonBus {
       case MessageType.RESPONSE_OUTER:
         return this.#onResponseOuter(body);
       case MessageType.EVENT_INNER:
-        return this.#onDataEventInner.apply(null, [...body, this]);
+        return this.#onDataEventInner(...body, this);
       case MessageType.EVENT_OUTER:
-        return this.#onDataEventOuter.apply(null, [...body, this]);
+        return this.#onDataEventOuter(...body, this);
       default:
         console.error("UNKNOWN MESSAGE TYPE");
     }
@@ -186,5 +193,11 @@ export class CommonBus {
     const begin = performance.now();
     await this[RequestInnerKey]<void>(RequestKeys.PING, null);
     return performance.now() - begin;
+  };
+
+  willDie = () => {
+    if (this.#willDieSent) return;
+    this[EventSendInnerKey](EventKeys.TERMINATE, null);
+    this.#willDieSent = true;
   };
 }

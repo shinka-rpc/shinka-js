@@ -8,8 +8,13 @@ export const messagePortFactory =
     const onconnect = async (bus: CommonBus) => {
       port.onMessage.addListener(bus.onMessage);
       port.onDisconnect.addListener(() => client.stop());
+      self.addEventListener("beforeunload", bus.willDie);
       const send = async (data: unknown) => port.postMessage(data);
-      const close = async () => port.disconnect();
+      const close = async () => {
+        // chrome-specific issue: worker stops unexpectedly
+        self.removeEventListener("beforeunload", bus.willDie);
+        port.disconnect();
+      };
       return { send, close };
     };
     const client = await bus.onConnect(onconnect, complete(port));

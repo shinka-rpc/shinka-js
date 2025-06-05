@@ -1,4 +1,4 @@
-import { EventKeys, RegistryKey } from "../constants";
+import { EventKeys } from "../constants";
 import type { DataEventHandler } from "../types";
 import type { ClientBus } from "../client";
 import type { CommonBus } from "../common";
@@ -10,9 +10,7 @@ interface Events {
 
 const events: Events = {
   [EventKeys.INITIALIZE]: () => {},
-  [EventKeys.TERMINATE]: (_, thisArg) => {
-    thisArg[RegistryKey].unregister(thisArg);
-  },
+  [EventKeys.TERMINATE]: (_, thisArg) => thisArg.stop(),
 };
 
 export const registerEventsInner = (register: EventRegistryType[1]) =>

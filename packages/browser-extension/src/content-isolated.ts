@@ -1,4 +1,9 @@
-import { ClientBus, FactoryClient, Registry } from "@shinka-rpc/core";
+import {
+  ClientBus,
+  FactoryClient,
+  Registry,
+  registerBeforeUnload,
+} from "@shinka-rpc/core";
 
 // @ts-expect-error: 2304
 if (window.chrome === undefined) window.chrome = browser;
@@ -40,7 +45,7 @@ export const createIsolatedPair = ({
     restartTimeout: 750,
   });
 
-  extensionBus.registerBeforeUnload();
+  registerBeforeUnload(extensionBus);
 
   return { contentBus, extensionBus };
 };

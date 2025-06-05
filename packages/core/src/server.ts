@@ -33,6 +33,32 @@ export type ServerOptions = {
   sayHello?: boolean;
 };
 
+const composeServerRegistry = (
+  serverCB: (bus: CommonBus) => void,
+  externalCB: ((bus: CommonBus) => void) | undefined,
+) => {
+  if (!externalCB) return serverCB;
+  return (bus: CommonBus) => {
+    serverCB(bus);
+    try {
+      externalCB(bus);
+    } catch {
+      console.trace();
+    }
+  };
+};
+
+const createServerStrictRedistry = (
+  registry: Registry<CommonBus> | undefined,
+  clients: Set<CommonBus>,
+) => {
+  const { register, unregister } = registry || {};
+  return {
+    register: composeServerRegistry(clients.add.bind(clients), register),
+    unregister: composeServerRegistry(clients.delete.bind(clients), unregister),
+  } as StrictRegistry<CommonBus>;
+};
+
 export class ServerBus {
   [RegistryKey]!: StrictRegistry<CommonBus>;
   #serializer!: Serializer;
@@ -48,6 +74,8 @@ export class ServerBus {
   ) => void;
   #requestHandler!: RequestHandler<CommonBus, any>;
   #eventHandler!: (key: DataEventKey, body: any, thisArg: CommonBus) => void;
+  #clients!: Set<CommonBus>;
+
   extra!: Record<string, any>;
 
   constructor({
@@ -56,10 +84,12 @@ export class ServerBus {
     serializer = defaultSerializer,
     timeout = defaultRequestTimeout,
   }: ServerOptions) {
-    this[RegistryKey] = { ...emptyRegistry, ...registry };
+    const clients = new Set<CommonBus>();
+    this[RegistryKey] = createServerStrictRedistry(registry, clients);
     this.#serializer = serializer;
     this.#timeout = timeout;
     this.#sayHello = sayHello;
+    this.#clients = clients;
     this.extra = {};
     //===
     const [reqGet, reqSet] = createReqRegistry<CommonBus, any, any>();
@@ -87,6 +117,11 @@ export class ServerBus {
     complete(bus);
     await bus.start();
     if (this.#sayHello) bus[HelloKey]();
+    this.#clients.add(bus);
     return bus;
+  };
+
+  willDie = () => {
+    for (const client of this.#clients) client.willDie();
   };
 }
