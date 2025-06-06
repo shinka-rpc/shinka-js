@@ -13,6 +13,7 @@ This package contains a parametrizers of
 ```typescript
 import { ClientBus, type FactoryClient } from "@shinka-rpc/core";
 import { WebSocketFactoryData } from "@shinka-rpc/web-socket";
+import serializer from "@shinka-rpc/serializer-json";
 
 const factory: FactoryClient<ClientBus> = (bus) => {
   const socket = new WebSocket(process.env.WEBSOCKET_URL!);
@@ -21,7 +22,7 @@ const factory: FactoryClient<ClientBus> = (bus) => {
   return WebSocketFactoryData(socket, bus);
 };
 
-export const bus = new ClientBus({ factory });
+export const bus = new ClientBus({ factory, serializer });
 
 // You are able to start / stop the bus where you need it
 bus.start();

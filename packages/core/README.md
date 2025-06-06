@@ -73,6 +73,7 @@ example `@shinka-rpc/shared-worker` package
 ```typescript
 import { ClientBus, FactoryClient } from "@shinka-rpc/core";
 import { SharedWorker2FactoryData } from "@shinka-rpc/shared-worker/client";
+import serializer from "@shinka-rpc/serializer-json";
 
 const factory: FactoryClient<ClientBus> = async (bus) =>
   SharedWorker2FactoryData(
@@ -80,7 +81,7 @@ const factory: FactoryClient<ClientBus> = async (bus) =>
     bus,
   );
 
-export const bus = new ClientBus({ factory });
+export const bus = new ClientBus({ factory, serializer });
 
 bus.start();
 ```
@@ -93,8 +94,9 @@ declare let onconnect: (event: MessageEvent) => void;
 
 import { ServerBus } from "@shinka-rpc/core";
 import { SharedWorkerServer } from "@shinka-rpc/shared-worker/server";
+import serializer from "@shinka-rpc/serializer-json";
 
-export const server = new ServerBus();
+export const server = new ServerBus({ serializer });
 
 onconnect = SharedWorkerServer(server);
 ```

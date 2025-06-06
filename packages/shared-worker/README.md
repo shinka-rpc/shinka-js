@@ -33,8 +33,9 @@ declare let onconnect: (event: MessageEvent) => void;
 
 import { ServerBus } from "@shinka-rpc/core";
 import { SharedWorkerServer } from "@shinka-rpc/shared-worker";
+import serializer from "@shinka-rpc/serializer-json";
 
-export const server = new ServerBus();
+export const server = new ServerBus({ serializer });
 
 onconnect = SharedWorkerServer(server);
 ```
