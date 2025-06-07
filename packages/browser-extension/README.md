@@ -9,7 +9,7 @@ browser extension
 # Usage
 
 The most common use-case is to passthrough requests and events from the page to
-the extension environment, and back. There are some contextx here:
+the extension environment, and back. There are some contexts here:
 
 - Page `MAIN` [ExecutionWorld](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/scripting/ExecutionWorld)
 
@@ -20,6 +20,8 @@ the extension environment, and back. There are some contextx here:
 - [Popup](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/user_interface/Popups) and [options](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/user_interface/Options_pages) pages, [devtool panels](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/user_interface/devtools_panels) and other applications, working in `ISOLATED` [ExecutionWorld](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/scripting/ExecutionWorld)
 
 Sometimes you need to communicate between them
+
+Also you don't need to use any serializer here
 
 ## Some pre-requirements
 
@@ -86,7 +88,8 @@ passThroughRequest(contentBus, extensionBus, "example-request");
 - **Required** contentBusFactory: `FactoryClient<ClientBus>`
 - **Optional** responseTimeout: `number`
 - **Optional** contentRegistry: `Registry<ClientBus>` hooks for content bus
-- **Optional** extensionRegistry: `Registry<ClientBus>` hooks for extension environment
+- **Optional** extensionRegistry: `Registry<ClientBus>` hooks for extension
+environment
 
 # Backgroung `server` script
 

@@ -8,7 +8,7 @@ import {
 // @ts-expect-error: 2304
 if (window.chrome === undefined) window.chrome = browser;
 
-const extensionBusFactory: FactoryClient<ClientBus> = async (bus) => {
+export const extensionBusFactory: FactoryClient<ClientBus> = async (bus) => {
   const port = chrome.runtime.connect(chrome.runtime.id);
   port.onMessage.addListener(bus.onMessage);
   port.onDisconnect.addListener(bus.maybeRestart);

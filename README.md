@@ -16,7 +16,7 @@ extension environment
 - TODO: [@shinka-rpc/iframe](https://www.npmjs.com/package/@shinka-rpc/iframe) implements the RPC bus between the main page and the page inside
 [iframe](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/iframe)
 
-- TODO: [@shinka-rpc/dedicated-worker](https://www.npmjs.com/package/@shinka-rpc/dedicated-worker) implements the RPC bus between the page and
+- [@shinka-rpc/dedicated-worker](https://www.npmjs.com/package/@shinka-rpc/dedicated-worker) implements the RPC bus between the page and
 [Worker](https://developer.mozilla.org/en-US/docs/Web/API/Worker)
 
 - [@shinka-rpc/shared-worker](https://www.npmjs.com/package/@shinka-rpc/shared-worker) implements the RPC bus between the page and

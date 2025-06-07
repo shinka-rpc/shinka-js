@@ -17,7 +17,7 @@ implements the RPC bus between the page and browser extension environment
 implements the RPC bus between the main page and the page inside
 [iframe](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/iframe)
 
-- TODO: [@shinka-rpc/dedicated-worker](https://www.npmjs.com/package/@shinka-rpc/dedicated-worker)
+- [@shinka-rpc/dedicated-worker](https://www.npmjs.com/package/@shinka-rpc/dedicated-worker)
 implements the RPC bus between the page and
 [Worker](https://developer.mozilla.org/en-US/docs/Web/API/Worker)
 
@@ -73,7 +73,7 @@ example `@shinka-rpc/shared-worker` package
 ```typescript
 import { ClientBus, FactoryClient } from "@shinka-rpc/core";
 import { SharedWorker2FactoryData } from "@shinka-rpc/shared-worker/client";
-import serializer from "@shinka-rpc/serializer-json";
+import serializer from "@shinka-rpc/serializer-json";  // for example
 
 const factory: FactoryClient<ClientBus> = async (bus) =>
   SharedWorker2FactoryData(
@@ -94,7 +94,7 @@ declare let onconnect: (event: MessageEvent) => void;
 
 import { ServerBus } from "@shinka-rpc/core";
 import { SharedWorkerServer } from "@shinka-rpc/shared-worker/server";
-import serializer from "@shinka-rpc/serializer-json";
+import serializer from "@shinka-rpc/serializer-json";  // for example
 
 export const server = new ServerBus({ serializer });
 

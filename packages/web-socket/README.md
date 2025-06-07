@@ -13,12 +13,12 @@ This package contains a parametrizers of
 ```typescript
 import { ClientBus, type FactoryClient } from "@shinka-rpc/core";
 import { WebSocketFactoryData } from "@shinka-rpc/web-socket";
-import serializer from "@shinka-rpc/serializer-json";
+import serializer from "@shinka-rpc/serializer-json";  // for example
 
 const factory: FactoryClient<ClientBus> = (bus) => {
   const socket = new WebSocket(process.env.WEBSOCKET_URL!);
-  // Here you are able to do everything with `socket`. For example, switch to
-  // binary mode
+  // Here you are able to do everything with `socket`. For example,
+  // switch it to binary mode
   return WebSocketFactoryData(socket, bus);
 };
 
