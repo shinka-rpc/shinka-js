@@ -42,7 +42,7 @@ Also there are some default serializers available:
 - [@shinka-rpc/serializer-msgspec](https://www.npmjs.com/package/@shinka-rpc/serializer-msgspec)
 
 The main advantage of `@shinka-rpc` is in re-using of the same `core` with all
-parametrizers. And when you decided to build many RPC communication buses, your
+transports. And when you decided to build many RPC communication buses, your
 bundle would contain only one `core`
 
 # Symmetricity

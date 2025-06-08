@@ -6,7 +6,7 @@ Symmetric RPC bus. This page explains basic concepts only.
 Package `@shinka-rpc/core` implements main functionality of `@shinka-rpc`.
 Ironically the `core` know how to do everything but made so abstract that as is
 unable to do anything. So to make `@shinka-rpc` able to do things, you have to
-pass the **parametrizer** -- commonly very small function, returning 2 functions:
+pass the **transport** -- commonly very small function, returning 2 functions:
 `send` and `close`, and subscribing the instance to `onMessage`. Here you are
 able to implement the custom one (or more) or use any already existing:
 
@@ -28,7 +28,7 @@ extension environment
 
 
 The main advantage of `@shinka-rpc` is in re-using of the same `core` with all
-parametrizers. And when you decided to build many RPC communication buses, your
+transports. And when you decided to build many RPC communication buses, your
 bundle would contain only one `core`
 
 # Symmetricity

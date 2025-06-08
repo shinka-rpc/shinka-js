@@ -2,7 +2,7 @@
 
 Symmetric RPC bus
 
-This package contains a parametrizers of
+This package contains a transports of
 [@shinka-rpc/core](https://www.npmjs.com/package/@shinka-rpc/core) for
 browser extension
 

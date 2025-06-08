@@ -3,6 +3,7 @@ import type { MessageType } from "./constants";
 import type { CommonBus } from "./common";
 
 export type REQID = number;
+export type SerializedData = string | Uint8Array;
 export type DataEventKey = string | number | boolean;
 export type Request<B> = [REQID, B];
 export type Response<B> = [boolean, REQID, B];
@@ -42,7 +43,10 @@ export type Message<B> =
   | MessageResponse<B>
   | MessageEvent<B>;
 
-export type GenericSerializer<I, O> = {
+export type GenericSerializer<
+  I extends Message<any>,
+  O extends SerializedData,
+> = {
   serialize: (data: I) => O;
   deserialize: (data: O) => I;
 };
@@ -64,7 +68,6 @@ export type FactoryData = {
   close: () => Promise<void>;
 };
 
-export type SerializedData = string | Uint8Array;
 export type OnMessageSerialized = (data: SerializedData) => void;
 
 export type FactoryClient<B> = (bus: B) => Promise<FactoryData>;
