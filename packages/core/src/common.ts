@@ -101,15 +101,11 @@ export class CommonBus {
   async [StartInnerKey]() {
     if (this.#started) return console.warn("Double start caught!");
     this.#started = true;
-    try {
-      const { send, close } = await this.#factory(this);
-      this.#sendMessage = send;
-      this.#closeBus = close;
-      this[RegistryKey].register(this);
-    } catch (e) {
-      this.#started = false;
-      throw e;
-    }
+
+    const { send, close } = await this.#factory(this);
+    this.#sendMessage = send;
+    this.#closeBus = close;
+    queueMicrotask(() => this[RegistryKey].register(this));
   }
 
   async start() {
@@ -125,11 +121,7 @@ export class CommonBus {
 
   async #stopInner() {
     this.#started = false;
-    try {
-      this[RegistryKey].unregister(this);
-    } catch {
-      console.trace();
-    }
+    queueMicrotask(() => this[RegistryKey].unregister(this));
     const close = this.#closeBus;
     this.#closeBus = undefined;
     this.#sendMessage = undefined;

@@ -5,21 +5,41 @@ layout: home
 hero:
   name: "shinka-rpc"
   text: Symmetric RPC bus
-  tagline: My great project tagline
+  tagline: Remote procedure call framework
   actions:
     - theme: brand
-      text: Markdown Examples
-      link: /markdown-examples
+      text: Core
+      link: /core
     - theme: alt
-      text: API Examples
-      link: /api-examples
+      text: Transports
+      link: /transports
+    - theme: alt
+      text: Serializers
+      link: /serializers
 
 features:
-  - title: Feature A
-    details: Lorem ipsum dolor sit amet, consectetur adipiscing elit
-  - title: Feature B
-    details: Lorem ipsum dolor sit amet, consectetur adipiscing elit
-  - title: Feature C
-    details: Lorem ipsum dolor sit amet, consectetur adipiscing elit
+  - title: Symmetricity
+    details: Every participant may register his request and event handlers, and
+      send events and requests to the interlocutor
+
+  - title: External transports
+    details: We provide
+      <a href="https://www.npmjs.com/package/@shinka-rpc/shared-worker">SharedWorker</a>,
+      <a href="https://www.npmjs.com/package/@shinka-rpc/dedicated-worker">DedicatedWorker</a>,
+      <a href="https://www.npmjs.com/package/@shinka-rpc/web-socket">Websocket</a> and
+      <a href="https://www.npmjs.com/package/@shinka-rpc/browser-extension">BrowserExtension</a>
+      transports, but you are able to define your own
+
+  - title: External serializers
+    details: We provide by default
+      <a href="https://www.npmjs.com/package/@shinka-rpc/serializer-json">json</a>,
+      <a href="https://www.npmjs.com/package/@shinka-rpc/serializer-bson">bson</a> and
+      <a href="https://www.npmjs.com/package/@shinka-rpc/serializer-msgspec">msgspec</a>
+      serializers, but you are able to create your own
+
+  - title: Multi Language
+    details: On the other side of the communication channel there may be an
+      application written in another language. At the least python is already
+      implemented and waiting to be published
 ---
 

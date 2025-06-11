@@ -1,0 +1,15 @@
+.VPFeature .details > a {
+  color: var(--vp-home-hero-name-color);
+}
+
+h1.heading > .text {
+  font-size: 52px;
+}
+
+html.dark {
+  .main {
+    img[alt="diagram"] {
+      filter: invert(1);
+    }
+  }
+}

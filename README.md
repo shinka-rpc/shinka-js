@@ -26,6 +26,14 @@ extension environment
 
 - TODO: [@shinka-rpc/webrtc-data](https://www.npmjs.com/package/@shinka-rpc/webrtc) implements the RPC bus over the [RTCDataChannel](https://developer.mozilla.org/en-US/docs/Web/API/RTCDataChannel)
 
+Also there are some default serializers available:
+
+- [@shinka-rpc/serializer-json](https://www.npmjs.com/package/@shinka-rpc/serializer-json)
+
+- [@shinka-rpc/serializer-bson](https://www.npmjs.com/package/@shinka-rpc/serializer-bson)
+
+- [@shinka-rpc/serializer-msgspec](https://www.npmjs.com/package/@shinka-rpc/serializer-msgspec)
+
 
 The main advantage of `@shinka-rpc` is in re-using of the same `core` with all
 transports. And when you decided to build many RPC communication buses, your
@@ -59,6 +67,7 @@ example `@shinka-rpc/shared-worker` package
 ```typescript
 import { ClientBus, FactoryClient } from "@shinka-rpc/core";
 import { SharedWorker2FactoryData } from "@shinka-rpc/shared-worker/client";
+import serializer from "@shinka-rpc/serializer-json";  // for example
 
 const factory: FactoryClient<ClientBus> = async (bus) =>
   SharedWorker2FactoryData(
@@ -66,7 +75,7 @@ const factory: FactoryClient<ClientBus> = async (bus) =>
     bus,
   );
 
-export const bus = new ClientBus({ factory });
+export const bus = new ClientBus({ factory, serializer });
 
 bus.start();
 ```
@@ -79,8 +88,10 @@ declare let onconnect: (event: MessageEvent) => void;
 
 import { ServerBus } from "@shinka-rpc/core";
 import { SharedWorkerServer } from "@shinka-rpc/shared-worker/server";
+import serializer from "@shinka-rpc/serializer-json";  // for example
 
-export const server = new ServerBus();
+
+export const server = new ServerBus({ serializer });
 
 onconnect = SharedWorkerServer(server);
 ```
@@ -92,7 +103,7 @@ Both `server` and `client` provide the same API:
 - **1-st** handler arg: `any` payload. Use `Object` and `Array` to pass multiple
 args, and then unpack them
 
-- **2nd** handler arg: `thisArg`
+- **2-nd** handler arg: `thisArg`
   - In `client` case it's `ClientBus` itself
   - In `server` case it's `CommonBus` -- `client`'s representation
 
@@ -118,7 +129,7 @@ If you need to something `async`ronous, just use `async` function as a handler
 Both `server` and `client` provide the same API:
 
 ```typescript
-type Meta = {};
+type Meta = { /*...*/ };
 const loadMeta = () => bus.request<Meta>("load-meta");  // returns Promise<Meta>
 const setToken = (token: string) => bus.event("set-token", [token]);
 ```
