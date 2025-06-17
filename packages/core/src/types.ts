@@ -3,7 +3,13 @@ import type { MessageType } from "./constants";
 import type { CommonBus } from "./common";
 
 export type REQID = number;
+
+/**
+ * Type representing serialized data that can be sent over the bus.
+ * This can be either a string or a Uint8Array.
+ */
 export type SerializedData = string | Uint8Array;
+
 export type DataEventKey = string | number | boolean;
 export type Request<B> = [REQID, B];
 export type Response<B> = [boolean, REQID, B];
@@ -43,28 +49,59 @@ export type Message<B> =
   | MessageResponse<B>
   | MessageEvent<B>;
 
+/**
+ * Generic serializer interface for converting between
+ * message types and serialized data.
+ *
+ * @template I - The input message type
+ * @template O - The output serialized data type
+ */
 export type GenericSerializer<
   I extends Message<any>,
   O extends SerializedData,
 > = {
+  /** Converts a message to serialized data */
   serialize: (data: I) => O;
+  /** Converts serialized data back to a message */
   deserialize: (data: O) => I;
 };
 
 export type Serializer = GenericSerializer<Message<any>, any>;
 
+/**
+ * Strict registry interface that requires both register and unregister functions.
+ * This is used for managing bus registration and lifecycle.
+ *
+ * @template C - The type of object being registered
+ */
 export type StrictRegistry<C> = {
+  /** Registers an object with the registry */
   register: (target: C) => void;
+  /** Unregisters an object from the registry */
   unregister: (target: C) => void;
 };
 
+/**
+ * Optional registry interface where register and unregister functions are optional.
+ * This is used when a registry implementation might not need both functions.
+ *
+ * @template C - The type of object being registered
+ */
 export type Registry<C> = {
+  /** Optional function to register an object */
   register?: (target: C) => void;
+  /** Optional function to unregister an object */
   unregister?: (target: C) => void;
 };
 
+/**
+ * Factory data interface for bus communication.
+ * This defines the basic functions needed for sending messages and closing connections.
+ */
 export type FactoryData = {
+  /** Function to send data through the bus */
   send: (data: any) => void;
+  /** Function to close the connection */
   close: () => Promise<void>;
 };
 
@@ -74,4 +111,8 @@ export type FactoryClient<B> = (bus: B) => Promise<FactoryData>;
 
 export type CompleteFN = (bus: CommonBus) => void;
 
+/**
+ * Type representing a tuple of reject and resolve functions for a Promise.
+ * This is used internally for managing request/response pairs.
+ */
 export type RejectResolve = [(reason?: any) => void, (value: any) => void];

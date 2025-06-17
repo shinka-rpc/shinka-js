@@ -24,3 +24,7 @@ both sides accepts only one connection. Who of them is [Server](./server-bus)?
 
 No one. It's OK scenario [Client](./client-bus) &longleftrightarrow; [Client](./client-bus)
 :::
+
+## Registry
+
+This is the way how to control client's connect and disconnect

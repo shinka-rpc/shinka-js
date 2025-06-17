@@ -4,6 +4,31 @@ import type { CommonBus } from "../common";
 
 const AsyncFunctionType = (async () => {}).constructor;
 
+/**
+ * Creates a request handler that wraps a callback function with proper error handling and response management.
+ * The handler automatically handles both synchronous and asynchronous callbacks, ensuring proper response
+ * sending and error handling.
+ *
+ * @template TA - The type of bus this handler is associated with
+ * @template B - The type of request body
+ * @template R - The type of response
+ * @param cb - The callback function to handle the request
+ * @returns A request handler function that manages the request lifecycle
+ *
+ * @example
+ * ```typescript
+ * // Synchronous handler
+ * const handler = requestRegistryHook((data, bus) => {
+ *   return processData(data);
+ * });
+ *
+ * // Asynchronous handler
+ * const asyncHandler = requestRegistryHook(async (data, bus) => {
+ *   const result = await fetchData(data);
+ *   return result;
+ * });
+ * ```
+ */
 export const requestRegistryHook = <TA extends CommonBus, B, R>(
   cb: (body: B, thisArg: TA) => R,
 ) => {
@@ -26,6 +51,31 @@ export const requestRegistryHook = <TA extends CommonBus, B, R>(
 
 const dummy = <I, O>(v: I) => v as any as O;
 
+/**
+ * Creates a registry with get and set functions for managing key-value pairs.
+ * The registry supports value transformation through an optional hook function.
+ *
+ * @template K - The type of keys in the registry
+ * @template V - The type of values in the registry
+ * @template H - The type of values before transformation (defaults to V)
+ * @param valHook - Optional function to transform values before storing them
+ * @returns A tuple containing get and set functions for the registry
+ *
+ * @example
+ * ```typescript
+ * // Create a simple registry
+ * const [get, set] = createRegistry<string, number>();
+ * set("key", 42);
+ * get("key"); // returns 42
+ *
+ * // Create a registry with value transformation
+ * const [getTransformed, setTransformed] = createRegistry<string, string, number>(
+ *   (val) => val.toString()
+ * );
+ * setTransformed("key", 42);
+ * getTransformed("key"); // returns "42"
+ * ```
+ */
 export const createRegistry = <K, V, H = V>(
   valHook: (val: H) => V = dummy<H, V>,
 ) => {

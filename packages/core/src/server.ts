@@ -59,25 +59,57 @@ const createServerStrictRedistry = (
   } as StrictRegistry<CommonBus>;
 };
 
+/**
+ * ServerBus is a class that manages server-side communication buses.
+ * It handles multiple client connections, request/event routing, and provides a centralized
+ * way to manage communication between the server and its clients.
+ *
+ * @class ServerBus
+ */
 export class ServerBus {
   [RegistryKey]!: StrictRegistry<CommonBus>;
   #serializer!: Serializer;
   #timeout!: number;
   #sayHello: boolean;
+
+  /**
+   * Registers a request handler for a specific event key.
+   * @param key - The event key to handle requests for
+   * @param fn - The callback function to handle the request
+   */
   onRequest!: (
     key: DataEventKey,
     fn: (data: any, thisArg: CommonBus) => any,
   ) => void;
+
+  /**
+   * Registers an event handler for a specific event key.
+   * @param key - The event key to handle events for
+   * @param fn - The callback function to handle the event
+   */
   onDataEvent!: (
     key: DataEventKey,
     fn: (data: any, thisArg: CommonBus) => void,
   ) => void;
+
   #requestHandler!: RequestHandler<CommonBus, any>;
   #eventHandler!: (key: DataEventKey, body: any, thisArg: CommonBus) => void;
   #clients!: Set<CommonBus>;
 
+  /**
+   * Additional data storage for the server instance
+   */
   extra!: Record<string, any>;
 
+  /**
+   * Creates a new instance of ServerBus.
+   *
+   * @param options - Configuration options for the ServerBus
+   * @param options.registry - Optional registry for request and event handlers
+   * @param options.sayHello - Optional flag to send hello message on client connect (defaults to false)
+   * @param options.serializer - Optional custom serializer (defaults to defaultSerializer)
+   * @param options.timeout - Optional timeout for request responses in milliseconds (defaults to defaultRequestTimeout)
+   */
   constructor({
     registry,
     sayHello = false,
@@ -101,6 +133,14 @@ export class ServerBus {
     this.#eventHandler = createEventHandler(evGet);
   }
 
+  /**
+   * Handles a new client connection.
+   * Creates a new bus instance for the client and initializes the connection.
+   *
+   * @param onmessage - Factory function that creates message handlers for the client
+   * @param complete - Optional callback function that is called when the connection is established
+   * @returns Promise that resolves with the created bus instance
+   */
   onConnect = async (
     onmessage: FactoryClient<CommonBus>,
     complete: CompleteFN = () => {},
@@ -121,6 +161,10 @@ export class ServerBus {
     return bus;
   };
 
+  /**
+   * Notifies all connected clients that the server will be terminated.
+   * This should be called before shutting down the server to ensure proper cleanup.
+   */
   willDie = () => {
     for (const client of this.#clients) client.willDie();
   };
