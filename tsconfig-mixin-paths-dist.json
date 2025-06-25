@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "paths": {
+      "@shinka-rpc/core": ["dist/core"],
+      "@shinka-rpc/core/*": ["dist/core/*"],
+      "@shinka-rpc/util": ["dist/util"],
+      "@shinka-rpc/util/*": ["dist/util/*"]
+    }
+  }
+}

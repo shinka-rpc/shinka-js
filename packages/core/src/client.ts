@@ -13,6 +13,7 @@ import {
   createRequestHandler,
   createReqRegistry,
   createEventRegistry,
+  asOnRequest,
 } from "./factory/registry";
 
 import { CommonBus } from "./common";
@@ -22,9 +23,10 @@ import type {
   Serializer,
   DataEventKey,
   Registry,
+  ShinkaMeta,
 } from "./types";
 
-import { sleep } from "@shinka-rpc/util/sleep";
+import { sleep } from "@shinka-rpc/util";
 
 export type ClientBusProps<B> = {
   factory: FactoryClient<B>;
@@ -51,6 +53,7 @@ export class ClientBus extends CommonBus {
   onRequest!: (
     key: DataEventKey,
     fn: (data: any, thisArg: this) => void,
+    metadata?: ShinkaMeta,
   ) => void;
 
   /**
@@ -96,7 +99,7 @@ export class ClientBus extends CommonBus {
       createEventHandler(evGet),
       responseTimeout,
     );
-    this.onRequest = reqSet;
+    this.onRequest = asOnRequest(reqSet);
     this.onDataEvent = evSet;
     this.#sayHello = sayHello;
     this.#restartTimeout = restartTimeout;

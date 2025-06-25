@@ -1,4 +1,5 @@
-import type { DataEventKey } from "../types";
+import { Response } from "../response";
+import type { DataEventKey, ShinkaMeta } from "../types";
 import type { Context } from "../context";
 import type { CommonBus } from "../common";
 
@@ -7,44 +8,60 @@ const AsyncFunctionType = (async () => {}).constructor;
 /**
  * Creates a request handler that wraps a callback function with proper error handling and response management.
  * The handler automatically handles both synchronous and asynchronous callbacks, ensuring proper response
- * sending and error handling.
+ * sending and error handling. It also supports Response objects with metadata.
  *
  * @template TA - The type of bus this handler is associated with
  * @template B - The type of request body
  * @template R - The type of response
- * @param cb - The callback function to handle the request
+ * @param options - Configuration options for the request handler
+ * @param options.cb - The callback function to handle the request
+ * @param options.metadata - Optional metadata to merge with response metadata
  * @returns A request handler function that manages the request lifecycle
  *
  * @example
  * ```typescript
  * // Synchronous handler
- * const handler = requestRegistryHook((data, bus) => {
- *   return processData(data);
+ * const handler = requestRegistryHook({
+ *   cb: (data, bus) => processData(data)
  * });
  *
- * // Asynchronous handler
- * const asyncHandler = requestRegistryHook(async (data, bus) => {
- *   const result = await fetchData(data);
- *   return result;
+ * // Asynchronous handler with metadata
+ * const asyncHandler = requestRegistryHook({
+ *   cb: async (data, bus) => await fetchData(data),
+ *   metadata: { transport: "transportOptions", serialize: "serializeOptions" }
  * });
  * ```
  */
-export const requestRegistryHook = <TA extends CommonBus, B, R>(
-  cb: (body: B, thisArg: TA) => R,
-) => {
+export const requestRegistryHook = <TA extends CommonBus, B, R>({
+  cb,
+  metadata,
+}: {
+  cb: (body: B, thisArg: TA) => R;
+  metadata?: ShinkaMeta;
+}) => {
   return cb instanceof AsyncFunctionType
     ? async (body: B, ctx: Context<TA>) => {
         try {
-          ctx.answer(await cb(body, ctx.bus));
+          const response = await cb(body, ctx.bus);
+          response instanceof Response
+            ? ctx.answer(response.value, { ...metadata, ...response.metadata })
+            : ctx.answer(response, metadata);
         } catch (e) {
-          ctx.error(e);
+          e instanceof Response
+            ? ctx.error(e.value, { ...metadata, ...e.metadata })
+            : ctx.error(e, metadata);
         }
       }
     : (body: B, ctx: Context<TA>) => {
         try {
-          ctx.answer(cb(body, ctx.bus));
+          const response = cb(body, ctx.bus);
+          response instanceof Response
+            ? ctx.answer(response.value, { ...metadata, ...response.metadata })
+            : ctx.answer(response, metadata);
         } catch (e) {
-          ctx.error(e);
+          e instanceof Response
+            ? ctx.error(e.value, { ...metadata, ...e.metadata })
+            : ctx.error(e, metadata);
         }
       };
 };
@@ -60,21 +77,6 @@ const dummy = <I, O>(v: I) => v as any as O;
  * @template H - The type of values before transformation (defaults to V)
  * @param valHook - Optional function to transform values before storing them
  * @returns A tuple containing get and set functions for the registry
- *
- * @example
- * ```typescript
- * // Create a simple registry
- * const [get, set] = createRegistry<string, number>();
- * set("key", 42);
- * get("key"); // returns 42
- *
- * // Create a registry with value transformation
- * const [getTransformed, setTransformed] = createRegistry<string, string, number>(
- *   (val) => val.toString()
- * );
- * setTransformed("key", 42);
- * getTransformed("key"); // returns "42"
- * ```
  */
 export const createRegistry = <K, V, H = V>(
   valHook: (val: H) => V = dummy<H, V>,
@@ -91,6 +93,14 @@ type MaybeReqHandler<T extends CommonBus> =
   | ((body: any, ctx: Context<T>) => any)
   | undefined;
 
+/**
+ * Creates a request handler function that looks up and executes request callbacks from a registry.
+ * This function provides a standardized way to handle incoming requests by delegating to registered handlers.
+ *
+ * @template T - The type of bus this handler is associated with
+ * @param getRequest - Function to retrieve request handlers from the registry
+ * @returns A function that handles requests by looking up and executing the appropriate handler
+ */
 export const createRequestHandler =
   <T extends CommonBus>(
     getRequest: (key: DataEventKey) => MaybeReqHandler<T>,
@@ -105,6 +115,15 @@ type MaybeEventHandler<T extends CommonBus> =
   | ((body: any, thisArg: T) => void)
   | undefined;
 
+/**
+ * Creates an event handler function that looks up and executes event callbacks from a registry.
+ * This function provides a standardized way to handle incoming events by delegating to registered handlers.
+ *
+ * @template T - The type of bus this handler is associated with
+ * @template B - The type of event body
+ * @param getDataEvent - Function to retrieve event handlers from the registry
+ * @returns A function that handles events by looking up and executing the appropriate handler
+ */
 export const createEventHandler =
   <T extends CommonBus, B>(
     getDataEvent: (key: DataEventKey) => MaybeEventHandler<T>,
@@ -115,16 +134,58 @@ export const createEventHandler =
     cb(body, thisArg);
   };
 
+/**
+ * Creates a request registry with get and set functions for managing request handlers.
+ * The registry automatically wraps callbacks with proper error handling and response management.
+ *
+ * @template TA - The type of bus this registry is associated with
+ * @template B - The type of request body
+ * @template R - The type of response
+ * @returns A tuple containing get and set functions for the request registry
+ */
 export const createReqRegistry = <TA extends CommonBus, B, R>() =>
   createRegistry<
     DataEventKey,
     (body: B, ctx: Context<TA>) => void,
-    (body: B, thisArg: TA) => R
+    { cb: (body: B, thisArg: TA) => R; metadata?: ShinkaMeta }
   >(requestRegistryHook<TA, B, R>);
 
 export type ReqRegistryType = ReturnType<typeof createReqRegistry>;
 
+/**
+ * Creates an event registry with get and set functions for managing event handlers.
+ * The registry stores event callbacks that can be executed when events are received.
+ *
+ * @template T - The type of bus this registry is associated with
+ * @template B - The type of event body
+ * @returns A tuple containing get and set functions for the event registry
+ */
 export const createEventRegistry = <T extends CommonBus, B>() =>
   createRegistry<DataEventKey, (data: B, thisArg: T) => void>();
 
 export type EventRegistryType = ReturnType<typeof createEventRegistry>;
+
+/**
+ * Creates a convenience function that adapts a request registry setter to accept separate callback and metadata parameters.
+ * This provides a more ergonomic API for registering request handlers.
+ *
+ * @template TA - The type of bus this adapter is associated with
+ * @param reqSet - The request registry setter function
+ * @returns A function that accepts separate key, callback, and metadata parameters
+ */
+export const asOnRequest =
+  <TA extends CommonBus>(
+    reqSet: (
+      key: DataEventKey,
+      val: {
+        cb: (body: any, thisArg: TA) => any;
+        metadata?: ShinkaMeta;
+      },
+    ) => void,
+  ) =>
+  (
+    key: DataEventKey,
+    cb: (data: any, thisArg: TA) => any,
+    metadata?: ShinkaMeta,
+  ) =>
+    reqSet(key, { cb, metadata });

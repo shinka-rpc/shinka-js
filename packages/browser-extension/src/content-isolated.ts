@@ -24,32 +24,6 @@ export type CreateIsolatedPairProps = {
   extensionRegistry?: Registry<ClientBus>;
 };
 
-/**
- * Creates a pair of isolated buses for content script and extension communication.
- * This function sets up two ClientBus instances with proper configuration for
- * isolated communication between content scripts and the extension.
- *
- * @param props - Configuration options for the isolated pair
- * @param props.contentBusFactory - Factory function for creating the content bus
- * @param props.responseTimeout - Timeout for request responses in milliseconds
- * @param props.contentRegistry - Optional registry for content bus handlers
- * @param props.extensionRegistry - Optional registry for extension bus handlers
- * @returns An object containing the configured content and extension buses
- *
- * @example
- * ```typescript
- * const { contentBus, extensionBus } = createIsolatedPair({
- *   contentBusFactory: createContentBusFactory(),
- *   responseTimeout: 5000,
- *   contentRegistry: {
- *     // Content bus handlers
- *   },
- *   extensionRegistry: {
- *     // Extension bus handlers
- *   }
- * });
- * ```
- */
 export const createIsolatedPair = ({
   contentBusFactory,
   responseTimeout,

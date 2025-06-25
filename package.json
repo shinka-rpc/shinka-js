@@ -4,9 +4,9 @@
   "main": "index.js",
   "scripts": {
     "build": "lerna run --scope \"@shinka-rpc/*\" build",
+    "test": "lerna run --scope \"@shinka-rpc/*\" test",
     "packall": "D=\"$PWD\"; mkdir -p pack && rm -f pack/*; for d in dist/*; do cd \"$d\"; npm pack --pack-destination \"$D\"/pack; cd \"$D\"; done",
     "prepublishall": "npm run build",
-    "test": "echo \"Error: no test specified\" && exit 1",
     "publishall": "node publishAll.mjs",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",

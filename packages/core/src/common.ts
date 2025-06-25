@@ -16,7 +16,7 @@ import type {
   Serializer,
   Message,
   DataEventHandler,
-  Response,
+  ResponseType,
   DataEvent,
   Request,
   RequestHandler,
@@ -24,6 +24,7 @@ import type {
   MessageEvent,
   DataEventKey,
   SerializedData,
+  ShinkaMeta,
 } from "./types";
 
 import {
@@ -36,6 +37,10 @@ import {
 import { reqrsp } from "./factory/request-response";
 import { registerEventsInner, registerRequestsInner } from "./inner";
 
+const transportNotInitialized = () => {
+  throw new Error("Transport is not initialized");
+};
+
 /**
  * CommonBus is the base class for implementing message-based communication buses.
  * It provides core functionality for handling requests, responses, and events between different parts of the system.
@@ -46,7 +51,7 @@ export class CommonBus {
   #factory!: FactoryClient<typeof this>;
   #serializer!: Serializer;
   [RegistryKey]!: StrictRegistry<typeof this>;
-  #sendMessage?: (message: any) => void;
+  #sendMessage?: (message: any, opts?: any) => void;
   #closeBus?: () => Promise<void>;
 
   /**
@@ -56,12 +61,16 @@ export class CommonBus {
    * @param data - The data to send with the request
    * @returns Promise that resolves with the response data
    */
-  request!: <T>(key: DataEventKey, data: any) => Promise<T>;
+  request!: <T>(
+    key: DataEventKey,
+    data: any,
+    metadata?: ShinkaMeta,
+  ) => Promise<T>;
 
-  #onResponseOuter!: (response: Response<any>) => void;
+  #onResponseOuter!: (response: ResponseType<any>) => void;
   #onMessageRequestOuter!: (request: Request<any>) => void;
   [RequestInnerKey]!: <T>(key: DataEventKey, data: any) => Promise<T>;
-  #onResponseInner!: (response: Response<any>) => void;
+  #onResponseInner!: (response: ResponseType<any>) => void;
   #onMessageRequestInner!: (request: Request<any>) => void;
   #onDataEventOuter!: DataEventHandler<typeof this, any>;
   #onDataEventInner!: DataEventHandler<typeof this, any>;
@@ -69,7 +78,7 @@ export class CommonBus {
   /**
    * Additional data storage for the bus instance
    */
-  extra!: Record<string, any>;
+  extra!: Record<string | symbol, any>;
 
   [StoppedKey]!: boolean;
   #started!: boolean;
@@ -96,7 +105,7 @@ export class CommonBus {
     responseTimeout: number,
   ) {
     this.#closeBus = undefined;
-    this.#sendMessage = undefined;
+    this.#sendMessage = transportNotInitialized;
     this.#factory = factory;
     this.#serializer = serializer;
     this[RegistryKey] = registry;
@@ -176,6 +185,7 @@ export class CommonBus {
     this.#closeBus = undefined;
     this.#sendMessage = undefined;
     if (close) await close();
+    this.#sendMessage = transportNotInitialized;
   }
 
   /**
@@ -196,9 +206,9 @@ export class CommonBus {
    * @private
    * @param message - The message to send
    */
-  #sendData = (message: Message<any>) => {
-    const serialized = this.#serializer.serialize(message);
-    this.#sendMessage!(serialized);
+  #sendData = (message: Message<any>, metadata?: ShinkaMeta) => {
+    const serialized = this.#serializer.serialize(message, metadata?.serialize);
+    this.#sendMessage!(serialized, metadata?.transport);
   };
 
   /**
@@ -237,9 +247,10 @@ export class CommonBus {
   #eventSend(
     event_type: MessageType.EVENT_OUTER | MessageType.EVENT_INNER,
     event: DataEvent<any>,
+    metadata?: ShinkaMeta,
   ) {
     const message: MessageEvent<any> = [event_type, event];
-    this.#sendData(message);
+    this.#sendData(message, metadata);
   }
 
   /**
@@ -257,8 +268,8 @@ export class CommonBus {
    * @param key - The event key
    * @param data - The event data
    */
-  event(key: DataEventKey, data: any) {
-    this.#eventSend(MessageType.EVENT_OUTER, [key, data]);
+  event(key: DataEventKey, data: any, metadata?: ShinkaMeta) {
+    this.#eventSend(MessageType.EVENT_OUTER, [key, data], metadata);
   }
 
   /**

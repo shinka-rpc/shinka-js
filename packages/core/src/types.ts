@@ -12,7 +12,7 @@ export type SerializedData = string | Uint8Array;
 
 export type DataEventKey = string | number | boolean;
 export type Request<B> = [REQID, B];
-export type Response<B> = [boolean, REQID, B];
+export type ResponseType<B> = [boolean, REQID, B];
 export type DataEvent<B> = [DataEventKey, B];
 export type ProcessData<B> = [DataEventKey, B];
 export type DataEventHandler<TA extends CommonBus, B> = (
@@ -32,7 +32,7 @@ export type MessageRequest<B> = MessageRequestBase<
   MessageType.REQUEST_OUTER | MessageType.REQUEST_INNER,
   B
 >;
-export type MessageResponseBase<T, B> = [T, Response<B>];
+export type MessageResponseBase<T, B> = [T, ResponseType<B>];
 export type MessageResponse<B> = MessageResponseBase<
   MessageType.RESPONSE_OUTER | MessageType.RESPONSE_INNER,
   B
@@ -55,18 +55,20 @@ export type Message<B> =
  *
  * @template I - The input message type
  * @template O - The output serialized data type
+ * @template SO - Serializer options
  */
 export type GenericSerializer<
   I extends Message<any>,
   O extends SerializedData,
+  SO,
 > = {
   /** Converts a message to serialized data */
-  serialize: (data: I) => O;
+  serialize: (data: I, opts?: SO) => O;
   /** Converts serialized data back to a message */
   deserialize: (data: O) => I;
 };
 
-export type Serializer = GenericSerializer<Message<any>, any>;
+export type Serializer = GenericSerializer<Message<any>, any, any>;
 
 /**
  * Strict registry interface that requires both register and unregister functions.
@@ -100,12 +102,12 @@ export type Registry<C> = {
  */
 export type FactoryData = {
   /** Function to send data through the bus */
-  send: (data: any) => void;
+  send: (data: any, opts?: any) => void;
   /** Function to close the connection */
   close: () => Promise<void>;
 };
 
-export type OnMessageSerialized = (data: SerializedData) => void;
+// export type OnMessageSerialized = (data: SerializedData) => void;
 
 export type FactoryClient<B> = (bus: B) => Promise<FactoryData>;
 
@@ -116,3 +118,10 @@ export type CompleteFN = (bus: CommonBus) => void;
  * This is used internally for managing request/response pairs.
  */
 export type RejectResolve = [(reason?: any) => void, (value: any) => void];
+
+export type ShinkaMetaGeneric<SO, TO> = {
+  transport?: TO;
+  serialize?: SO;
+};
+
+export type ShinkaMeta = ShinkaMetaGeneric<any, any>;

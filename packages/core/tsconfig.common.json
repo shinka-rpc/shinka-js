@@ -1,6 +1,7 @@
 {
-  "extends": "../../tsconfig.build.json",
+  "extends": ["../../tsconfig.common.json"],
   "compilerOptions": {
+    "baseUrl": "./",
     "outDir": "../../dist/core",
     "preserveConstEnums": false
   }

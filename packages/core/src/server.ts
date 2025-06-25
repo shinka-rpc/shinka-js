@@ -1,6 +1,5 @@
 import {
   defaultSerializer,
-  emptyRegistry,
   LazyInitKey,
   RegistryKey,
   defaultRequestTimeout,
@@ -14,6 +13,7 @@ import {
   createRequestHandler,
   createReqRegistry,
   createEventRegistry,
+  asOnRequest,
 } from "./factory/registry";
 
 import type {
@@ -24,6 +24,7 @@ import type {
   FactoryClient,
   RequestHandler,
   CompleteFN,
+  ShinkaMeta,
 } from "./types";
 
 export type ServerOptions = {
@@ -80,6 +81,7 @@ export class ServerBus {
   onRequest!: (
     key: DataEventKey,
     fn: (data: any, thisArg: CommonBus) => any,
+    metadata?: ShinkaMeta,
   ) => void;
 
   /**
@@ -99,7 +101,7 @@ export class ServerBus {
   /**
    * Additional data storage for the server instance
    */
-  extra!: Record<string, any>;
+  extra!: Record<string | symbol, any>;
 
   /**
    * Creates a new instance of ServerBus.
@@ -127,7 +129,7 @@ export class ServerBus {
     const [reqGet, reqSet] = createReqRegistry<CommonBus, any, any>();
     const [evGet, evSet] = createEventRegistry<CommonBus, any>();
 
-    this.onRequest = reqSet;
+    this.onRequest = asOnRequest(reqSet);
     this.onDataEvent = evSet;
     this.#requestHandler = createRequestHandler(reqGet);
     this.#eventHandler = createEventHandler(evGet);

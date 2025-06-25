@@ -1,13 +1,7 @@
 {
-  "extends": "./tsconfig.build.json",
+  "extends": ["./tsconfig.common.json", "./tsconfig-mixin-paths-src.json"],
   "compilerOptions": {
-    "jsx": "react-jsx",
-    "paths": {
-      "@shinka-rpc/core": ["packages/core/src"],
-      "@shinka-rpc/core/*": ["packages/core/src/*"],
-      "@shinka-rpc/util": ["packages/util/src"],
-      "@shinka-rpc/util/*": ["packages/util/src/*"]
-    }
+    "jsx": "react-jsx"
   },
   "include": ["./packages/*/src/**.ts"]
 }

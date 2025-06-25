@@ -1,0 +1,4 @@
+{
+  "extends": ["./tsconfig.common.json", "../../tsconfig-mixin-paths-dist.json"],
+  "exclude": ["jest.config.ts", "__tests__/"]
+}
