@@ -83,19 +83,42 @@ const createSyncHandler = (
   bus.onRequest(
     "bus1-sync",
     ([arg, simple, ok]: any) => {
-      results.push({ key: "bus1-sync-request", arg });
+      results.push({ key: "sync-request", arg });
       const result = simple
         ? "bus1-simple-response-send"
-        : new Response("bus1-nested-response-send", {
-            serialize: "bus1-sync-serialize",
-            transport: "bus1-sync-transport",
+        : new Response("nested-response-send", {
+            serialize: "sync-serialize",
+            transport: "sync-transport",
           });
       if (ok) return result;
       else throw result;
     },
     {
-      serialize: "bus1-sync-serialize-default",
-      transport: "bus1-sync-transport-default",
+      serialize: "sync-serialize-default",
+      transport: "sync-transport-default",
+    },
+  );
+
+const createAsyncHandler = (
+  bus: ClientBus | ServerBus,
+  results: Record<string, any>[],
+) =>
+  bus.onRequest(
+    "bus1-async",
+    async ([arg, simple, ok]: any) => {
+      results.push({ key: "async-request", arg });
+      const result = simple
+        ? "simple-response-send"
+        : new Response("nested-response-send", {
+            serialize: "async-serialize",
+            transport: "async-transport",
+          });
+      if (ok) return result;
+      else throw result;
+    },
+    {
+      serialize: "async-serialize-default",
+      transport: "async-transport-default",
     },
   );
 
@@ -113,6 +136,8 @@ const createMockBusService =
         : undefined,
     );
 
+// === sync
+
 test("sync-simple-ok", async () => {
   const { results, bus1, bus2 } = await setupTest();
   const bus1Sync = createMockBusService("bus1-sync", bus2);
@@ -126,9 +151,9 @@ test("sync-simple-ok", async () => {
   expect(results).toStrictEqual([
     { key: "bus2-serializer", opts: "bus1-sync-req-serialize" },
     { key: "bus2-transport", opts: "bus1-sync-req-transport" },
-    { key: "bus1-sync-request", arg: "bus1-sync-simple-ok" },
-    { key: "bus1-serializer", opts: "bus1-sync-serialize-default" },
-    { key: "bus1-transport", opts: "bus1-sync-transport-default" },
+    { key: "sync-request", arg: "bus1-sync-simple-ok" },
+    { key: "bus1-serializer", opts: "sync-serialize-default" },
+    { key: "bus1-transport", opts: "sync-transport-default" },
     { key: "bus1-sync-response-got", out: "bus1-simple-response-send" },
   ]);
 });
@@ -146,10 +171,10 @@ test("sync-nested-ok", async () => {
   expect(results).toStrictEqual([
     { key: "bus2-serializer", opts: undefined },
     { key: "bus2-transport", opts: undefined },
-    { key: "bus1-sync-request", arg: "bus1-sync-nested-ok" },
-    { key: "bus1-serializer", opts: "bus1-sync-serialize" },
-    { key: "bus1-transport", opts: "bus1-sync-transport" },
-    { key: "bus1-sync-response-got", out: "bus1-nested-response-send" },
+    { key: "sync-request", arg: "bus1-sync-nested-ok" },
+    { key: "bus1-serializer", opts: "sync-serialize" },
+    { key: "bus1-transport", opts: "sync-transport" },
+    { key: "bus1-sync-response-got", out: "nested-response-send" },
   ]);
 });
 
@@ -170,9 +195,9 @@ test("sync-simple-err", async () => {
   expect(results).toStrictEqual([
     { key: "bus2-serializer", opts: undefined },
     { key: "bus2-transport", opts: undefined },
-    { key: "bus1-sync-request", arg: "bus1-sync-simple-err" },
-    { key: "bus1-serializer", opts: "bus1-sync-serialize-default" },
-    { key: "bus1-transport", opts: "bus1-sync-transport-default" },
+    { key: "sync-request", arg: "bus1-sync-simple-err" },
+    { key: "bus1-serializer", opts: "sync-serialize-default" },
+    { key: "bus1-transport", opts: "sync-transport-default" },
     { key: "bus1-sync-response-got", err: "bus1-simple-response-send" },
   ]);
 });
@@ -194,9 +219,99 @@ test("sync-nested-err", async () => {
   expect(results).toStrictEqual([
     { key: "bus2-serializer", opts: undefined },
     { key: "bus2-transport", opts: undefined },
-    { key: "bus1-sync-request", arg: "bus1-sync-nested-err" },
-    { key: "bus1-serializer", opts: "bus1-sync-serialize" },
-    { key: "bus1-transport", opts: "bus1-sync-transport" },
-    { key: "bus1-sync-response-got", err: "bus1-nested-response-send" },
+    { key: "sync-request", arg: "bus1-sync-nested-err" },
+    { key: "bus1-serializer", opts: "sync-serialize" },
+    { key: "bus1-transport", opts: "sync-transport" },
+    { key: "bus1-sync-response-got", err: "nested-response-send" },
+  ]);
+});
+
+// === async
+
+test("async-simple-ok", async () => {
+  const { results, bus1, bus2 } = await setupTest();
+  const bus1Sync = createMockBusService("bus1-async", bus2);
+  createAsyncHandler(bus1, results);
+
+  results.push({
+    key: "bus1-async-response-got",
+    out: await bus1Sync("bus1-async-simple-ok", true, true, false),
+  });
+
+  expect(results).toStrictEqual([
+    { key: "bus2-serializer", opts: undefined },
+    { key: "bus2-transport", opts: undefined },
+    { key: "async-request", arg: "bus1-async-simple-ok" },
+    { key: "bus1-serializer", opts: "async-serialize-default" },
+    { key: "bus1-transport", opts: "async-transport-default" },
+    { key: "bus1-async-response-got", out: "simple-response-send" },
+  ]);
+});
+
+test("async-nested-ok", async () => {
+  const { results, bus1, bus2 } = await setupTest();
+  const bus1Sync = createMockBusService("bus1-async", bus2);
+  createAsyncHandler(bus1, results);
+
+  results.push({
+    key: "bus1-async-response-got",
+    out: await bus1Sync("bus1-async-nested-ok", false, true, false),
+  });
+
+  expect(results).toStrictEqual([
+    { key: "bus2-serializer", opts: undefined },
+    { key: "bus2-transport", opts: undefined },
+    { key: "async-request", arg: "bus1-async-nested-ok" },
+    { key: "bus1-serializer", opts: "async-serialize" },
+    { key: "bus1-transport", opts: "async-transport" },
+    { key: "bus1-async-response-got", out: "nested-response-send" },
+  ]);
+});
+
+test("async-simple-err", async () => {
+  const { results, bus1, bus2 } = await setupTest();
+  const bus1Sync = createMockBusService("bus1-async", bus2);
+  createAsyncHandler(bus1, results);
+
+  try {
+    await bus1Sync("bus1-async-simple-err", true, false, false);
+  } catch (e) {
+    results.push({
+      key: "bus1-async-response-got",
+      err: e,
+    });
+  }
+
+  expect(results).toStrictEqual([
+    { key: "bus2-serializer", opts: undefined },
+    { key: "bus2-transport", opts: undefined },
+    { key: "async-request", arg: "bus1-async-simple-err" },
+    { key: "bus1-serializer", opts: "async-serialize-default" },
+    { key: "bus1-transport", opts: "async-transport-default" },
+    { key: "bus1-async-response-got", err: "simple-response-send" },
+  ]);
+});
+
+test("async-nested-err", async () => {
+  const { results, bus1, bus2 } = await setupTest();
+  const bus1Sync = createMockBusService("bus1-async", bus2);
+  createAsyncHandler(bus1, results);
+
+  try {
+    await bus1Sync("bus1-async-nested-err", false, false, false);
+  } catch (e) {
+    results.push({
+      key: "bus1-async-response-got",
+      err: e,
+    });
+  }
+
+  expect(results).toStrictEqual([
+    { key: "bus2-serializer", opts: undefined },
+    { key: "bus2-transport", opts: undefined },
+    { key: "async-request", arg: "bus1-async-nested-err" },
+    { key: "bus1-serializer", opts: "async-serialize" },
+    { key: "bus1-transport", opts: "async-transport" },
+    { key: "bus1-async-response-got", err: "nested-response-send" },
   ]);
 });
