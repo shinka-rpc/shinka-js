@@ -49,6 +49,7 @@ export const reqrsp = <B extends CommonBus>(
       });
     }
 
+    pending.delete(reqID);
     const callback = callbacks[+OK];
     callback(body);
   };
