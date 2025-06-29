@@ -7,7 +7,7 @@ import type { ServerBus, CompleteFN, CommonBus } from "@shinka-rpc/core";
  * @param port - The Chrome runtime port instance
  * @returns A function that will be called when the port connection is complete
  */
-export type CompleteCB = (port: chrome.runtime.Port) => CompleteFN;
+export type CompleteCB = (port: chrome.runtime.Port) => CompleteFN<CommonBus>;
 
 /**
  * Creates a factory function for handling Chrome runtime port connections in a browser extension.
@@ -33,7 +33,7 @@ export type CompleteCB = (port: chrome.runtime.Port) => CompleteFN;
 export const messagePortFactory =
   (bus: ServerBus, complete: CompleteCB = () => () => {}) =>
   async (port: chrome.runtime.Port) => {
-    const onconnect = async (bus: CommonBus) => {
+    const factory = async (bus: CommonBus) => {
       port.onMessage.addListener(bus.onMessage);
       port.onDisconnect.addListener(() => client.stop());
       self.addEventListener("beforeunload", bus.willDie);
@@ -45,5 +45,5 @@ export const messagePortFactory =
       };
       return { send, close };
     };
-    const client = await bus.onConnect(onconnect, complete(port));
+    const client = await bus.connect({ factory, complete: complete(port) });
   };

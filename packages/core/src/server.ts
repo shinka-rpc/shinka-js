@@ -21,10 +21,10 @@ import type {
   Serializer,
   StrictRegistry,
   Registry,
-  FactoryClient,
   RequestHandler,
   CompleteFN,
   ShinkaMeta,
+  ServerBusConnectProps,
 } from "./types";
 
 export type ServerOptions = {
@@ -139,26 +139,30 @@ export class ServerBus {
    * Handles a new client connection.
    * Creates a new bus instance for the client and initializes the connection.
    *
-   * @param onmessage - Factory function that creates message handlers for the client
-   * @param complete - Optional callback function that is called when the connection is established
+   * @param factory - Factory function that creates message handlers for the client
+   * @param complete - Optional callback function that is called just before
+   * client representation bus is started. Accepts created CommonBus instance
    * @returns Promise that resolves with the created bus instance
    */
-  onConnect = async (
-    onmessage: FactoryClient<CommonBus>,
-    complete: CompleteFN = () => {},
-  ) => {
+  connect = async ({
+    factory,
+    serializer = this.#serializer,
+    responseTimeout = this.#timeout,
+    sayHello = this.#sayHello,
+    complete = () => {},
+  }: ServerBusConnectProps<CommonBus>) => {
     const bus = new CommonBus();
     bus[LazyInitKey](
-      onmessage,
-      this.#serializer,
+      factory,
+      serializer,
       this[RegistryKey],
       this.#requestHandler,
       this.#eventHandler,
-      this.#timeout,
+      responseTimeout,
     );
     complete(bus);
     await bus.start();
-    if (this.#sayHello) bus[HelloKey]();
+    if (sayHello) bus[HelloKey]();
     this.#clients.add(bus);
     return bus;
   };

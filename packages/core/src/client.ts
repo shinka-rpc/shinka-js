@@ -1,3 +1,5 @@
+import { sleep } from "@shinka-rpc/util";
+
 import {
   LazyInitKey,
   defaultRequestTimeout,
@@ -18,24 +20,7 @@ import {
 
 import { CommonBus } from "./common";
 
-import type {
-  FactoryClient,
-  Serializer,
-  DataEventKey,
-  Registry,
-  ShinkaMeta,
-} from "./types";
-
-import { sleep } from "@shinka-rpc/util";
-
-export type ClientBusProps<B> = {
-  factory: FactoryClient<B>;
-  serializer?: Serializer;
-  registry?: Registry<B>;
-  responseTimeout?: number;
-  sayHello?: boolean;
-  restartTimeout?: number;
-};
+import type { DataEventKey, ShinkaMeta, ClientBusProps } from "./types";
 
 /**
  * ClientBus is a class that extends CommonBus to provide client-side event handling and request functionality.

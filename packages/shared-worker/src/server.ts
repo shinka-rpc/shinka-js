@@ -34,7 +34,7 @@ import type { ServerBus, CommonBus } from "@shinka-rpc/core";
 export const SharedWorkerServer =
   (server: ServerBus, binary = false) =>
   (e: MessageEvent) => {
-    const onconnect = async (bus: CommonBus) => {
+    const factory = async (bus: CommonBus) => {
       const port = e.source as any as MessagePort;
       const _onmessage = (e: MessageEvent) => bus.onMessage(e.data);
       port.onmessage = _onmessage;
@@ -45,5 +45,5 @@ export const SharedWorkerServer =
       port.start();
       return { send, close };
     };
-    server.onConnect(onconnect);
+    server.connect({ factory });
   };

@@ -111,7 +111,7 @@ export type FactoryData = {
 
 export type FactoryClient<B> = (bus: B) => Promise<FactoryData>;
 
-export type CompleteFN = (bus: CommonBus) => void;
+export type CompleteFN<B> = (bus: B) => void;
 
 /**
  * Type representing a tuple of reject and resolve functions for a Promise.
@@ -125,3 +125,20 @@ export type ShinkaMetaGeneric<SO, TO> = {
 };
 
 export type ShinkaMeta = ShinkaMetaGeneric<any, any>;
+
+// Synthetic
+export type CommonBusProps<B> = {
+  factory: FactoryClient<B>;
+  serializer?: Serializer;
+  responseTimeout?: number;
+  sayHello?: boolean;
+};
+
+export type ClientBusProps<B> = CommonBusProps<B> & {
+  restartTimeout?: number;
+  registry?: Registry<B>;
+};
+
+export type ServerBusConnectProps<B> = CommonBusProps<B> & {
+  complete?: CompleteFN<B>;
+};
