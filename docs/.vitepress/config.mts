@@ -4,6 +4,10 @@ const baseUrl = process.env.READTHEDOCS_VERSION_NAME
   ? `/${process.env.READTHEDOCS_VERSION_NAME}/`
   : "/";
 
+const imgPath = process.env.READTHEDOCS_VERSION_NAME
+  ? `${baseUrl}assets/img/`
+  : "/img/";
+
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
   title: "shinka-rpc",
@@ -11,7 +15,7 @@ export default defineConfig({
   cleanUrls: true,
   base: baseUrl,
 
-  head: [["link", { rel: "icon", href: `${baseUrl}img/favicon.png` }]],
+  head: [["link", { rel: "icon", href: `${imgPath}favicon.png` }]],
 
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
