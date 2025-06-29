@@ -1,6 +1,6 @@
 {
   "name": "@shinka-rpc/web-socket",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "",
   "main": "./src/index.ts",
   "scripts": {
@@ -38,6 +38,6 @@
     "types": "./src/index.ts"
   },
   "dependencies": {
-    "@shinka-rpc/core": "^0.0.1"
+    "@shinka-rpc/core": "^0.0.2"
   }
 }
