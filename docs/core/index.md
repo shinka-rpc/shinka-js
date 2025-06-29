@@ -25,6 +25,9 @@ both sides accepts only one connection. Who of them is [Server](./server-bus)?
 No one. It's OK scenario [Client](./client-bus) &longleftrightarrow; [Client](./client-bus)
 :::
 
+[Server](./server-bus) can initialize connections by itself, so reverse-server
+and hybrid scenarios are also available
+
 ## Registry
 
 This is the way how to control client's connect and disconnect

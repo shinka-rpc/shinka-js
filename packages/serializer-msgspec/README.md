@@ -1,6 +1,6 @@
 # @shinka-rpc/serializer-msgspec
 
-Symmetric RPC bus
+Symmetric RPC bus. [Documentation is here](https://shinka-rpc-js.readthedocs.io/latest/serializers/msgspec/)
 
 This package implements serializer into msgspec
 

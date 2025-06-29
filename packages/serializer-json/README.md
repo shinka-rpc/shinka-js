@@ -1,6 +1,6 @@
 # @shinka-rpc/serializer-json
 
-Symmetric RPC bus
+Symmetric RPC bus. [Documentation is here](https://shinka-rpc-js.readthedocs.io/latest/serializers/json/)
 
 This package implements serializer into JSON
 

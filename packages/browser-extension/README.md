@@ -1,6 +1,6 @@
 # @shinka-rpc/browser-extension
 
-Symmetric RPC bus
+Symmetric RPC bus. [Documentation is here](https://shinka-rpc-js.readthedocs.io/latest/transports/browser-extension/)
 
 This package contains a transports of
 [@shinka-rpc/core](https://www.npmjs.com/package/@shinka-rpc/core) for

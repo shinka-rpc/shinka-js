@@ -48,7 +48,8 @@ bundle would contain only one `core`
 # Symmetricity
 
 It means **both** server and client may register **request** and **event**
-handlers, and then send *requests* and *events* to each other
+handlers, and then send *requests* and *events* to each other, and **both** may
+initialize connections
 
 # `request` and `event`
 
@@ -59,7 +60,7 @@ does not wait for any feedback from other side -- shoot and forget
 # Usage
 
 There are 2 scenarios: `server` and `client` usage. The only difference is
-`server` accepts N `client`s. There are some strange cases: dedicated
+`server` handles N `client`s. There are some strange cases: dedicated
 [Worker](https://developer.mozilla.org/en-US/docs/Web/API/Worker) or
 [iframe](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/iframe).
 Who is a server and client if each of them are alone? Simple answer -- both of

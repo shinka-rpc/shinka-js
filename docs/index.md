@@ -19,8 +19,8 @@ hero:
 
 features:
   - title: Symmetricity
-    details: Every participant may register his request and event handlers, and
-      send events and requests to the interlocutor
+    details: Every participant may register his request and event handlers,
+      initialize connestions, and send events and requests to the interlocutor
 
   - title: External transports
     details: We provide

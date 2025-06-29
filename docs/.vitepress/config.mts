@@ -33,14 +33,26 @@ export default defineConfig({
       ],
       "/transports/": [
         {
-          text: "Transports",
-          items: [{ text: "Runtime API Examples", link: "/api-examples" }],
+          items: [
+            { text: "Transports", link: "/transports/" },
+            { text: "Dedicated Worker", link: "/transports/dedicated-worker" },
+            { text: "Shared Worker", link: "/transports/shared-worker" },
+            {
+              text: "Browser Extension",
+              link: "/transports/browser-extension",
+            },
+            { text: "WebSocket", link: "/transports/web-socket" },
+          ],
         },
       ],
       "/serializers/": [
         {
-          text: "Serializers",
-          items: [{ text: "Markdown Examples", link: "/markdown-examples" }],
+          items: [
+            { text: "Serializers", link: "/serializers/" },
+            { text: "JSON", link: "/serializers/json" },
+            { text: "BSON", link: "/serializers/bson" },
+            { text: "Msgspec", link: "/serializers/msgspec" },
+          ],
         },
       ],
     },

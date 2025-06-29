@@ -1,6 +1,6 @@
 # @shinka-rpc/dedicated-worker [not tested!]
 
-Symmetric RPC bus
+Symmetric RPC bus. [Documentation is here](https://shinka-rpc-js.readthedocs.io/latest/transports/dedicated-worker/)
 
 This package implements the transport implementation of
 [@shinka-rpc/core](https://www.npmjs.com/package/@shinka-rpc/core) for

@@ -38,7 +38,7 @@
     "types": "./src/index.ts"
   },
   "dependencies": {
-    "@shinka-rpc/core": "^0.0.1",
+    "@shinka-rpc/core": "^0.0.2",
     "@types/chrome": "^0.0.323"
   }
 }
