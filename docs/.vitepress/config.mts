@@ -1,15 +1,17 @@
 import { defineConfig } from "vitepress";
 
+const baseUrl = process.env.READTHEDOCS_VERSION_NAME
+  ? `/${process.env.READTHEDOCS_VERSION_NAME}/`
+  : "/";
+
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
   title: "shinka-rpc",
   description: "Symmetric RPC bus",
   cleanUrls: true,
-  base: process.env.READTHEDOCS_VERSION_NAME
-    ? `/${process.env.READTHEDOCS_VERSION_NAME}/`
-    : "/",
+  base: baseUrl,
 
-  head: [["link", { rel: "icon", href: "/img/favicon.png" }]],
+  head: [["link", { rel: "icon", href: `${baseUrl}img/favicon.png` }]],
 
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
