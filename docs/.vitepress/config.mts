@@ -4,9 +4,9 @@ const baseUrl = process.env.READTHEDOCS_VERSION_NAME
   ? `/${process.env.READTHEDOCS_VERSION_NAME}/`
   : "/";
 
-const imgPath = process.env.READTHEDOCS_VERSION_NAME
-  ? `${baseUrl}assets/img/`
-  : "/img/";
+const faviconPath = process.env.READTHEDOCS_VERSION_NAME
+  ? `${baseUrl}favicon.png`
+  : "/img/favicon.png";
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
@@ -15,7 +15,7 @@ export default defineConfig({
   cleanUrls: true,
   base: baseUrl,
 
-  head: [["link", { rel: "icon", href: `${imgPath}favicon.png` }]],
+  head: [["link", { rel: "icon", href: faviconPath }]],
 
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config

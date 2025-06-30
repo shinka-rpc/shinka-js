@@ -9,5 +9,6 @@ build:
     build:
       html:
         - npm run docs:build
+        - cp ./docs/img/favicon.png ./docs/.vitepress/dist/
         - mkdir $READTHEDOCS_OUTPUT
         - mv ./docs/.vitepress/dist $READTHEDOCS_OUTPUT/html
