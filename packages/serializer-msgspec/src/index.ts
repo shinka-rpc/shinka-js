@@ -1,7 +1,7 @@
-import type { Serializer, Message } from "@shinka-rpc/core";
+import type { SerializerFactory, Message } from "@shinka-rpc/core";
 import { encode, decode } from "@msgpack/msgpack";
 
-export default {
+export default (() => ({
   serialize: encode,
   deserialize: decode as (value: unknown) => Message<unknown>,
-} as Serializer;
+})) as SerializerFactory;

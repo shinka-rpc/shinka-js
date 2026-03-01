@@ -65,12 +65,12 @@ example `@shinka-rpc/shared-worker` package
 ## `client` initialization
 
 ```typescript
-import { ClientBus, FactoryClient } from "@shinka-rpc/core";
-import { SharedWorker2FactoryData } from "@shinka-rpc/shared-worker/client";
+import { ClientBus, TransportFactory } from "@shinka-rpc/core";
+import { SharedWorker2Transport } from "@shinka-rpc/shared-worker/client";
 import serializer from "@shinka-rpc/serializer-json";  // for example
 
-const factory: FactoryClient<ClientBus> = async (bus) =>
-  SharedWorker2FactoryData(
+const transport: TransportFactory<ClientBus> = async (bus) =>
+  SharedWorker2Transport(
     new SharedWorker(new URL("./worker.ts", import.meta.url)),
     bus,
   );

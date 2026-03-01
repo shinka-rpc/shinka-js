@@ -1,6 +1,6 @@
-import type { Serializer } from "@shinka-rpc/core";
+import type { SerializerFactory } from "@shinka-rpc/core";
 
-export default {
+export default (() => ({
   serialize: JSON.stringify,
   deserialize: JSON.parse,
-} as Serializer;
+})) as SerializerFactory;

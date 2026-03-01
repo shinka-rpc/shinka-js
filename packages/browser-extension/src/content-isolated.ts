@@ -1,14 +1,16 @@
 import {
   ClientBus,
-  FactoryClient,
-  Registry,
+  TransportFactory,
+  // Registry,
   registerBeforeUnload,
 } from "@shinka-rpc/core";
 
 // @ts-expect-error: 2304
 if (window.chrome === undefined) window.chrome = browser;
 
-export const extensionBusFactory: FactoryClient<ClientBus> = async (bus) => {
+export const extensionBusTransport: TransportFactory<ClientBus> = async (
+  bus,
+) => {
   const port = chrome.runtime.connect(chrome.runtime.id);
   port.onMessage.addListener(bus.onMessage);
   port.onDisconnect.addListener(bus.maybeRestart);
@@ -18,30 +20,30 @@ export const extensionBusFactory: FactoryClient<ClientBus> = async (bus) => {
 };
 
 export type CreateIsolatedPairProps = {
-  contentBusFactory: FactoryClient<ClientBus>;
+  contentBusTransport: TransportFactory<ClientBus>;
   responseTimeout: number;
-  contentRegistry?: Registry<ClientBus>;
-  extensionRegistry?: Registry<ClientBus>;
+  // contentRegistry?: Registry<ClientBus>;
+  // extensionRegistry?: Registry<ClientBus>;
 };
 
 export const createIsolatedPair = ({
-  contentBusFactory,
+  contentBusTransport,
   responseTimeout,
-  contentRegistry = {},
-  extensionRegistry = {},
+  // contentRegistry = {},
+  // extensionRegistry = {},
 }: CreateIsolatedPairProps) => {
   const contentBus = new ClientBus({
-    factory: contentBusFactory,
+    transport: contentBusTransport,
     responseTimeout,
-    sayHello: false,
-    registry: contentRegistry,
+    // sayHello: false,
+    // registry: contentRegistry,
   });
 
   const extensionBus = new ClientBus({
-    factory: extensionBusFactory,
+    transport: extensionBusTransport,
     responseTimeout,
-    sayHello: false,
-    registry: extensionRegistry,
+    // sayHello: false,
+    // registry: extensionRegistry,
     restartTimeout: 750,
   });
 

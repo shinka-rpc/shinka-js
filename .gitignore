@@ -1,4 +1,8 @@
+.vscode/
+
 /node_modules/
 /dist/
 /lerna-debug.log
 /pack/
+
+.env
