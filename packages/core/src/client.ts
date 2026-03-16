@@ -15,25 +15,23 @@ import { CommonBus } from "./common";
 import type { DataEventKey, ShinkaMeta, ClientBusProps } from "./types";
 
 export class ClientBus extends CommonBus {
-  onRequest!: (
+  public onRequest!: (
     key: DataEventKey,
     fn: (data: any, thisArg: this) => void,
     metadata?: ShinkaMeta,
   ) => void;
 
-  onDataEvent!: (
+  public onDataEvent!: (
     key: DataEventKey,
     fn: (data: any, thisArg: this) => void,
   ) => void;
 
-  // private sayHello!: boolean;
   private restartTimeout!: number;
 
   constructor({
     transport,
     serializer = defaultSerializer,
     responseTimeout = defaultRequestTimeout,
-    // sayHello = false,
     restartTimeout = 0,
   }: ClientBusProps<ClientBus>) {
     super();
@@ -48,16 +46,10 @@ export class ClientBus extends CommonBus {
     );
     this.onRequest = asOnRequest(reqSet);
     this.onDataEvent = evSet;
-    // this.sayHello = sayHello;
     this.restartTimeout = restartTimeout;
   }
 
-  // async startInner() {
-  //   await super.startInner();
-  //   if (this.sayHello) this.__hello();
-  // }
-
-  maybeRestart = async () => {
+  public maybeRestart = async () => {
     const timeout = this.restartTimeout;
     if (!timeout || this.stopped) return;
     await sleep(timeout);

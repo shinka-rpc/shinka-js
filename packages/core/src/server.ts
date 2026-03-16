@@ -23,7 +23,6 @@ import type {
 export type ServerOptions = {
   serializer?: SerializerFactory;
   timeout?: number;
-  // sayHello?: boolean;
 };
 
 type ShinkaEventHandlerProxies = {
@@ -49,15 +48,14 @@ export class ServerBus {
   private eventListenerProxies!: ShinkaEventHandlerProxies;
   private serializerFactory!: SerializerFactory;
   private timeout!: number;
-  // private sayHello: boolean;
 
-  onRequest!: (
+  public onRequest!: (
     key: DataEventKey,
     fn: (data: any, thisArg: CommonBus) => any,
     metadata?: ShinkaMeta,
   ) => void;
 
-  onDataEvent!: (
+  public onDataEvent!: (
     key: DataEventKey,
     fn: (data: any, thisArg: CommonBus) => void,
   ) => void;
@@ -70,10 +68,9 @@ export class ServerBus {
   ) => void;
   private clients!: Set<CommonBus>;
 
-  extra!: Record<string | symbol, any>;
+  public extra!: Record<string | symbol, any>;
 
   constructor({
-    // sayHello = false,
     serializer = defaultSerializer,
     timeout = defaultRequestTimeout,
   }: ServerOptions) {
@@ -87,7 +84,6 @@ export class ServerBus {
     );
     this.serializerFactory = serializer;
     this.timeout = timeout;
-    // this.sayHello = sayHello;
     this.clients = clients;
     this.extra = {};
     //===
@@ -100,11 +96,10 @@ export class ServerBus {
     this.eventHandler = createEventHandler(evGet);
   }
 
-  connect = async ({
+  public connect = async ({
     transport,
     serializer = this.serializerFactory,
     responseTimeout = this.timeout,
-    // sayHello = this.sayHello,
     complete = () => {},
   }: ServerBusConnectProps<CommonBus>) => {
     const bus = new CommonBus();
@@ -119,18 +114,13 @@ export class ServerBus {
     bus.addEventListener("disconnect", this.eventListenerProxies.disconnect);
     complete(bus);
     await bus.start();
-    // if (sayHello) bus.__hello();
     this.clients.add(bus);
     return bus;
   };
 
-  willDie = () => {
-    for (const client of this.clients) client.willDie();
-  };
-
-  addEventListener: AddRemoveEventListener = (type, target) =>
+  public addEventListener: AddRemoveEventListener = (type, target) =>
     this.eventListeners[type].add(target);
 
-  removeEventListener: AddRemoveEventListener = (type, target) =>
+  public removeEventListener: AddRemoveEventListener = (type, target) =>
     this.eventListeners[type].delete(target);
 }

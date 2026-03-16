@@ -40,7 +40,7 @@ export class CommonBus {
   private sendMessage?: (message: any, opts?: any) => void;
   private closeBus?: () => Promise<void>;
 
-  request!: <T>(
+  public request!: <T>(
     key: DataEventKey,
     data: any,
     metadata?: ShinkaMeta,
@@ -54,13 +54,13 @@ export class CommonBus {
   private onDataEventOuter!: DataEventHandler<typeof this, any>;
   private onDataEventInner!: DataEventHandler<typeof this, any>;
 
-  extra!: Record<string | symbol, any>;
+  public extra!: Record<string | symbol, any>;
 
   protected stopped!: boolean;
   private started!: boolean;
   private willDieSent!: boolean;
 
-  __lazyInit(
+  public __lazyInit(
     transport: TransportFactory<typeof this>,
     serializer: SerializerFactory,
     onRequestOuter: RequestHandler<typeof this, any>,
@@ -106,10 +106,15 @@ export class CommonBus {
     if (this.started) return console.warn("Double start caught!");
     this.started = true;
 
-    const { send, close } = await this.transport(this);
+    this.serializerInstance = this.serializerFactory(this);
+    const { transportInitOpts = {} } = this.serializerInstance;
+    const { send, close } = await this.transport(
+      this,
+      this.transportAPI,
+      transportInitOpts,
+    );
     this.sendMessage = send;
     this.closeBus = close;
-    this.serializerInstance = this.serializerFactory();
     for (const listener of this.eventListeners.connect)
       queueMicrotask(() => listener(this));
   }
@@ -154,10 +159,12 @@ export class CommonBus {
     this.sendMessage!(serialized, metadata?.transport);
   };
 
-  onMessage = (serialized: SerializedData) => {
-    const data = this.serializerInstance.deserialize(
-      serialized,
-    ) as Message<any>;
+  public onMessage = (serialized: SerializedData) => {
+    const data = this.serializerInstance.deserialize(serialized);
+    this.dispatch(data);
+  };
+
+  private dispatch = (data: Message<any>) => {
     const [msgType, body] = data;
     switch (msgType) {
       case MessageType.REQUEST_INNER:
@@ -173,7 +180,7 @@ export class CommonBus {
       case MessageType.EVENT_OUTER:
         return this.onDataEventOuter(...body, this);
       default:
-        console.error("UNKNOWN MESSAGE TYPE");
+        console.error("UNKNOWN MESSAGE TYPE", data);
     }
   };
 
@@ -190,27 +197,28 @@ export class CommonBus {
     this.eventSend(MessageType.EVENT_INNER, [key, data]);
   }
 
-  event(key: DataEventKey, data: any, metadata?: ShinkaMeta) {
+  public event(key: DataEventKey, data: any, metadata?: ShinkaMeta) {
     this.eventSend(MessageType.EVENT_OUTER, [key, data], metadata);
   }
 
-  __hello = () => this.eventInner(EventKeys.INITIALIZE, null);
-
-  ping = async () => {
+  public ping = async () => {
     const begin = performance.now();
     await this.requestInner<void>(RequestKeys.PING, null);
     return performance.now() - begin;
   };
 
-  willDie = () => {
-    if (this.willDieSent) return;
-    this.eventInner(EventKeys.TERMINATE, null);
-    this.willDieSent = true;
-  };
-
-  addEventListener: AddRemoveEventListener = (type, target) =>
+  public addEventListener: AddRemoveEventListener = (type, target) =>
     this.eventListeners[type].add(target);
 
-  removeEventListener: AddRemoveEventListener = (type, target) =>
+  public removeEventListener: AddRemoveEventListener = (type, target) =>
     this.eventListeners[type].delete(target);
+
+  private transportAPI = {
+    hi: () => this.eventInner(EventKeys.INITIALIZE, null),
+    bye: () => {
+      if (this.stopped || this.willDieSent) return;
+      this.eventInner(EventKeys.TERMINATE, null);
+      this.willDieSent = true;
+    },
+  };
 }

@@ -4,4 +4,5 @@ import { encode, decode } from "@msgpack/msgpack";
 export default (() => ({
   serialize: encode,
   deserialize: decode as (value: unknown) => Message<unknown>,
+  transportInitOpts: { mode: "binary" },
 })) as SerializerFactory;

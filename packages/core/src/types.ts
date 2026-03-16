@@ -45,6 +45,8 @@ export type Message<B> =
   | MessageResponse<B>
   | MessageEvent<B>;
 
+export type TransportInitOpts = { mode?: "text" | "binary" };
+
 export type GenericSerializer<
   I extends Message<any>,
   O extends SerializedData,
@@ -52,10 +54,11 @@ export type GenericSerializer<
 > = {
   serialize: (data: I, opts?: SO) => O;
   deserialize: (data: O) => I;
+  transportInitOpts?: TransportInitOpts;
 };
 
 export type Serializer = GenericSerializer<Message<any>, any, any>;
-export type SerializerFactory = () => Serializer;
+export type SerializerFactory = (bus: CommonBus) => Serializer;
 
 export type ShinkaConnectEventListener = (bus: CommonBus) => void;
 
@@ -69,14 +72,18 @@ export type AddRemoveEventListener = (
   target: ShinkaConnectEventListener,
 ) => void;
 
+export type TransportAPI = { hi: () => void; bye: () => void };
+
 export type Transport = {
   send: (data: any, opts?: any) => void;
   close: () => Promise<void>;
 };
 
-// export type OnMessageSerialized = (data: SerializedData) => void;
-
-export type TransportFactory<B> = (bus: B) => Promise<Transport>;
+export type TransportFactory<B> = (
+  bus: B,
+  api: TransportAPI,
+  opts: TransportInitOpts,
+) => Promise<Transport>;
 
 export type CompleteFN<B> = (bus: B) => void;
 
@@ -94,7 +101,6 @@ export type CommonBusProps<B> = {
   transport: TransportFactory<B>;
   serializer?: SerializerFactory;
   responseTimeout?: number;
-  // sayHello?: boolean;
 };
 
 export type ClientBusProps<B> = CommonBusProps<B> & {
