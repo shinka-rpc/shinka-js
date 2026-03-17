@@ -4,6 +4,8 @@ import {
   ClientBus,
   Response,
   ServerBus,
+  TransportAPI,
+  TransportInitOpts,
   type CommonBus,
   type Serializer,
 } from "@shinka-rpc/core";
@@ -32,7 +34,7 @@ const fakeTransportClient =
     key: string,
     results: Record<string, any>[],
   ) =>
-  async (bus: ClientBus) => {
+  async (bus: ClientBus, api: TransportAPI, opts: TransportInitOpts) => {
     const [send_, dispatch] = pipe;
     const close = async () => {};
     const send = (value: unknown, opts: any) => {
@@ -51,6 +53,7 @@ const createMockSerializer =
         return data;
       },
       deserialize: (data: unknown) => data,
+      transportInitOpts: { mode: "not-serialized" },
     }) as Serializer;
 
 const setupClientClient = async () => {

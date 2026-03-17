@@ -1,9 +1,8 @@
 import { Response } from "../response";
+import { AsyncFunctionType } from "../constants";
 import type { DataEventKey, ShinkaMeta } from "../types";
 import type { Context } from "../context";
 import type { CommonBus } from "../common";
-
-const AsyncFunctionType = (async () => {}).constructor;
 
 export const requestRegistryHook = <TA extends CommonBus, B, R>({
   cb,

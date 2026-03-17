@@ -2,26 +2,10 @@ import type { Context } from "./context";
 import type { MessageType } from "./constants";
 import type { CommonBus } from "./common";
 
+export type FnConstructorName = "Function" | "AsyncFunction";
+
 export type REQID = number;
-
-export type SerializedData = string | Uint8Array;
-
-export type DataEventKey = string | number | boolean;
 export type Request<B> = [REQID, B];
-export type ResponseType<B> = [boolean, REQID, B];
-export type DataEvent<B> = [DataEventKey, B];
-export type ProcessData<B> = [DataEventKey, B];
-export type DataEventHandler<TA extends CommonBus, B> = (
-  key: DataEventKey,
-  data: B,
-  thisArg: TA,
-) => void;
-
-export type RequestHandler<TA extends CommonBus, B> = (
-  key: DataEventKey,
-  body: B,
-  context: Context<TA>,
-) => void;
 
 export type MessageRequestBase<T, B> = [T, Request<B>];
 export type MessageRequest<B> = MessageRequestBase<
@@ -45,20 +29,75 @@ export type Message<B> =
   | MessageResponse<B>
   | MessageEvent<B>;
 
-export type TransportInitOpts = { mode?: "text" | "binary" };
+// In some cases serialization is not required
+export type SerializedData = string | Uint8Array | Message<any>;
+
+export type DataEventKey = string | number | boolean;
+export type ResponseType<B> = [boolean, REQID, B];
+export type DataEvent<B> = [DataEventKey, B];
+export type ProcessData<B> = [DataEventKey, B];
+export type DataEventHandler<TA extends CommonBus, B> = (
+  key: DataEventKey,
+  data: B,
+  thisArg: TA,
+) => void;
+
+export type RequestHandler<TA extends CommonBus, B> = (
+  key: DataEventKey,
+  body: B,
+  context: Context<TA>,
+) => void;
+
+export type TransportInitOpts = {
+  mode: "text" | "binary" | "not-serialized";
+};
+
+export type SerializerFnSync<
+  I extends Message<any>,
+  O extends SerializedData,
+  SO,
+> = (data: I, opts?: SO) => O;
+
+export type SerializerFnAsync<
+  I extends Message<any>,
+  O extends SerializedData,
+  SO,
+> = (data: I, opts?: SO) => Promise<O>;
+
+export type SerializerFn<
+  I extends Message<any>,
+  O extends SerializedData,
+  SO,
+> = SerializerFnSync<I, O, SO> | SerializerFnAsync<I, O, SO>;
+
+export type DeserializerFnSync<
+  I extends Message<any>,
+  O extends SerializedData,
+> = (data: O) => I;
+
+export type DeserializerFnAsync<
+  I extends Message<any>,
+  O extends SerializedData,
+> = (data: O) => Promise<I>;
+
+export type DeserializerFn<I extends Message<any>, O extends SerializedData> =
+  | DeserializerFnSync<I, O>
+  | DeserializerFnAsync<I, O>;
 
 export type GenericSerializer<
   I extends Message<any>,
   O extends SerializedData,
   SO,
 > = {
-  serialize: (data: I, opts?: SO) => O;
-  deserialize: (data: O) => I;
-  transportInitOpts?: TransportInitOpts;
+  serialize: SerializerFn<I, O, SO>;
+  deserialize: DeserializerFn<I, O>;
+  transportInitOpts: TransportInitOpts;
 };
 
 export type Serializer = GenericSerializer<Message<any>, any, any>;
-export type SerializerFactory = (bus: CommonBus) => Serializer;
+export type SerializerFactory = (
+  bus: CommonBus,
+) => Serializer | Promise<Serializer>;
 
 export type ShinkaConnectEventListener = (bus: CommonBus) => void;
 

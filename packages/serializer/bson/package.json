@@ -19,7 +19,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/shinka-rpc/shinka-js.git",
-    "directory": "packages/util"
+    "directory": "packages/serializer/bson"
   },
   "author": "AI Kavalevich",
   "license": "MIT",

@@ -1,4 +1,9 @@
-import { MessageType, EventKeys, RequestKeys } from "./constants";
+import {
+  MessageType,
+  EventKeys,
+  RequestKeys,
+  AsyncFunctionType,
+} from "./constants";
 
 import type {
   TransportFactory,
@@ -25,19 +30,29 @@ import {
   createReqRegistry,
 } from "./factory/registry";
 
+import {
+  createSendData,
+  createHandleReceived,
+} from "./factory/serializer-strategy";
+
 import { reqrsp } from "./factory/request-response";
 import { registerEventsInner, registerRequestsInner } from "./inner";
 
-const transportNotInitialized = () => {
-  throw new Error("Transport is not initialized");
-};
+// const transportNotInitialized = () => {
+//   throw new Error("Transport is not initialized");
+// };
 
 export class CommonBus {
   private transport!: TransportFactory<typeof this>;
   private serializerFactory!: SerializerFactory;
-  private serializerInstance!: Serializer;
+  // private serializerInstance!: Serializer;
+  private sendDataInner!: (
+    message: Message<any>,
+    metadata?: ShinkaMeta,
+  ) => void;
+  private handleReceived!: (serialized: SerializedData) => void;
   protected eventListeners!: ShinkaEventListeners;
-  private sendMessage?: (message: any, opts?: any) => void;
+  // private sendMessage?: (message: any, opts?: any) => void;
   private closeBus?: () => Promise<void>;
 
   public request!: <T>(
@@ -68,7 +83,7 @@ export class CommonBus {
     responseTimeout: number,
   ) {
     this.closeBus = undefined;
-    this.sendMessage = transportNotInitialized;
+    // this.sendMessage = transportNotInitialized;
     this.transport = transport;
     this.serializerFactory = serializer;
     this.eventListeners = {
@@ -106,14 +121,21 @@ export class CommonBus {
     if (this.started) return console.warn("Double start caught!");
     this.started = true;
 
-    this.serializerInstance = this.serializerFactory(this);
-    const { transportInitOpts = {} } = this.serializerInstance;
+    const maybeSerializerInstance = this.serializerFactory(this);
+    const { serialize, deserialize, transportInitOpts } =
+      maybeSerializerInstance instanceof Promise
+        ? await maybeSerializerInstance
+        : maybeSerializerInstance;
+
     const { send, close } = await this.transport(
       this,
       this.transportAPI,
       transportInitOpts,
     );
-    this.sendMessage = send;
+
+    this.sendDataInner = createSendData(serialize, send);
+    this.handleReceived = createHandleReceived(deserialize, this.dispatch);
+    // this.sendMessage = send;
     this.closeBus = close;
     for (const listener of this.eventListeners.connect)
       queueMicrotask(() => listener(this));
@@ -137,9 +159,9 @@ export class CommonBus {
 
     const close = this.closeBus;
     this.closeBus = undefined;
-    this.sendMessage = undefined;
+    // this.sendMessage = undefined;
     if (close) await close();
-    this.sendMessage = transportNotInitialized;
+    // this.sendMessage = transportNotInitialized;
   }
 
   async restart() {
@@ -152,16 +174,21 @@ export class CommonBus {
   }
 
   private sendData = (message: Message<any>, metadata?: ShinkaMeta) => {
-    const serialized = this.serializerInstance.serialize(
-      message,
-      metadata?.serialize,
-    );
-    this.sendMessage!(serialized, metadata?.transport);
+    this.sendDataInner(message, metadata);
   };
 
+  // private sendData = (message: Message<any>, metadata?: ShinkaMeta) => {
+  //   const serialized = this.serializerInstance.serialize(
+  //     message,
+  //     metadata?.serialize,
+  //   );
+  //   this.sendMessage!(serialized, metadata?.transport);
+  // };
+
   public onMessage = (serialized: SerializedData) => {
-    const data = this.serializerInstance.deserialize(serialized);
-    this.dispatch(data);
+    // const data = this.serializerInstance.deserialize(serialized);
+    // this.dispatch(data);
+    this.handleReceived(serialized);
   };
 
   private dispatch = (data: Message<any>) => {
