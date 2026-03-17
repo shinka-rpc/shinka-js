@@ -7,7 +7,7 @@ import {
   TransportAPI,
   TransportInitOpts,
   type CommonBus,
-  type Serializer,
+  type SerializerFactory,
 } from "@shinka-rpc/core";
 
 const mkPipe = (delay = 0) => {
@@ -45,29 +45,51 @@ const fakeTransportClient =
     return { send, close };
   };
 
-const createMockSerializer =
-  (key: string, results: Record<string, any>[]) => () =>
-    ({
-      serialize: (data: unknown, opts: any) => {
-        results.push({ key: `${key}-serializer`, opts });
-        return data;
-      },
-      deserialize: (data: unknown) => data,
-      transportInitOpts: { mode: "not-serialized" },
-    }) as Serializer;
+const createMockSerializerAsync = (
+  key: string,
+  results: Record<string, any>[],
+) =>
+  (async () => ({
+    serialize: async (data: unknown, opts: any) => {
+      results.push({ key: `${key}-serializer-async`, opts });
+      return data;
+    },
+    deserialize: async (data: unknown) => data,
+    transportInitOpts: { mode: "not-serialized" },
+    typeHints: { serialize: "AsyncFunction", deserialize: "AsyncFunction" },
+  })) as SerializerFactory;
 
-const setupClientClient = async () => {
+const createMockSerializerSync = (
+  key: string,
+  results: Record<string, any>[],
+) =>
+  (() => ({
+    serialize: (data: unknown, opts: any) => {
+      results.push({ key: `${key}-serializer`, opts });
+      return data;
+    },
+    deserialize: (data: unknown) => data,
+    transportInitOpts: { mode: "not-serialized" },
+    typeHints: { serialize: "Function", deserialize: "Function" },
+  })) as SerializerFactory;
+
+const setupClientClient = async (
+  createSerializer: (
+    key: string,
+    results: Record<string, any>[],
+  ) => SerializerFactory,
+) => {
   const results: Record<string, any>[] = [];
 
   const [pipe1to2, pipe2to1] = mkPipePair(0, 0);
 
   const bus1 = new ClientBus({
     transport: fakeTransportClient(pipe1to2, "bus1", results),
-    serializer: createMockSerializer("bus1", results),
+    serializer: createSerializer("bus1", results),
   });
   const bus2 = new ClientBus({
     transport: fakeTransportClient(pipe2to1, "bus2", results),
-    serializer: createMockSerializer("bus2", results),
+    serializer: createSerializer("bus2", results),
   });
 
   bus1.addEventListener("connect", () =>
@@ -99,17 +121,22 @@ const setupClientClient = async () => {
   return { results, bus1, bus2, start, stop };
 };
 
-const setupClientServer = async () => {
+const setupClientServer = async (
+  createSerializer: (
+    key: string,
+    results: Record<string, any>[],
+  ) => SerializerFactory,
+) => {
   const results: Record<string, any>[] = [];
 
   const [pipe1to2, pipe2to1] = mkPipePair(0, 0);
 
   const client = new ClientBus({
     transport: fakeTransportClient(pipe1to2, "client1", results),
-    serializer: createMockSerializer("client1", results),
+    serializer: createSerializer("client1", results),
   });
   const server = new ServerBus({
-    serializer: createMockSerializer("server", results),
+    serializer: createSerializer("server", results),
   });
 
   client.addEventListener("connect", () =>
@@ -209,7 +236,9 @@ const createMockBusService =
 // === sync
 
 test("sync-simple-ok", async () => {
-  const { results, bus1, bus2, start, stop } = await setupClientClient();
+  const { results, bus1, bus2, start, stop } = await setupClientClient(
+    createMockSerializerSync,
+  );
   const bus1Sync = createMockBusService("bus1-sync", bus2);
   createSyncHandler(bus1, results);
   await start();
@@ -235,8 +264,39 @@ test("sync-simple-ok", async () => {
   ]);
 });
 
+test("sync-simple-ok-serializer-async", async () => {
+  const { results, bus1, bus2, start, stop } = await setupClientClient(
+    createMockSerializerAsync,
+  );
+  const bus1Sync = createMockBusService("bus1-sync", bus2);
+  createSyncHandler(bus1, results);
+  await start();
+
+  results.push({
+    key: "bus1-sync-response-got",
+    out: await bus1Sync("bus1-sync-simple-ok", true, true, true),
+  });
+
+  await stop();
+
+  expect(results).toStrictEqual([
+    { key: "bus1-event", val: "connect" },
+    { key: "bus2-event", val: "connect" },
+    { key: "bus2-serializer-async", opts: "bus1-sync-req-serialize" },
+    { key: "bus2-transport", opts: "bus1-sync-req-transport" },
+    { key: "sync-request", arg: "bus1-sync-simple-ok" },
+    { key: "bus1-serializer-async", opts: "sync-serialize-default" },
+    { key: "bus1-transport", opts: "sync-transport-default" },
+    { key: "bus1-sync-response-got", out: "bus1-simple-response-send" },
+    { key: "bus1-event", val: "disconnect" },
+    { key: "bus2-event", val: "disconnect" },
+  ]);
+});
+
 test("sync-nested-ok", async () => {
-  const { results, bus1, bus2, start, stop } = await setupClientClient();
+  const { results, bus1, bus2, start, stop } = await setupClientClient(
+    createMockSerializerSync,
+  );
   const bus1Sync = createMockBusService("bus1-sync", bus2);
   createSyncHandler(bus1, results);
   await start();
@@ -263,7 +323,9 @@ test("sync-nested-ok", async () => {
 });
 
 test("sync-simple-err", async () => {
-  const { results, bus1, bus2, start, stop } = await setupClientClient();
+  const { results, bus1, bus2, start, stop } = await setupClientClient(
+    createMockSerializerSync,
+  );
   const bus1Sync = createMockBusService("bus1-sync", bus2);
   createSyncHandler(bus1, results);
   await start();
@@ -294,7 +356,9 @@ test("sync-simple-err", async () => {
 });
 
 test("sync-nested-err", async () => {
-  const { results, bus1, bus2, start, stop } = await setupClientClient();
+  const { results, bus1, bus2, start, stop } = await setupClientClient(
+    createMockSerializerSync,
+  );
   const bus1Sync = createMockBusService("bus1-sync", bus2);
   createSyncHandler(bus1, results);
   await start();
@@ -327,7 +391,9 @@ test("sync-nested-err", async () => {
 // === async
 
 test("async-simple-ok", async () => {
-  const { results, bus1, bus2, start, stop } = await setupClientClient();
+  const { results, bus1, bus2, start, stop } = await setupClientClient(
+    createMockSerializerSync,
+  );
   const bus1Sync = createMockBusService("bus1-async", bus2);
   createAsyncHandler(bus1, results);
   await start();
@@ -354,7 +420,9 @@ test("async-simple-ok", async () => {
 });
 
 test("async-nested-ok", async () => {
-  const { results, bus1, bus2, start, stop } = await setupClientClient();
+  const { results, bus1, bus2, start, stop } = await setupClientClient(
+    createMockSerializerSync,
+  );
   const bus1Sync = createMockBusService("bus1-async", bus2);
   createAsyncHandler(bus1, results);
   await start();
@@ -381,7 +449,9 @@ test("async-nested-ok", async () => {
 });
 
 test("async-simple-err", async () => {
-  const { results, bus1, bus2, start, stop } = await setupClientClient();
+  const { results, bus1, bus2, start, stop } = await setupClientClient(
+    createMockSerializerSync,
+  );
   const bus1Sync = createMockBusService("bus1-async", bus2);
   createAsyncHandler(bus1, results);
   await start();
@@ -412,7 +482,9 @@ test("async-simple-err", async () => {
 });
 
 test("async-nested-err", async () => {
-  const { results, bus1, bus2, start, stop } = await setupClientClient();
+  const { results, bus1, bus2, start, stop } = await setupClientClient(
+    createMockSerializerSync,
+  );
   const bus1Sync = createMockBusService("bus1-async", bus2);
   createAsyncHandler(bus1, results);
   await start();
@@ -445,7 +517,9 @@ test("async-nested-err", async () => {
 // === server
 
 test("server-classic", async () => {
-  const { results, client, server, start } = await setupClientServer();
+  const { results, client, server, start } = await setupClientServer(
+    createMockSerializerSync,
+  );
   createSyncHandler(server, results);
   const clientService = createMockBusService("bus1-sync", client);
   const common = await start();
@@ -472,7 +546,9 @@ test("server-classic", async () => {
 });
 
 test("server-reverse", async () => {
-  const { results, client, server, start } = await setupClientServer();
+  const { results, client, server, start } = await setupClientServer(
+    createMockSerializerSync,
+  );
   createSyncHandler(client, results);
   const common = await start();
   const commonService = createMockBusService("bus1-sync", common);

@@ -52,6 +52,11 @@ export type TransportInitOpts = {
   mode: "text" | "binary" | "not-serialized";
 };
 
+export type SerializerTypeHints = {
+  serialize: FnConstructorName;
+  deserialize: FnConstructorName;
+};
+
 export type SerializerFnSync<
   I extends Message<any>,
   O extends SerializedData,
@@ -91,6 +96,7 @@ export type GenericSerializer<
 > = {
   serialize: SerializerFn<I, O, SO>;
   deserialize: DeserializerFn<I, O>;
+  typeHints: SerializerTypeHints;
   transportInitOpts: TransportInitOpts;
 };
 

@@ -26,6 +26,7 @@ export const defaultSerializer: SerializerFactory = () => ({
   serialize: dummy,
   deserialize: dummy,
   transportInitOpts: { mode: "not-serialized" },
+  typeHints: { serialize: "Function", deserialize: "Function" },
 });
 
 export const defaultRequestTimeout = 2500;

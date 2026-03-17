@@ -38,10 +38,11 @@ export const createSendData = <
   SO,
   TO,
 >(
+  hint: FnConstructorName,
   serialize: SerializerFn<I, O, SO>,
   send: (data: O, opts?: TO) => void,
   // @ts-ignore
-) => sendData[serialize.constructor.name as FnConstructorName](serialize, send);
+) => sendData[hint](serialize, send);
 
 // ===
 const handleReceived = {
@@ -65,10 +66,11 @@ export const createHandleReceived = <
   I extends Message<any>,
   O extends SerializedData,
 >(
+  hint: FnConstructorName,
   deserialize: DeserializerFn<I, O>,
   dispatch: (data: Message<any>) => void,
 ) =>
-  handleReceived[deserialize.constructor.name as FnConstructorName](
+  handleReceived[hint](
     // @ts-ignore
     deserialize,
     dispatch,

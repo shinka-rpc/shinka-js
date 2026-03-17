@@ -5,4 +5,5 @@ export default (() => ({
   serialize: encode,
   deserialize: decode as (value: unknown) => Message<unknown>,
   transportInitOpts: { mode: "binary" },
+  typeHints: { serialize: "Function", deserialize: "Function" },
 })) as SerializerFactory;

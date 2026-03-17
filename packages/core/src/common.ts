@@ -122,7 +122,7 @@ export class CommonBus {
     this.started = true;
 
     const maybeSerializerInstance = this.serializerFactory(this);
-    const { serialize, deserialize, transportInitOpts } =
+    const { serialize, deserialize, transportInitOpts, typeHints } =
       maybeSerializerInstance instanceof Promise
         ? await maybeSerializerInstance
         : maybeSerializerInstance;
@@ -133,8 +133,12 @@ export class CommonBus {
       transportInitOpts,
     );
 
-    this.sendDataInner = createSendData(serialize, send);
-    this.handleReceived = createHandleReceived(deserialize, this.dispatch);
+    this.sendDataInner = createSendData(typeHints.serialize, serialize, send);
+    this.handleReceived = createHandleReceived(
+      typeHints.deserialize,
+      deserialize,
+      this.dispatch,
+    );
     // this.sendMessage = send;
     this.closeBus = close;
     for (const listener of this.eventListeners.connect)
