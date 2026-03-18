@@ -2,3 +2,5 @@
 /dist/
 /lerna-debug.log
 /pack/
+.env
+.vscode/

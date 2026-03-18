@@ -31,7 +31,7 @@
   },
   "homepage": "https://github.com/shinka-rpc/shinka-js",
   "dependencies": {
-    "lerna": "^8.2.2",
+    "lerna": "^9.0.7",
     "typescript": "^5.8.3"
   },
   "workspaces": [
