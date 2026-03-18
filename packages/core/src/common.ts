@@ -127,11 +127,7 @@ export class CommonBus {
         ? await maybeSerializerInstance
         : maybeSerializerInstance;
 
-    const { send, close } = await this.transport(
-      this,
-      this.transportAPI,
-      transportInitOpts,
-    );
+    const { send, close } = await this.transport(this, transportInitOpts);
 
     this.sendDataInner = createSendData(typeHints.serialize, serialize, send);
     this.handleReceived = createHandleReceived(

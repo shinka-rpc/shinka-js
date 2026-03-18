@@ -5,19 +5,14 @@ if (window.chrome === undefined) window.chrome = browser;
 
 export const extensionBusTransport: TransportFactory<ClientBus> = async (
   bus,
-  api,
   opts,
 ) => {
   const port = chrome.runtime.connect(chrome.runtime.id);
   port.onMessage.addListener(bus.onMessage);
   port.onDisconnect.addListener(bus.maybeRestart);
   const send = async (data: unknown) => port.postMessage(data);
-  self.addEventListener("beforeunload", api.bye);
-  const close = async () => {
-    port.disconnect();
-    self.removeEventListener("beforeunload", api.bye);
-  };
-  return { send, close };
+  const close = async () => port.disconnect();
+  return { send, close, instruction: {} };
 };
 
 export type CreateIsolatedPairProps = {

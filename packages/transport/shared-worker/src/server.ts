@@ -12,7 +12,7 @@ export const SharedWorkerServer =
         : (data: string) => port.postMessage(data);
       const close = async () => port.close();
       port.start();
-      return { send, close };
+      return { send, close, instruction: {} };
     };
     server.connect({ transport });
   };

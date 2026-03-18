@@ -34,7 +34,7 @@ const fakeTransportClient =
     key: string,
     results: Record<string, any>[],
   ) =>
-  async (bus: ClientBus, api: TransportAPI, opts: TransportInitOpts) => {
+  async (bus: ClientBus, opts: TransportInitOpts) => {
     const [send_, dispatch] = pipe;
     const close = async () => {};
     const send = (value: unknown, opts: any) => {
@@ -42,7 +42,7 @@ const fakeTransportClient =
       send_(value);
     };
     dispatch(bus.onMessage);
-    return { send, close };
+    return { send, close, instruction: {} };
   };
 
 const createMockSerializerAsync = (
@@ -163,7 +163,7 @@ const setupClientServer = async (
         const [send, dispatch] = pipe2to1;
         dispatch(bus.onMessage);
         const close = async () => {};
-        return { send, close };
+        return { send, close, instruction: {} };
       },
     });
 

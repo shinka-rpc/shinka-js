@@ -122,11 +122,11 @@ export type TransportAPI = { hi: () => void; bye: () => void };
 export type Transport = {
   send: (data: any, opts?: any) => void;
   close: () => Promise<void>;
+  instruction: { hi?: boolean; bye?: boolean };
 };
 
 export type TransportFactory<B> = (
   bus: B,
-  api: TransportAPI,
   opts: TransportInitOpts,
 ) => Promise<Transport>;
 
