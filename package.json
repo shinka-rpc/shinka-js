@@ -31,6 +31,9 @@
   },
   "homepage": "https://github.com/shinka-rpc/shinka-js",
   "dependencies": {
+    "@kai3341/bsonfy": "^1.0.2",
+    "@msgpack/msgpack": "^3.1.3",
+    "@types/chrome": "^0.1.38",
     "lerna": "^9.0.7",
     "typescript": "^5.8.3"
   },

@@ -109,14 +109,14 @@ const handlePackageName = async (name) => {
 
 (async () => {
   const results = [];
-  // const dirHandlerPromices = [];
+  // const dirHandlerPromises = [];
   for (const name of await readdir(distDir)) {
-    // const promice = handlePackageName(name);
-    // dirHandlerPromices.push(promice);
+    // const promise = handlePackageName(name);
+    // dirHandlerPromises.push(promise);
     results.push(await handlePackageName(name));
   }
 
-  // const results = await Promise.all(dirHandlerPromices);
+  // const results = await Promise.all(dirHandlerPromises);
   const toPublishPaths = results.filter(Boolean);
   // console.log(toPublishPaths);
   for (const toPublish of toPublishPaths) await publish(toPublish);

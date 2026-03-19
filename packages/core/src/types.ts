@@ -2,30 +2,10 @@ import type { Context } from "./context";
 import type { MessageType } from "./constants";
 import type { CommonBus } from "./common";
 
+export type FnConstructorName = "Function" | "AsyncFunction";
+
 export type REQID = number;
-
-/**
- * Type representing serialized data that can be sent over the bus.
- * This can be either a string or a Uint8Array.
- */
-export type SerializedData = string | Uint8Array;
-
-export type DataEventKey = string | number | boolean;
 export type Request<B> = [REQID, B];
-export type ResponseType<B> = [boolean, REQID, B];
-export type DataEvent<B> = [DataEventKey, B];
-export type ProcessData<B> = [DataEventKey, B];
-export type DataEventHandler<TA extends CommonBus, B> = (
-  key: DataEventKey,
-  data: B,
-  thisArg: TA,
-) => void;
-
-export type RequestHandler<TA extends CommonBus, B> = (
-  key: DataEventKey,
-  body: B,
-  context: Context<TA>,
-) => void;
 
 export type MessageRequestBase<T, B> = [T, Request<B>];
 export type MessageRequest<B> = MessageRequestBase<
@@ -49,74 +29,109 @@ export type Message<B> =
   | MessageResponse<B>
   | MessageEvent<B>;
 
-/**
- * Generic serializer interface for converting between
- * message types and serialized data.
- *
- * @template I - The input message type
- * @template O - The output serialized data type
- * @template SO - Serializer options
- */
+// In some cases serialization is not required
+export type SerializedData = string | Uint8Array | Message<any>;
+
+export type DataEventKey = string | number | boolean;
+export type ResponseType<B> = [boolean, REQID, B];
+export type DataEvent<B> = [DataEventKey, B];
+export type ProcessData<B> = [DataEventKey, B];
+export type DataEventHandler<TA extends CommonBus, B> = (
+  key: DataEventKey,
+  data: B,
+  thisArg: TA,
+) => void;
+
+export type RequestHandler<TA extends CommonBus, B> = (
+  key: DataEventKey,
+  body: B,
+  context: Context<TA>,
+) => void;
+
+export type TransportInitOpts = {
+  mode: "text" | "binary" | "not-serialized";
+};
+
+export type SerializerTypeHints = {
+  serialize: FnConstructorName;
+  deserialize: FnConstructorName;
+};
+
+export type SerializerFnSync<
+  I extends Message<any>,
+  O extends SerializedData,
+  SO,
+> = (data: I, opts?: SO) => O;
+
+export type SerializerFnAsync<
+  I extends Message<any>,
+  O extends SerializedData,
+  SO,
+> = (data: I, opts?: SO) => Promise<O>;
+
+export type SerializerFn<
+  I extends Message<any>,
+  O extends SerializedData,
+  SO,
+> = SerializerFnSync<I, O, SO> | SerializerFnAsync<I, O, SO>;
+
+export type DeserializerFnSync<
+  I extends Message<any>,
+  O extends SerializedData,
+> = (data: O) => I;
+
+export type DeserializerFnAsync<
+  I extends Message<any>,
+  O extends SerializedData,
+> = (data: O) => Promise<I>;
+
+export type DeserializerFn<I extends Message<any>, O extends SerializedData> =
+  | DeserializerFnSync<I, O>
+  | DeserializerFnAsync<I, O>;
+
 export type GenericSerializer<
   I extends Message<any>,
   O extends SerializedData,
   SO,
 > = {
-  /** Converts a message to serialized data */
-  serialize: (data: I, opts?: SO) => O;
-  /** Converts serialized data back to a message */
-  deserialize: (data: O) => I;
+  serialize: SerializerFn<I, O, SO>;
+  deserialize: DeserializerFn<I, O>;
+  typeHints: SerializerTypeHints;
+  transportInitOpts: TransportInitOpts;
 };
 
 export type Serializer = GenericSerializer<Message<any>, any, any>;
+export type SerializerFactory = (
+  bus: CommonBus,
+) => Serializer | Promise<Serializer>;
 
-/**
- * Strict registry interface that requires both register and unregister functions.
- * This is used for managing bus registration and lifecycle.
- *
- * @template C - The type of object being registered
- */
-export type StrictRegistry<C> = {
-  /** Registers an object with the registry */
-  register: (target: C) => void;
-  /** Unregisters an object from the registry */
-  unregister: (target: C) => void;
+export type ShinkaConnectEventListener = (bus: CommonBus) => void;
+
+export type ShinkaEventListeners = {
+  connect: Set<ShinkaConnectEventListener>;
+  disconnect: Set<ShinkaConnectEventListener>;
 };
 
-/**
- * Optional registry interface where register and unregister functions are optional.
- * This is used when a registry implementation might not need both functions.
- *
- * @template C - The type of object being registered
- */
-export type Registry<C> = {
-  /** Optional function to register an object */
-  register?: (target: C) => void;
-  /** Optional function to unregister an object */
-  unregister?: (target: C) => void;
-};
+export type AddRemoveEventListener = (
+  type: "connect" | "disconnect",
+  target: ShinkaConnectEventListener,
+) => void;
 
-/**
- * Factory data interface for bus communication.
- * This defines the basic functions needed for sending messages and closing connections.
- */
-export type FactoryData = {
-  /** Function to send data through the bus */
+export type TransportAPI = { hi: () => void; bye: () => void };
+
+export type Transport = {
   send: (data: any, opts?: any) => void;
-  /** Function to close the connection */
   close: () => Promise<void>;
+  instruction: { hi?: boolean; bye?: boolean };
 };
 
-// export type OnMessageSerialized = (data: SerializedData) => void;
-
-export type FactoryClient<B> = (bus: B) => Promise<FactoryData>;
+export type TransportFactory<B> = (
+  bus: B,
+  opts: TransportInitOpts,
+) => Promise<Transport>;
 
 export type CompleteFN<B> = (bus: B) => void;
 
-/**
- * Type representing a tuple of reject and resolve functions for a Promise.
- * This is used internally for managing request/response pairs.
- */
 export type RejectResolve = [(reason?: any) => void, (value: any) => void];
 
 export type ShinkaMetaGeneric<SO, TO> = {
@@ -128,15 +143,13 @@ export type ShinkaMeta = ShinkaMetaGeneric<any, any>;
 
 // Synthetic
 export type CommonBusProps<B> = {
-  factory: FactoryClient<B>;
-  serializer?: Serializer;
+  transport: TransportFactory<B>;
+  serializer?: SerializerFactory;
   responseTimeout?: number;
-  sayHello?: boolean;
 };
 
 export type ClientBusProps<B> = CommonBusProps<B> & {
   restartTimeout?: number;
-  registry?: Registry<B>;
 };
 
 export type ServerBusConnectProps<B> = CommonBusProps<B> & {
