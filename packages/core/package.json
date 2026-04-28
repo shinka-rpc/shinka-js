@@ -4,7 +4,7 @@
   "description": "",
   "main": "./src/index.ts",
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsgo -p tsconfig.build.json",
     "postbuild": "node ../../packagePostBuild.mjs",
     "test": "jest"
   },
@@ -28,12 +28,12 @@
   },
   "homepage": "https://github.com/shinka-rpc/shinka-js",
   "devDependencies": {
-    "@types/node": "^20.11.17",
-    "babel-jest": "^30.0.2",
-    "jest": "^30.0.2",
-    "ts-jest": "^29.4.0",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.3.3"
+    "@types/node": "^20",
+    "babel-jest": "^30",
+    "jest": "^30",
+    "ts-jest": "^29",
+    "ts-node": "^10",
+    "typescript": "^5"
   },
   "exports": {
     "default": "./src/index.ts",

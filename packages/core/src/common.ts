@@ -173,23 +173,11 @@ export class CommonBus {
     await this.startInner();
   }
 
-  private sendData = (message: Message<any>, metadata?: ShinkaMeta) => {
+  private sendData = (message: Message<any>, metadata?: ShinkaMeta) =>
     this.sendDataInner(message, metadata);
-  };
 
-  // private sendData = (message: Message<any>, metadata?: ShinkaMeta) => {
-  //   const serialized = this.serializerInstance.serialize(
-  //     message,
-  //     metadata?.serialize,
-  //   );
-  //   this.sendMessage!(serialized, metadata?.transport);
-  // };
-
-  public onMessage = (serialized: SerializedData) => {
-    // const data = this.serializerInstance.deserialize(serialized);
-    // this.dispatch(data);
+  public onMessage = (serialized: SerializedData) =>
     this.handleReceived(serialized);
-  };
 
   private dispatch = (data: Message<any>) => {
     const [msgType, body] = data;

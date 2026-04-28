@@ -12,5 +12,5 @@ export const createClientTransport =
     const close = async () => window.removeEventListener("message", _onmessage);
     const send = async (data: unknown) =>
       window.postMessage([TAG_SEND, data], "*");
-    return { send, close } as Transport;
+    return { send, close, instruction: {} } as Transport;
   };

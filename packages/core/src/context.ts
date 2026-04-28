@@ -18,7 +18,7 @@ export class Context<B extends CommonBus> {
     data: any,
     metadata?: ShinkaMeta,
   ) => void;
-  private timeoutId!: NodeJS.Timeout | null;
+  private timeoutId!: number | null;
 
   constructor(
     reqID: number,

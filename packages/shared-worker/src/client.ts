@@ -11,5 +11,5 @@ export const SharedWorker2Transport = (
   const send = binary
     ? (data: Uint8Array) => instance.port.postMessage(data, [data.buffer])
     : (data: string) => instance.port.postMessage(data);
-  return { send, close } as Transport;
+  return { send, close, instruction: {} } as Transport;
 };

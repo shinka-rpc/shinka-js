@@ -1,7 +1,7 @@
 {
   "extends": "../../tsconfig.common.json",
   "compilerOptions": {
-    "baseUrl": "./",
-    "outDir": "../../dist/serializer-bson"
+    "rootDir": "./src",
+    "outDir": "../../dist/serializer-json"
   }
 }

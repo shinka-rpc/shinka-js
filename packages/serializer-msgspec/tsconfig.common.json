@@ -1,7 +1,7 @@
 {
   "extends": "../../tsconfig.common.json",
   "compilerOptions": {
-    "baseUrl": "./",
-    "outDir": "../../dist/shared-worker"
+    "rootDir": "./src",
+    "outDir": "../../dist/serializer-msgspec"
   }
 }

@@ -8,10 +8,10 @@ export const WebSocketTransport = async (
   instance.addEventListener("message", _onmessage);
   instance.addEventListener("close", bus.maybeRestart);
   const close = async () => instance.close();
-  const send = (data: Uint8Array) => instance.send(data);
+  const send = (data: BufferSource) => instance.send(data);
   await new Promise((resolve, reject) => {
     instance.addEventListener("open", resolve);
     instance.addEventListener("error", reject);
   });
-  return { send, close };
+  return { send, close, instruction: {} };
 };

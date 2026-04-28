@@ -11,5 +11,5 @@ export const DedicatedWorker2Transport = (
   const send = binary
     ? (data: Uint8Array) => instance.postMessage(data, [data.buffer])
     : (data: string) => instance.postMessage(data);
-  return { send, close } as Transport;
+  return { send, close, instruction: {} } as Transport;
 };

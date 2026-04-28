@@ -1,6 +1,7 @@
 {
   "extends": "../../tsconfig.common.json",
   "compilerOptions": {
-    "outDir": "../../dist/serializer-json"
+    "rootDir": "./src",
+    "outDir": "../../dist/dedicated-worker"
   }
 }

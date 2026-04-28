@@ -2,7 +2,7 @@ import type {
   ServerBus,
   CompleteFN,
   CommonBus,
-  TransportAPI,
+  // TransportAPI,
   TransportInitOpts,
 } from "@shinka-rpc/core";
 
