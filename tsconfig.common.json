@@ -1,21 +1,17 @@
 {
   "compilerOptions": {
-    "baseUrl": "./",
-    "target": "ES2015",
-    "module": "ES2015",
+    "target": "ES2016",
+    "module": "es2015",
     "lib": ["DOM", "DOM.Iterable", "ES2017"],
     "declaration": true,
-    // "allowJs": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "strict": true,
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true,
-    "moduleResolution": "node",
     "resolveJsonModule": true,
-    "isolatedModules": false
-    // "noEmit": true,
+    "typeRoots": ["./node_modules/@types"]
   },
   "exclude": [
     // "**/*.test.ts",

@@ -31,14 +31,18 @@
   },
   "homepage": "https://github.com/shinka-rpc/shinka-js",
   "dependencies": {
-    "lerna": "^9.0.7",
-    "typescript": "^5.8.3"
+    "@kai3341/bsonfy": "^1",
+    "@msgpack/msgpack": "^3",
+    "@typescript/native-preview": "^7.0.0-dev.20260428.1",
+    "lerna": "^9",
+    "typescript": "^6",
+    "@types/chrome": "*"
   },
   "workspaces": [
     "./packages/*/"
   ],
   "devDependencies": {
-    "compare-versions": "^6.1.1",
+    "compare-versions": "^6",
     "vitepress": "next"
   }
 }

@@ -11,11 +11,11 @@ This package implements the transport implementation of
 ## `client` case
 
 ```typescript
-import { ClientBus, FactoryClient } from "@shinka-rpc/core";
-import { DedicatedWorker2FactoryData } from "@shinka-rpc/dedicated-worker";
+import { ClientBus, TransportFactory } from "@shinka-rpc/core";
+import { DedicatedWorker2Transport } from "@shinka-rpc/dedicated-worker";
 
-const factory: FactoryClient<ClientBus> = async (bus) =>
-  DedicatedWorker2FactoryData(
+const transport: TransportFactory<ClientBus> = async (bus) =>
+  DedicatedWorker2Transport(
     new Worker(new URL("./worker.ts", import.meta.url)),
     bus,
   );
@@ -43,7 +43,7 @@ import {
 import serializer from "@shinka-rpc/serializer-json";  // for example
 
 export const server = new ClientBus({
-  factory: DedicatedWorkerServer,
+  transport: DedicatedWorkerServer,
   serializer,
 });
 
