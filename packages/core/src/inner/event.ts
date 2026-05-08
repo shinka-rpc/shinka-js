@@ -1,17 +1,12 @@
 import { EventKeys } from "../constants";
-import type { DataEventHandler } from "../types";
-import type { ClientBus } from "../client";
 import type { CommonBus } from "../common";
 import type { EventRegistryType } from "../factory/registry";
 
-interface Events {
-  [key: number]: DataEventHandler<any, ClientBus & CommonBus>;
-}
+const events = new Map<EventKeys, (data: any, thisArg: CommonBus) => void>([
+  [EventKeys.INITIALIZE, () => {}],
+  [EventKeys.TERMINATE, (_, thisArg) => thisArg.stop()],
+]);
 
-const events: Events = {
-  [EventKeys.INITIALIZE]: () => {},
-  [EventKeys.TERMINATE]: (_, thisArg) => thisArg.stop(),
+export const registerEventsInner = (register: EventRegistryType[1]) => {
+  for (const [k, v] of events.entries()) register(k, v);
 };
-
-export const registerEventsInner = (register: EventRegistryType[1]) =>
-  Object.entries(events).forEach(([k, v]) => register(k, v));

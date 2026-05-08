@@ -7,8 +7,8 @@ export const enum MessageType {
   REQUEST_OUTER = 1,
   RESPONSE_INNER = 2,
   RESPONSE_OUTER = 3,
-  EVENT_OUTER = 4,
-  EVENT_INNER = 5,
+  EVENT_INNER = 4,
+  EVENT_OUTER = 5,
 }
 
 export const enum EventKeys {

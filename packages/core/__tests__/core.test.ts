@@ -4,7 +4,6 @@ import {
   ClientBus,
   Response,
   ServerBus,
-  TransportAPI,
   TransportInitOpts,
   type CommonBus,
   type SerializerFactory,

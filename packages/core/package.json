@@ -27,14 +27,6 @@
     "url": "https://github.com/shinka-rpc/shinka-js/issues"
   },
   "homepage": "https://github.com/shinka-rpc/shinka-js",
-  "devDependencies": {
-    "@types/node": "^20",
-    "babel-jest": "^30",
-    "jest": "^30",
-    "ts-jest": "^29",
-    "ts-node": "^10",
-    "typescript": "^5"
-  },
   "exports": {
     "default": "./src/index.ts",
     "require": "./src/index.ts",

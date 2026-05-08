@@ -1,16 +1,16 @@
 import { RequestKeys } from "../constants";
-import type { RequestHandler } from "../types";
-import type { ClientBus } from "../client";
 import type { CommonBus } from "../common";
 import type { ReqRegistryType } from "../factory/registry";
+import type { ShinkaMeta } from "../types";
 
-interface Requests {
-  [key: number]: RequestHandler<ClientBus & CommonBus, any>;
-}
+const requests = new Map<
+  RequestKeys,
+  { cb: (data: any, thisArg: CommonBus) => any; metadata?: ShinkaMeta }
+>([
+  [RequestKeys.PING, { cb: () => {} }],
+  //
+]);
 
-const requests: Requests = {
-  [RequestKeys.PING]: () => {},
+export const registerRequestsInner = (register: ReqRegistryType[1]) => {
+  for (const [k, v] of requests.entries()) register(k, v);
 };
-
-export const registerRequestsInner = (register: ReqRegistryType[1]) =>
-  Object.entries(requests).forEach(([k, v]) => register(k, v));

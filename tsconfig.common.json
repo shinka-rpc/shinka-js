@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
-    "target": "ES2016",
+    "target": "es2017",
     "module": "es2015",
-    "lib": ["DOM", "DOM.Iterable", "ES2017"],
+    "lib": ["DOM", "DOM.Iterable", "es2017"],
     "declaration": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
@@ -10,8 +10,7 @@
     "strict": true,
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true,
-    "resolveJsonModule": true,
-    "typeRoots": ["./node_modules/@types"]
+    "resolveJsonModule": true
   },
   "exclude": [
     // "**/*.test.ts",
