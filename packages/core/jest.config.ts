@@ -3,10 +3,7 @@ import { createDefaultPreset } from "ts-jest";
 
 const preset: Config = createDefaultPreset();
 
-Object.assign(preset.transform!["^.+\\.tsx?$"]![1]!, {
-  useESM: true,
-  tsconfig: { types: ["web"] },
-});
+Object.assign(preset.transform!["^.+\\.tsx?$"]![1]!, { useESM: true });
 
 preset.transform!["^.+\\.jsx?$"] = "babel-jest";
 preset.testEnvironment = "node";

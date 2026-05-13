@@ -38,7 +38,6 @@
   },
   "devDependencies": {
     "@jest/globals": "^30.3.0",
-    "@types/web": "^0.0.349",
     "@typescript/native-preview": "^7.0.0-dev.20260421.2",
     "babel-jest": "^30.3.0",
     "compare-versions": "^6",

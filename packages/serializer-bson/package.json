@@ -34,6 +34,7 @@
     "types": "./src/index.ts"
   },
   "dependencies": {
-    "@kai3341/bsonfy": "^1.0.2"
+    "@kai3341/bsonfy": "^1.0.2",
+    "@shinka-rpc/core": "^0.1.0"
   }
 }

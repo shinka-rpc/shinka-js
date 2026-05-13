@@ -18,7 +18,7 @@ export class Context<B extends CommonBus> {
     data: any,
     metadata?: ShinkaMeta,
   ) => void;
-  private timeoutId!: number | null;
+  private timeoutId!: ReturnType<typeof setTimeout> | null;
 
   constructor(
     reqID: number,

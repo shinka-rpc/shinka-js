@@ -32,5 +32,8 @@
     "require": "./src/index.ts",
     "import": "./src/index.ts",
     "types": "./src/index.ts"
+  },
+  "dependencies": {
+    "@shinka-rpc/core": "^0.1.0"
   }
 }
