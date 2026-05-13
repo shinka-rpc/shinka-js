@@ -11,12 +11,12 @@ This package implements the transport implementation of
 ## `client` case
 
 ```typescript
-import { ClientBus, FactoryClient } from "@shinka-rpc/core";
-import { SharedWorker2FactoryData } from "@shinka-rpc/shared-worker";
+import { ClientBus, TransportFactory } from "@shinka-rpc/core";
+import { SharedWorker2Transport } from "@shinka-rpc/shared-worker";
 import serializer from "@shinka-rpc/serializer-json";  // for example
 
-const factory: FactoryClient<ClientBus> = async (bus) =>
-  SharedWorker2FactoryData(
+const transport: TransportFactory<ClientBus> = async (bus) =>
+  SharedWorker2Transport(
     new SharedWorker(new URL("./worker.ts", import.meta.url)),
     bus,
   );
@@ -28,7 +28,7 @@ bus.start();
 
 ### API Reference:
 
-**SharedWorker2FactoryData**:
+**SharedWorker2Transport**:
 
 - **Required** instance: [SharedWorker](https://developer.mozilla.org/en-US/docs/Web/API/SharedWorker)
 
@@ -36,7 +36,7 @@ bus.start();
 
 - **Optional** `binary`: `Boolean` &mdash; enable binary-specific `transfer` optimization. **Default**: `false`
 
-- **Refurning**: `FactoryData`
+- **Refurning**: `Transport`
 
 ## `server` case / `worker` side
 

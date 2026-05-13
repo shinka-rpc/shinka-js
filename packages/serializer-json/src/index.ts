@@ -1,6 +1,8 @@
-import type { Serializer } from "@shinka-rpc/core";
+import type { SerializerFactory, CommonBus } from "@shinka-rpc/core";
 
-export default {
+export default ((_: CommonBus) => ({
   serialize: JSON.stringify,
   deserialize: JSON.parse,
-} as Serializer;
+  transportInitOpts: { mode: "text" },
+  typeHints: { serialize: "Function", deserialize: "Function" },
+})) as SerializerFactory;

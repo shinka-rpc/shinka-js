@@ -1,9 +1,11 @@
-import type { Serializer } from "@shinka-rpc/core";
+import type { SerializerFactory } from "@shinka-rpc/core";
 import { BSON } from "@kai3341/bsonfy";
 
 const { deserialize: bson_deserialize } = BSON;
 
-export default {
+export default ((_) => ({
   serialize: BSON.serialize,
   deserialize: (data: any) => bson_deserialize(data, true, undefined, true),
-} as Serializer;
+  transportInitOpts: { mode: "binary" },
+  typeHints: { serialize: "Function", deserialize: "Function" },
+})) as SerializerFactory;
