@@ -1,25 +1,27 @@
-import type { CommonBus } from "./common";
-import type { ClientBus } from "./client";
-import type { ServerBus } from "./server";
-import type { DataEventKey } from "./types";
+import type { DataEventKey, ShinkaOn, ShinkaDo, ShinkaMeta } from "./types";
 
-type SourceBus = ClientBus | ServerBus;
-type DestinationBus = CommonBus | ClientBus;
+type SourceBus<SO, TO> = ShinkaOn<SO, TO, ShinkaDo<SO, TO>>;
+type DestinationBus<SO, TO> = ShinkaDo<SO, TO>;
 
-export const passThroughEvents = (
-  source: SourceBus,
-  dest: DestinationBus,
-  ...keys: DataEventKey[]
+export const passThroughEvents = <SO, TO>(
+  source: SourceBus<SO, TO>,
+  dest: DestinationBus<SO, TO>,
+  metadata: ShinkaMeta<SO, TO> | undefined,
+  keys: DataEventKey[],
 ) => {
   for (const key of keys)
-    source.onDataEvent(key, (data) => dest.event(key, data));
+    source.onDataEvent(key, (data) => dest.dataEvent(key, data, metadata));
 };
 
-export const passThroughRequests = (
-  source: SourceBus,
-  dest: DestinationBus,
-  ...keys: DataEventKey[]
+export const passThroughRequests = <SO, TO>(
+  source: SourceBus<SO, TO>,
+  dest: DestinationBus<SO, TO>,
+  metadata: ShinkaMeta<SO, TO> | undefined,
+  keys: DataEventKey[],
 ) => {
   for (const key of keys)
-    source.onRequest(key, async (data) => await dest.request(key, data));
+    source.onRequest(key, async (data) => await dest.request(key, data), {
+      ...metadata,
+      hint: "AsyncFunction",
+    });
 };

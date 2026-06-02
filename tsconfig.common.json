@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
-    "target": "es2017",
-    "module": "es2015",
-    "lib": ["DOM", "DOM.Iterable", "es2017"],
+    "target": "es2022",
+    "module": "ES2022",
+    "lib": ["DOM", "DOM.Iterable", "ES2021"],
     "declaration": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
@@ -16,6 +16,8 @@
     // "**/*.test.ts",
     // "**/*.stub.ts",
     "node_modules/",
-    "dist/"
+    "dist/",
+    "**/__tests__/",
+    "**/jest.config.ts"
   ]
 }

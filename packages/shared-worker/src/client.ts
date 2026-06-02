@@ -5,7 +5,7 @@ export const SharedWorker2Transport = (
   bus: ClientBus,
   binary = false,
 ) => {
-  const _onmessage = (e: MessageEvent) => bus.onMessage(e.data);
+  const _onmessage = (e: MessageDataEvent) => bus.onMessage(e.data);
   instance.port.onmessage = _onmessage;
   const close = async () => instance.port.close();
   const send = binary

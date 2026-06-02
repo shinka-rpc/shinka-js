@@ -34,6 +34,7 @@
     "@kai3341/bsonfy": "^1",
     "@msgpack/msgpack": "^3",
     "@types/chrome": "*",
+    "@types/node": "*",
     "lerna": "^9"
   },
   "devDependencies": {

@@ -2,10 +2,10 @@ import type { ServerBus, CommonBus } from "@shinka-rpc/core";
 
 export const SharedWorkerServer =
   (server: ServerBus, binary = false) =>
-  (e: MessageEvent) => {
+  (e: MessageDataEvent) => {
     const transport = async (bus: CommonBus) => {
       const port = e.source as any as MessagePort;
-      const _onmessage = (e: MessageEvent) => bus.onMessage(e.data);
+      const _onmessage = (e: MessageDataEvent) => bus.onMessage(e.data);
       port.onmessage = _onmessage;
       const send = binary
         ? (data: Uint8Array) => port.postMessage(data, [data.buffer])

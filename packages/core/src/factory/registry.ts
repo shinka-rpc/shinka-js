@@ -1,41 +1,76 @@
 import { Response } from "../response";
-import { AsyncFunctionType } from "../constants";
-import type { DataEventKey, ShinkaMeta } from "../types";
+import type {
+  DataEventKey,
+  ShinkaMeta,
+  FnConstructorName,
+  MessageDataEvent,
+  MetadataWithHint,
+} from "../types";
 import type { Context } from "../context";
 import type { CommonBus } from "../common";
 
-export const requestRegistryHook = <TA extends CommonBus, B, R>({
+const separateMetadataHint = <SO, TO>(
+  metadataWithHint?: MetadataWithHint<SO, TO>,
+) =>
+  metadataWithHint
+    ? ([
+        {
+          transport: metadataWithHint.transport,
+          serialize: metadataWithHint.serialize,
+        },
+        metadataWithHint.hint,
+      ] as [ShinkaMeta<SO, TO>?, FnConstructorName?])
+    : [undefined, undefined];
+
+const requestRegistryHookSync =
+  <SO, TO, TA, B, R>(
+    cb: (body: B, thisArg: TA) => R | Response<SO, TO, R>,
+    metadata?: ShinkaMeta<SO, TO>,
+  ) =>
+  (body: B, ctx: Context<SO, TO, TA>) => {
+    try {
+      const response = cb(body, ctx.thisArg);
+      response instanceof Response
+        ? ctx.answer(response.value, { ...metadata, ...response.metadata })
+        : ctx.answer(response, metadata);
+    } catch (e) {
+      e instanceof Response
+        ? ctx.error(e.value, { ...metadata, ...e.metadata })
+        : ctx.error(e, metadata);
+    }
+  };
+
+const requestRegistryHookAsync =
+  <SO, TO, TA, B, R>(
+    cb: (body: B, thisArg: TA) => R,
+    metadata?: ShinkaMeta<SO, TO>,
+  ) =>
+  async (body: B, ctx: Context<SO, TO, TA>) => {
+    try {
+      const response = await cb(body, ctx.thisArg);
+      response instanceof Response
+        ? ctx.answer(response.value, { ...metadata, ...response.metadata })
+        : ctx.answer(response, metadata);
+    } catch (e) {
+      e instanceof Response
+        ? ctx.error(e.value, { ...metadata, ...e.metadata })
+        : ctx.error(e, metadata);
+    }
+  };
+
+export const requestRegistryHook = <SO, TO, TA, B, R>({
   cb,
   metadata,
+  hint,
 }: {
   cb: (body: B, thisArg: TA) => R;
-  metadata?: ShinkaMeta;
+  metadata?: ShinkaMeta<SO, TO>;
+  hint?: FnConstructorName;
 }) => {
-  return cb instanceof AsyncFunctionType
-    ? async (body: B, ctx: Context<TA>) => {
-        try {
-          const response = await cb(body, ctx.bus);
-          response instanceof Response
-            ? ctx.answer(response.value, { ...metadata, ...response.metadata })
-            : ctx.answer(response, metadata);
-        } catch (e) {
-          e instanceof Response
-            ? ctx.error(e.value, { ...metadata, ...e.metadata })
-            : ctx.error(e, metadata);
-        }
-      }
-    : (body: B, ctx: Context<TA>) => {
-        try {
-          const response = cb(body, ctx.bus);
-          response instanceof Response
-            ? ctx.answer(response.value, { ...metadata, ...response.metadata })
-            : ctx.answer(response, metadata);
-        } catch (e) {
-          e instanceof Response
-            ? ctx.error(e.value, { ...metadata, ...e.metadata })
-            : ctx.error(e, metadata);
-        }
-      };
+  if (!hint) hint = cb.constructor.name as FnConstructorName;
+  return hint === "AsyncFunction"
+    ? requestRegistryHookAsync(cb, metadata)
+    : requestRegistryHookSync(cb, metadata);
 };
 
 const dummy = <I, O>(v: I) => v as any as O;
@@ -48,64 +83,68 @@ export const createRegistry = <K, V, H = V>(
   const set = (key: K, val: H) => {
     registry.set(key, valHook(val));
   };
-  return [get, set] as [(key: K) => V | undefined, (key: K, val: H) => void];
+  return [get, set] as [typeof get, typeof set];
 };
 
-type MaybeReqHandler<T extends CommonBus> =
-  | ((body: any, ctx: Context<T>) => any)
+type MaybeReqHandler<SO, TO, TA> =
+  | ((body: any, ctx: Context<SO, TO, TA>) => any)
   | undefined;
 
-export const createRequestHandler =
-  <T extends CommonBus>(
-    getRequest: (key: DataEventKey) => MaybeReqHandler<T>,
+export const createDispatchRequest =
+  <SO, TO, TA>(
+    getRequest: (key: DataEventKey) => MaybeReqHandler<SO, TO, TA>,
   ) =>
-  (key: DataEventKey, body: any, ctx: Context<T>) => {
+  (key: DataEventKey, body: any, ctx: Context<SO, TO, TA>) => {
     const cb = getRequest(key);
     if (!cb) return console.error("NO REQUEST HANDLER");
     cb(body, ctx);
   };
 
-type MaybeEventHandler<T extends CommonBus> =
-  | ((body: any, thisArg: T) => void)
-  | undefined;
+type MaybeEventHandler<TA> = ((body: any, thisArg: TA) => void) | undefined;
 
-export const createEventHandler =
-  <T extends CommonBus, B>(
-    getDataEvent: (key: DataEventKey) => MaybeEventHandler<T>,
-  ) =>
-  (key: DataEventKey, body: B, thisArg: T) => {
+export const createDispatchDataEvent =
+  <TA, B>(getDataEvent: (key: DataEventKey) => MaybeEventHandler<TA>) =>
+  (message: MessageDataEvent<B>, thisArg: TA) => {
+    const [_, body, key] = message;
     const cb = getDataEvent(key);
     if (!cb) return console.error("NO EVENT HANDLER");
     cb(body, thisArg);
   };
 
-export const createReqRegistry = <TA extends CommonBus, B, R>() =>
+export const createReqRegistry = <SO, TO, TA, B, R>() =>
   createRegistry<
     DataEventKey,
-    (body: B, ctx: Context<TA>) => void,
-    { cb: (body: B, thisArg: TA) => R; metadata?: ShinkaMeta }
-  >(requestRegistryHook<TA, B, R>);
+    (body: B, ctx: Context<SO, TO, TA>) => void,
+    {
+      cb: (body: B, thisArg: TA) => R;
+      metadata?: ShinkaMeta<SO, TO>;
+      hint?: FnConstructorName;
+    }
+  >(requestRegistryHook<SO, TO, TA, B, R>);
 
 export type ReqRegistryType = ReturnType<typeof createReqRegistry>;
 
-export const createEventRegistry = <T extends CommonBus, B>() =>
-  createRegistry<DataEventKey, (data: B, thisArg: T) => void>();
+export const createEventRegistry = <TA, B>() =>
+  createRegistry<DataEventKey, (data: B, thisArg: TA) => void>();
 
 export type EventRegistryType = ReturnType<typeof createEventRegistry>;
 
 export const asOnRequest =
-  <TA extends CommonBus>(
+  <TO, SO, TA>(
     reqSet: (
       key: DataEventKey,
       val: {
         cb: (body: any, thisArg: TA) => any;
-        metadata?: ShinkaMeta;
+        metadata?: ShinkaMeta<SO, TO>;
+        hint?: FnConstructorName;
       },
     ) => void,
   ) =>
   (
     key: DataEventKey,
-    cb: (data: any, thisArg: TA) => any,
-    metadata?: ShinkaMeta,
-  ) =>
-    reqSet(key, { cb, metadata });
+    cb: (body: any, thisArg: TA) => any,
+    metadataWithHint?: MetadataWithHint<SO, TO>,
+  ) => {
+    const [metadata, hint] = separateMetadataHint(metadataWithHint);
+    reqSet(key, { cb, metadata, hint });
+  };

@@ -1,239 +1,345 @@
+import { createSendData, createOnRawData } from "./factory/serializer-strategy";
+
+import { makeCreateOrCompleteShinka } from "./shinka";
 import {
-  MessageType,
-  EventKeys,
-  RequestKeys,
-  AsyncFunctionType,
+  busHandlerRegistries,
+  exchangeTimeoutHandler,
+  busEvents,
+  busRequests,
+} from "./bus-handler-registries";
+
+import {
+  messageTypeTransport,
+  messageTypeSerializer,
+  messageTypeBus,
+  messageTypeUser,
+  defaultRequestTimeout,
+  defaultExchangeTimeoutThrashold,
+  type MessageTypeGroup,
 } from "./constants";
 
+import { microTaskHelper } from "./microtask-helper";
+
 import type {
-  TransportFactory,
-  Serializer,
+  SendFn,
+  DispatchMap,
   Message,
-  DataEventHandler,
-  ResponseType,
-  DataEvent,
-  Request,
-  RequestHandler,
   AddRemoveEventListener,
-  MessageEvent,
-  DataEventKey,
-  SerializedData,
-  ShinkaMeta,
-  SerializerFactory,
   ShinkaEventListeners,
+  ShinkaAll,
+  ThisArgMap,
+  HandlerRegistriesAll,
+  InternalHandlerThisArg,
+  Factories,
+  VarsTimeout,
+  ExchangeTimeouts,
+  BusHandlerThisArg,
+  ShinkaDataEvent,
+  ShinkaRequest,
 } from "./types";
 
-import {
-  createEventHandler,
-  createRequestHandler,
-  createEventRegistry,
-  createReqRegistry,
-} from "./factory/registry";
+import { delegate, type DelegateType, banshee } from "@shinka-rpc/util";
 
-import {
-  createSendData,
-  createHandleReceived,
-} from "./factory/serializer-strategy";
+const transportNotInitialized = () => {
+  throw new Error("Transport is not initialized");
+};
 
-import { reqrsp } from "./factory/request-response";
-import { registerEventsInner, registerRequestsInner } from "./inner";
+const dummy = () => {};
 
-// const transportNotInitialized = () => {
-//   throw new Error("Transport is not initialized");
-// };
+const thisArgMapHelper = <SO, TO, B>(
+  thisArgMap: ThisArgMap<SO, TO, B>,
+  messageTypeGroup: MessageTypeGroup,
+  thisArg: InternalHandlerThisArg<SO, TO, B> | BusHandlerThisArg<SO, TO, B> | B,
+) => {
+  for (const i of messageTypeGroup) thisArgMap.set(i, thisArg);
+};
 
-export class CommonBus {
-  private transport!: TransportFactory<typeof this>;
-  private serializerFactory!: SerializerFactory;
-  // private serializerInstance!: Serializer;
-  private sendDataInner!: (
-    message: Message<any>,
-    metadata?: ShinkaMeta,
-  ) => void;
-  private handleReceived!: (serialized: SerializedData) => void;
-  protected eventListeners!: ShinkaEventListeners;
-  // private sendMessage?: (message: any, opts?: any) => void;
-  private closeBus?: () => Promise<void>;
+const enum BusState {
+  STOPPED = 0,
+  STARTING = 1,
+  STARTED = 2,
+  STOPPING = 3,
+}
 
-  public request!: <T>(
-    key: DataEventKey,
-    data: any,
-    metadata?: ShinkaMeta,
-  ) => Promise<T>;
+type VarsBye = {
+  bye: 0 | 1;
+};
 
-  private onResponseOuter!: (response: ResponseType<any>) => void;
-  private onMessageRequestOuter!: (request: Request<any>) => void;
-  protected requestInner!: <T>(key: DataEventKey, data: any) => Promise<T>;
-  private onResponseInner!: (response: ResponseType<any>) => void;
-  private onMessageRequestInner!: (request: Request<any>) => void;
-  private onDataEventOuter!: DataEventHandler<typeof this, any>;
-  private onDataEventInner!: DataEventHandler<typeof this, any>;
+function byeReset(this: VarsBye) {
+  this.bye = 0;
+}
 
+type GracefulShutdownThis = [
+  ShinkaDataEvent<any, any>,
+  () => void,
+  () => Promise<void>,
+];
+
+function gracefulShutdown(this: GracefulShutdownThis) {
+  busEvents.terminate(this[0]);
+  this[1]();
+  this[2]();
+}
+
+type CommonBusVars = VarsTimeout &
+  VarsBye & {
+    state: BusState;
+  };
+
+export class CommonBus<SO, TO> {
+  private factories!: Factories<SO, TO>;
+  private shinkaAll!: ShinkaAll<SO, TO, typeof this>;
+  private dispatchMap!: DispatchMap<
+    InternalHandlerThisArg<SO, TO, typeof this> | typeof this
+  >;
+  private thisArgMap!: ThisArgMap<SO, TO, typeof this>;
+  private sendDelegate!: DelegateType<SendFn<SO, TO>>;
+  private closeDelegate!: DelegateType<() => Promise<void>>;
+  private clenaupDelegate!: DelegateType<(callOnWail?: boolean) => void>;
+  private eventListeners!: ShinkaEventListeners<typeof this>;
+  private vars!: CommonBusVars;
+  private exchangeTimeouts!: ExchangeTimeouts;
+
+  public request!: ShinkaRequest<SO, TO>;
+  public dataEvent!: ShinkaDataEvent<SO, TO>;
   public extra!: Record<string | symbol, any>;
 
-  protected stopped!: boolean;
-  private started!: boolean;
-  private willDieSent!: boolean;
-
-  public __lazyInit(
-    transport: TransportFactory<typeof this>,
-    serializer: SerializerFactory,
-    onRequestOuter: RequestHandler<typeof this, any>,
-    onDataEventOuter: DataEventHandler<typeof this, any>,
-    responseTimeout: number,
+  constructor(
+    factories: Factories<SO, TO>,
+    handlerRegistries: HandlerRegistriesAll<SO, TO, typeof this>,
+    eventListeners: ShinkaEventListeners<typeof this>,
+    responseTimeout = defaultRequestTimeout,
+    exchangeTimeouts: ExchangeTimeouts = {
+      value: 0,
+      thrashold: defaultExchangeTimeoutThrashold,
+    },
   ) {
-    this.closeBus = undefined;
-    // this.sendMessage = transportNotInitialized;
-    this.transport = transport;
-    this.serializerFactory = serializer;
-    this.eventListeners = {
-      connect: new Set(),
-      disconnect: new Set(),
+    this.factories = factories;
+    this.eventListeners = eventListeners;
+    this.exchangeTimeouts = exchangeTimeouts;
+    this.dispatchMap = new Map();
+    this.thisArgMap = new Map();
+
+    this.vars = {
+      state: BusState.STOPPED,
+      lastReceivedAt: 0,
+      lastSendAt: 0,
+      externalTimeout: 0,
+      exchangeTimeoutId: null,
+      bye: 0,
     };
-    this.onDataEventOuter = onDataEventOuter;
-    this.extra = {};
-    this.stopped = false;
-    this.started = false;
-    this.willDieSent = false;
-    [this.request, this.onResponseOuter, this.onMessageRequestOuter] = reqrsp(
-      this,
-      MessageType.REQUEST_OUTER,
-      this.sendData,
-      onRequestOuter,
+
+    this.sendDelegate = delegate(transportNotInitialized as SendFn<any, any>);
+    this.closeDelegate = delegate(
+      transportNotInitialized as () => Promise<void>,
+    );
+    this.clenaupDelegate = delegate(dummy);
+
+    const createOrCompleteShinka = makeCreateOrCompleteShinka<SO, TO, any>(
+      this.sendDelegate.call,
+      this.dispatchMap,
       responseTimeout,
     );
-    const [reqGet, reqSet] = createReqRegistry<typeof this, any, any>();
-    [this.requestInner, this.onResponseInner, this.onMessageRequestInner] =
-      reqrsp(
-        this,
-        MessageType.REQUEST_INNER,
-        this.sendData,
-        createRequestHandler(reqGet),
-        responseTimeout,
-      );
-    const [evGet, evSet] = createEventRegistry<typeof this, any>();
-    this.onDataEventInner = createEventHandler(evGet);
-    registerEventsInner(evSet);
-    registerRequestsInner(reqSet);
+
+    this.shinkaAll = {
+      bus: createOrCompleteShinka(messageTypeBus, busHandlerRegistries),
+      serializer: createOrCompleteShinka(
+        messageTypeSerializer,
+        handlerRegistries.serializer,
+      ),
+      transport: createOrCompleteShinka(
+        messageTypeTransport,
+        handlerRegistries.transport,
+      ),
+      user: createOrCompleteShinka(messageTypeUser, handlerRegistries.user),
+    };
+
+    thisArgMapHelper(this.thisArgMap, messageTypeBus, {
+      bus: this,
+      shinka: this.shinkaAll.bus,
+      vars: this.vars,
+      exchangeTimeouts: exchangeTimeouts,
+    });
+
+    thisArgMapHelper(this.thisArgMap, messageTypeSerializer, {
+      bus: this,
+      shinka: this.shinkaAll.serializer,
+    });
+
+    thisArgMapHelper(this.thisArgMap, messageTypeTransport, {
+      bus: this,
+      shinka: this.shinkaAll.transport,
+    });
+
+    thisArgMapHelper(this.thisArgMap, messageTypeUser, this);
+
+    this.request = this.shinkaAll.user.request;
+    this.dataEvent = this.shinkaAll.user.dataEvent;
+
+    this.extra = {};
   }
 
-  protected async startInner() {
-    if (this.started) return console.warn("Double start caught!");
-    this.started = true;
+  public start = async () => {
+    if (this.vars.state === BusState.STARTED) return;
+    if (this.vars.state !== BusState.STOPPED)
+      return console.warn("Bus is not in `STOPPED` state");
 
-    const maybeSerializerInstance = this.serializerFactory(this);
-    const { serialize, deserialize, transportInitOpts, typeHints } =
-      maybeSerializerInstance instanceof Promise
+    try {
+      this.vars.state = BusState.STARTING;
+
+      const maybeSerializerInstance = this.factories.serializer();
+      const {
+        serialize,
+        deserialize,
+        onReady: onReadySerializer,
+        transportInitOpts,
+        typeHints,
+      } = maybeSerializerInstance instanceof Promise
         ? await maybeSerializerInstance
         : maybeSerializerInstance;
 
-    const { send, close } = await this.transport(this, transportInitOpts);
+      const onRawData = createOnRawData(
+        typeHints.deserialize,
+        deserialize,
+        this.dispatch,
+        this.vars,
+      );
 
-    this.sendDataInner = createSendData(typeHints.serialize, serialize, send);
-    this.handleReceived = createHandleReceived(
-      typeHints.deserialize,
-      deserialize,
-      this.dispatch,
-    );
-    // this.sendMessage = send;
-    this.closeBus = close;
-    for (const listener of this.eventListeners.connect)
-      queueMicrotask(() => listener(this));
-  }
+      const {
+        send: sendSerialized,
+        close,
+        instruction,
+        onReady: onReadyTransport,
+      } = await this.factories.transport(onRawData, transportInitOpts);
 
-  async start() {
-    this.stopped = false;
-    await this.startInner();
-  }
+      this.closeDelegate.set(close);
 
-  async stop() {
-    this.stopped = true;
-    this.willDieSent = false;
-    await this.stopInner();
-  }
+      const send = createSendData(
+        typeHints.serialize,
+        serialize,
+        sendSerialized,
+        this.vars,
+      );
 
-  private async stopInner() {
-    this.started = false;
+      this.sendDelegate.set(send);
+
+      if (onReadyTransport) {
+        const onReadyTransportPromise = onReadyTransport();
+        if (onReadyTransportPromise instanceof Promise)
+          await onReadyTransportPromise;
+      }
+      if (onReadySerializer) {
+        const onReadySerializerPromise = onReadySerializer();
+        if (onReadySerializerPromise instanceof Promise)
+          await onReadySerializerPromise;
+      }
+
+      if (this.exchangeTimeouts.value)
+        this.vars.exchangeTimeoutId = setTimeout(
+          exchangeTimeoutHandler,
+          this.exchangeTimeouts.value,
+          this,
+          this.shinkaAll.bus,
+          this.vars,
+          this.exchangeTimeouts,
+        );
+
+      if (this.exchangeTimeouts.value)
+        busEvents.exchange(
+          this.shinkaAll.bus.dataEvent,
+          this.exchangeTimeouts.value,
+        );
+      else if (instruction.hi && !this.vars.lastSendAt)
+        busEvents.iAmAlive(this.shinkaAll.bus.dataEvent);
+
+      if (instruction.bye) this.vars.bye = 1;
+      const wail = instruction.bye
+        ? gracefulShutdown.bind([
+            this.shinkaAll.bus.dataEvent,
+            byeReset.bind(this.vars),
+            this.stop,
+          ])
+        : this.stop;
+
+      this.clenaupDelegate.set(banshee(this, wail));
+
+      this.vars.state = BusState.STARTED;
+
+      for (const listener of this.eventListeners.connect)
+        // @ts-expect-error: 2769
+        queueMicrotask(microTaskHelper.bind([listener, this]));
+    } catch (e) {
+      try {
+        await this.closeDelegate.call();
+      } catch (e) {}
+      this.clenaup();
+      throw e;
+    }
+  };
+
+  public stop = async () => {
+    if (this.vars.state === BusState.STOPPED) return;
+    if (this.vars.state !== BusState.STARTED)
+      return console.warn("Bus is not in `STARTED` state");
+
+    this.vars.state = BusState.STOPPING;
+
+    if (this.vars.bye) busEvents.terminate(this.shinkaAll.bus.dataEvent);
+
     for (const listener of this.eventListeners.disconnect)
-      queueMicrotask(() => listener(this));
+      // @ts-expect-error: 2769
+      queueMicrotask(microTaskHelper.bind([listener, this]));
 
-    const close = this.closeBus;
-    this.closeBus = undefined;
-    // this.sendMessage = undefined;
-    if (close) await close();
-    // this.sendMessage = transportNotInitialized;
-  }
-
-  async restart() {
     try {
-      await this.stopInner();
+      await this.closeDelegate.call();
+    } catch (e) {
+      console.error(e);
+    }
+
+    this.clenaup();
+  };
+
+  public restart = async () => {
+    try {
+      await this.stop();
     } catch (e) {
       console.warn(e);
     }
-    await this.startInner();
-  }
-
-  private sendData = (message: Message<any>, metadata?: ShinkaMeta) =>
-    this.sendDataInner(message, metadata);
-
-  public onMessage = (serialized: SerializedData) =>
-    this.handleReceived(serialized);
-
-  private dispatch = (data: Message<any>) => {
-    const [msgType, body] = data;
-    switch (msgType) {
-      case MessageType.REQUEST_INNER:
-        return this.onMessageRequestInner(body);
-      case MessageType.REQUEST_OUTER:
-        return this.onMessageRequestOuter(body);
-      case MessageType.RESPONSE_INNER:
-        return this.onResponseInner(body);
-      case MessageType.RESPONSE_OUTER:
-        return this.onResponseOuter(body);
-      case MessageType.EVENT_INNER:
-        return this.onDataEventInner(...body, this);
-      case MessageType.EVENT_OUTER:
-        return this.onDataEventOuter(...body, this);
-      default:
-        console.error("UNKNOWN MESSAGE TYPE", data);
-    }
+    await this.start();
   };
-
-  private eventSend(
-    event_type: MessageType.EVENT_OUTER | MessageType.EVENT_INNER,
-    event: DataEvent<any>,
-    metadata?: ShinkaMeta,
-  ) {
-    const message: MessageEvent<any> = [event_type, event];
-    this.sendData(message, metadata);
-  }
-
-  protected eventInner(key: DataEventKey, data: any) {
-    this.eventSend(MessageType.EVENT_INNER, [key, data]);
-  }
-
-  public event(key: DataEventKey, data: any, metadata?: ShinkaMeta) {
-    this.eventSend(MessageType.EVENT_OUTER, [key, data], metadata);
-  }
 
   public ping = async () => {
     const begin = performance.now();
-    await this.requestInner<void>(RequestKeys.PING, null);
+    await busRequests.ping(this.shinkaAll.bus.request);
     return performance.now() - begin;
   };
 
-  public addEventListener: AddRemoveEventListener = (type, target) =>
+  public addEventListener: AddRemoveEventListener<this> = (type, target) =>
     this.eventListeners[type].add(target);
 
-  public removeEventListener: AddRemoveEventListener = (type, target) =>
+  public removeEventListener: AddRemoveEventListener<this> = (type, target) =>
     this.eventListeners[type].delete(target);
 
-  private transportAPI = {
-    hi: () => this.eventInner(EventKeys.INITIALIZE, null),
-    bye: () => {
-      if (this.stopped || this.willDieSent) return;
-      this.eventInner(EventKeys.TERMINATE, null);
-      this.willDieSent = true;
-    },
+  private dispatch = (message: Message<any>) => {
+    const messageType = message[0];
+    const dispatchHandler = this.dispatchMap.get(messageType);
+    if (!dispatchHandler) return console.error("Unknown message type");
+    const thisArg = this.thisArgMap.get(messageType)!;
+    dispatchHandler(message as any, thisArg);
+  };
+
+  private clenaup = () => {
+    this.clenaupDelegate.call(false);
+    this.sendDelegate.reset();
+    this.closeDelegate.reset();
+    this.clenaupDelegate.reset();
+    this.vars.bye = 0;
+
+    if (this.vars.exchangeTimeoutId !== null) {
+      clearTimeout(this.vars.exchangeTimeoutId);
+      this.vars.exchangeTimeoutId = null;
+    }
+
+    this.vars.state = BusState.STOPPED;
   };
 }

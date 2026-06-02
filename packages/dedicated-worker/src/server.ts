@@ -8,5 +8,5 @@ export const DedicatedWorkerServer = (binary = false, targetOrigin = "/") => {
   return { send, close };
 };
 
-export const createOnMessage = (bus: ClientBus) => (e: MessageEvent) =>
+export const createOnMessage = (bus: ClientBus) => (e: MessageDataEvent) =>
   bus.onMessage(e.data);

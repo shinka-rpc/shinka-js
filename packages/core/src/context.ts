@@ -1,68 +1,68 @@
-import { MessageType } from "./constants";
+import type { Message, MessageResponse, ShinkaMeta } from "./types";
+import type { MessageTypeAllResponse } from "./constants";
 
-import type {
-  Message,
-  ResponseType,
-  MessageResponse,
-  ShinkaMeta,
-} from "./types";
-import type { CommonBus } from "./common";
-
-export class Context<B extends CommonBus> {
+export class Context<SO, TO, TA> {
   private reqID!: number;
-  bus!: B;
+  private messageTypes!: [MessageTypeAllResponse, MessageTypeAllResponse];
   private sendMessage!: (message: Message<any>, opts?: any) => void;
+  public thisArg!: TA;
   //
   private answerGeneric!: (
-    code: boolean,
+    messageType: MessageTypeAllResponse,
     data: any,
-    metadata?: ShinkaMeta,
+    metadata?: ShinkaMeta<SO, TO>,
   ) => void;
   private timeoutId!: ReturnType<typeof setTimeout> | null;
 
   constructor(
     reqID: number,
-    bus: B,
     sendMessage: (message: any) => void,
+    thisArg: TA,
     timeout: number,
+    messageTypes: [MessageTypeAllResponse, MessageTypeAllResponse],
   ) {
     this.reqID = reqID;
-    this.bus = bus;
     this.sendMessage = sendMessage;
+    this.thisArg = thisArg;
     this.answerGeneric = this.answerGenericOK;
+    this.messageTypes = messageTypes;
     if (timeout) this.timeoutId = setTimeout(this.close, timeout);
   }
 
-  private answerGenericOK(code: boolean, data: any, metadata?: ShinkaMeta) {
+  private answerGenericOK(
+    messageType: MessageTypeAllResponse,
+    data: any,
+    metadata?: ShinkaMeta<SO, TO>,
+  ) {
     if (this.timeoutId !== null) {
       clearTimeout(this.timeoutId);
       this.timeoutId = null;
     }
-    const response: ResponseType<any> = [code, this.reqID, data];
-    const message: MessageResponse<any> = [
-      MessageType.RESPONSE_OUTER,
-      response,
-    ];
+    const message: MessageResponse<any> = [messageType, this.reqID, data];
     this.sendMessage(message, metadata);
     this.answerGeneric = this.answerGenericERR;
   }
 
-  private answerGenericERR(code: boolean, data: any, metadata?: ShinkaMeta) {
+  private answerGenericERR(
+    messageType: MessageTypeAllResponse,
+    data: any,
+    metadata?: ShinkaMeta<SO, TO>,
+  ) {
     throw new Error(
       JSON.stringify({ msg: "Already answered", reqID: this.reqID }),
     );
   }
 
-  answer(data: any, metadata?: ShinkaMeta) {
-    this.answerGeneric(true, data, metadata);
+  answer(data: any, metadata?: ShinkaMeta<SO, TO>) {
+    this.answerGeneric(this.messageTypes[1], data, metadata);
   }
 
-  error(data: any, metadata?: ShinkaMeta) {
+  error(data: any, metadata?: ShinkaMeta<SO, TO>) {
     if (data instanceof Error) console.trace(data);
-    this.answerGeneric(false, data, metadata);
+    this.answerGeneric(this.messageTypes[0], data, metadata);
   }
 
-  close = (msg: any = "CLOSED", metadata?: ShinkaMeta) => {
+  close = (msg: any = "CLOSED", metadata?: ShinkaMeta<SO, TO>) => {
     // FIXME
     if (this.answerGeneric === this.answerGenericOK) this.error(msg, metadata);
   };

@@ -91,7 +91,7 @@ bus.start();
 
 ```typescript
 // @ts-nocheck
-declare let onconnect: (event: MessageEvent) => void;
+declare let onconnect: (event: MessageDataEvent) => void;
 
 import { ServerBus } from "@shinka-rpc/core";
 import { SharedWorkerServer } from "@shinka-rpc/shared-worker/server";

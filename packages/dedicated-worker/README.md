@@ -33,7 +33,7 @@ to use `ClientBus`
 
 ```typescript
 // @ts-nocheck
-declare let onmessage: (event: MessageEvent) => void;
+declare let onmessage: (event: MessageDataEvent) => void;
 
 import { ClientBus } from "@shinka-rpc/core";
 import {

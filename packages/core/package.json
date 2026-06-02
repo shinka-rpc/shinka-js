@@ -34,6 +34,6 @@
     "types": "./src/index.ts"
   },
   "dependencies": {
-    "@shinka-rpc/util": "^0.0.1"
+    "@shinka-rpc/util": "^0.0.3"
   }
 }

@@ -46,7 +46,7 @@ API. There is no magic.
 
 ```typescript
 // @ts-nocheck
-declare let onconnect: (event: MessageEvent) => void;
+declare let onconnect: (event: MessageDataEvent) => void;
 
 import { ServerBus } from "@shinka-rpc/core";
 import { SharedWorkerServer } from "@shinka-rpc/shared-worker";
@@ -65,4 +65,4 @@ onconnect = SharedWorkerServer(server);
 
 - **Optional** `binary`: `Boolean` &mdash; enable binary-specific `transfer` optimization. **Default**: `false`
 
-- **Refurning**: `(e: MessageEvent) => void`
+- **Refurning**: `(e: MessageDataEvent) => void`

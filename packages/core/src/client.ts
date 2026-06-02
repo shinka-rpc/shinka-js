@@ -1,58 +1,44 @@
-import { sleep } from "@shinka-rpc/util";
-
-import { defaultRequestTimeout, defaultSerializer } from "./constants";
-
-import {
-  createEventHandler,
-  createRequestHandler,
-  createReqRegistry,
-  createEventRegistry,
-  asOnRequest,
-} from "./factory/registry";
-
+import { createHandlerRegistries } from "./shinka";
+import { defaultRequestTimeout, defaultSerializerRoot } from "./constants";
 import { CommonBus } from "./common";
 
-import type { DataEventKey, ShinkaMeta, ClientBusProps } from "./types";
+import type {
+  ClientBusProps,
+  HandlerRegistriesAll,
+  Factories,
+  ShinkaOnDataEvent,
+  ShinkaOnRequest,
+} from "./types";
 
-export class ClientBus extends CommonBus {
-  public onRequest!: (
-    key: DataEventKey,
-    fn: (data: any, thisArg: this) => void,
-    metadata?: ShinkaMeta,
-  ) => void;
-
-  public onDataEvent!: (
-    key: DataEventKey,
-    fn: (data: any, thisArg: this) => void,
-  ) => void;
-
-  private restartTimeout!: number;
+export class ClientBus<SO, TO> extends CommonBus<SO, TO> {
+  public onRequest!: ShinkaOnRequest<SO, TO, this>;
+  public onDataEvent!: ShinkaOnDataEvent<this>;
 
   constructor({
     transport,
-    serializer = defaultSerializer,
+    serializer = defaultSerializerRoot,
     responseTimeout = defaultRequestTimeout,
-    restartTimeout = 0,
-  }: ClientBusProps<ClientBus>) {
-    super();
-    const [reqGet, reqSet] = createReqRegistry<typeof this, any, any>();
-    const [evGet, evSet] = createEventRegistry<typeof this, any>();
-    super.__lazyInit(
-      transport,
-      serializer,
-      createRequestHandler(reqGet),
-      createEventHandler(evGet),
+  }: ClientBusProps<SO, TO, any>) {
+    const [transportFactory, transportRegistries] = transport();
+    const [serializerFactory, serializerRegistries] = serializer();
+    const factories: Factories<SO, TO> = {
+      serializer: serializerFactory,
+      transport: transportFactory,
+    };
+    const userRegistries = createHandlerRegistries<SO, TO, this>();
+    const registries: HandlerRegistriesAll<SO, TO, any> = {
+      serializer: serializerRegistries,
+      transport: transportRegistries,
+      user: userRegistries,
+    };
+    super(
+      factories,
+      registries,
+      { connect: new Set(), disconnect: new Set() },
       responseTimeout,
     );
-    this.onRequest = asOnRequest(reqSet);
-    this.onDataEvent = evSet;
-    this.restartTimeout = restartTimeout;
+    this.onRequest = userRegistries.onRequest;
+    this.dataEvent = userRegistries.onDataEvent;
+    Object.freeze(this);
   }
-
-  public maybeRestart = async () => {
-    const timeout = this.restartTimeout;
-    if (!timeout || this.stopped) return;
-    await sleep(timeout);
-    await this.restart();
-  };
 }

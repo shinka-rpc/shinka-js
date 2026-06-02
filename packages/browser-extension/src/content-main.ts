@@ -2,7 +2,7 @@ import type { ClientBus, Transport } from "@shinka-rpc/core";
 
 export const createClientTransport =
   (TAG_ONMESSAGE: unknown, TAG_SEND: unknown) => async (bus: ClientBus) => {
-    const _onmessage = (event: MessageEvent) => {
+    const _onmessage = (event: MessageDataEvent) => {
       if (event.source === window && Array.isArray(event.data)) {
         const [tag, payload] = event.data;
         if (tag === TAG_ONMESSAGE) bus.onMessage(payload);
