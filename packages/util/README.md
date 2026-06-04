@@ -88,3 +88,35 @@ function is called, all event listeners are removed
 
 **Returns**: `(callOnWail = true) => void` function. This function calls `onWail`
 if `callOnWail` (by default is `true`) and removes registered eventListeners
+
+## DataSignal
+
+As is it's typescript port of
+[python's asyncio.Event](https://docs.python.org/3/library/asyncio-sync.html#asyncio.Event).
+But there are some difference:
+
+- Name. In javascript [Event](https://developer.mozilla.org/en-US/docs/Web/API/Event) is already exists
+- Payload. It's possible to pass it in javascript. Why not to do it?
+
+Usage example:
+
+```typescript
+import { DataSignal } from "@shinka-rpc/util";
+
+const voidSignal = new DataSignal<void>();
+await voidSignal.wait();  // waits untill `signal.set()` is called
+
+// ===
+
+const numSignal = new DataSignal<Number>();
+console.log(numSignal.isSet());  // false
+
+numSignal.set(123);  // of course this would be called in different app part
+
+const value1 = await numSignal.wait();  // value will be 123
+const value2 = await numSignal.wait();  // value will be 123 again
+console.log(numSignal.isSet());  // true
+
+numSignal.reset();  // numSignal resets into initial empty state
+console.log(numSignal.isSet());  // false
+```
