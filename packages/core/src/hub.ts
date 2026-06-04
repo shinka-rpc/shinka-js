@@ -1,104 +1,107 @@
-import { defaultSerializerRoot, defaultRequestTimeout } from "./constants";
+import {
+  defaultRequestTimeout,
+  defaultExchangeTimeoutThrashold,
+} from "./constants";
 
 import { CommonBus } from "./common";
 
+import { createEventListeners } from "./factory/event-listeners";
+
 import type {
-  DataEventKey,
-  RequestHandler,
-  HandlerRegistriesAll,
-  ShinkaMeta,
-  ServerBusConnectProps,
-  SerializerRoot,
-  TransportRoot,
   ShinkaEventListeners,
-  AddRemoveEventListener,
+  ManageEventListener,
   Factories,
   ShinkaOnRequest,
   ShinkaOnDataEvent,
+  InternalHandlerRegistries,
+  ExchangeTimeouts,
+  HandlerRegistriesAll,
 } from "./types";
 
-import { type HandlerRegistries, createHandlerRegistries } from "./shinka";
+import { createHandlerRegistries, type HandlerRegistries } from "./shinka";
 
 export type ServerOptions = {
-  // serializer?: SerializerRoot<SO, TO, CommonBus<SO, TO>>;
-  // transport: TransportRoot<SO, TO, CommonBus<SO, TO>>;
-  timeout?: number;
+  responseTimeout?: number;
+  exchangeTimeouts?: ExchangeTimeouts;
 };
 
-type ShinkaEventHandlerProxies<TA> = {
-  connect: (bus: TA) => void;
-  disconnect: (bus: TA) => void;
+export type HandlerRegistriesHub<SO, TO, B> = {
+  transport?: InternalHandlerRegistries<SO, TO, B>;
+  serializer?: InternalHandlerRegistries<SO, TO, B>;
 };
 
-const createShinkaEventHandlerProxy =
-  <TA>(set: Set<(bus: TA) => void>) =>
-  (bus: TA) => {
-    for (const fn of set) queueMicrotask(() => fn(bus));
-  };
-
-const createShinkaEventHandlerProxies = <TA>(
-  eventListeners: ShinkaEventListeners<TA>,
-) =>
-  ({
-    connect: createShinkaEventHandlerProxy(eventListeners.connect),
-    disconnect: createShinkaEventHandlerProxy(eventListeners.disconnect),
-  }) as ShinkaEventHandlerProxies<TA>;
+export type ConnectProps<SO, TO, B> = {
+  factories: Factories<SO, TO>;
+  handlerRegistries: HandlerRegistriesHub<SO, TO, B>;
+};
 
 export class Hub<SO, TO> {
   private userRegistries!: HandlerRegistries<SO, TO, CommonBus<SO, TO>>;
   private eventListeners!: ShinkaEventListeners<CommonBus<SO, TO>>;
-  private eventListenerProxies!: ShinkaEventHandlerProxies<CommonBus<SO, TO>>;
-  private timeout!: number;
-  private clients!: Set<CommonBus<SO, TO>>;
+  private responseTimeout!: number;
+  private exchangeTimeouts!: ExchangeTimeouts;
 
+  public clients!: Set<CommonBus<SO, TO>>;
   public onRequest!: ShinkaOnRequest<SO, TO, CommonBus<SO, TO>>;
   public onDataEvent!: ShinkaOnDataEvent<CommonBus<SO, TO>>;
-
   public extra!: Record<string | symbol, any>;
 
-  constructor({ timeout = defaultRequestTimeout }: ServerOptions) {
-    this.timeout = timeout;
+  constructor({
+    responseTimeout = defaultRequestTimeout,
+    exchangeTimeouts = {
+      value: 0,
+      thrashold: defaultExchangeTimeoutThrashold,
+    },
+  }: ServerOptions) {
+    this.responseTimeout = responseTimeout;
+    this.exchangeTimeouts = exchangeTimeouts;
     this.userRegistries = createHandlerRegistries<SO, TO, CommonBus<SO, TO>>();
     this.clients = new Set<CommonBus<SO, TO>>();
-    this.eventListeners = {
-      connect: new Set(),
-      disconnect: new Set(),
-    };
-    this.eventListenerProxies = createShinkaEventHandlerProxies(
-      this.eventListeners,
-    );
+    this.eventListeners = createEventListeners();
     this.extra = {};
     this.onRequest = this.userRegistries.onRequest;
     this.onDataEvent = this.userRegistries.onDataEvent;
     Object.freeze(this);
   }
 
-  // public connect = async ({
-  //   transport,
-  //   serializer = defaultSerializerRoot,
-  //   responseTimeout = this.timeout,
-  //   // complete = () => {},
-  // }: ServerBusConnectProps<SO, TO, CommonBus<SO, TO>>) => {
-  //   const bus = new CommonBus(
-  //     this.factories,
-  //     this.handlerRegistries,
-  //     responseTimeout,
-  //   );
+  private onClientDisconnect = (bus: CommonBus<SO, TO>) =>
+    this.clients.delete(bus);
 
-  //   bus.addEventListener("connect", this.eventListenerProxies.connect);
-  //   bus.addEventListener("disconnect", this.eventListenerProxies.disconnect);
-  //   // complete(bus);
-  //   await bus.start();
-  //   this.clients.add(bus);
-  //   return bus;
-  // };
+  public connect = async ({
+    factories,
+    handlerRegistries,
+  }: ConnectProps<SO, TO, CommonBus<SO, TO>>) => {
+    const handlerRegistriesAll: HandlerRegistriesAll<
+      SO,
+      TO,
+      CommonBus<SO, TO>
+    > = {
+      ...handlerRegistries,
+      user: this.userRegistries,
+    };
 
-  public addEventListener: AddRemoveEventListener<CommonBus<SO, TO>> = (
+    const bus = new CommonBus(
+      factories,
+      handlerRegistriesAll as any,
+      this.eventListeners as any,
+      this.responseTimeout,
+      this.exchangeTimeouts,
+    );
+
+    Object.freeze(bus);
+    bus.addEventListener("disconnect", this.onClientDisconnect);
+    this.clients.add(bus);
+
+    await bus.start();
+    return bus;
+  };
+
+  public addEventListener: ManageEventListener<CommonBus<SO, TO>> = (
     type,
     target,
   ) => this.eventListeners[type].add(target);
 
-  public removeEventListener: AddRemoveEventListener<CommonBus<SO, TO>> = (
+  public removeEventListener: ManageEventListener<CommonBus<SO, TO>> = (
     type,
     target,
   ) => this.eventListeners[type].delete(target);

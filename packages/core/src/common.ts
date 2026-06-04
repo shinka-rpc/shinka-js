@@ -1,4 +1,8 @@
 import { createSendData, createOnRawData } from "./factory/serializer-strategy";
+import {
+  createEventListeners,
+  createEventListenersBanned,
+} from "./factory/event-listeners";
 
 import { makeCreateOrCompleteShinka } from "./shinka";
 import {
@@ -24,8 +28,10 @@ import type {
   SendFn,
   DispatchMap,
   Message,
-  AddRemoveEventListener,
+  ManageEventListener,
+  EventListenerType,
   ShinkaEventListeners,
+  ShinkaListenerLayers,
   ShinkaAll,
   ThisArgMap,
   HandlerRegistriesAll,
@@ -49,8 +55,10 @@ const dummy = () => {};
 const thisArgMapHelper = <SO, TO, B>(
   thisArgMap: ThisArgMap<SO, TO, B>,
   messageTypeGroup: MessageTypeGroup,
+  freeze: 0 | 1,
   thisArg: InternalHandlerThisArg<SO, TO, B> | BusHandlerThisArg<SO, TO, B> | B,
 ) => {
+  if (freeze) Object.freeze(thisArg);
   for (const i of messageTypeGroup) thisArgMap.set(i, thisArg);
 };
 
@@ -96,7 +104,7 @@ export class CommonBus<SO, TO> {
   private sendDelegate!: DelegateType<SendFn<SO, TO>>;
   private closeDelegate!: DelegateType<() => Promise<void>>;
   private clenaupDelegate!: DelegateType<(callOnWail?: boolean) => void>;
-  private eventListeners!: ShinkaEventListeners<typeof this>;
+  private eventListeners!: ShinkaListenerLayers<typeof this>;
   private vars!: CommonBusVars;
   private exchangeTimeouts!: ExchangeTimeouts;
 
@@ -115,7 +123,11 @@ export class CommonBus<SO, TO> {
     },
   ) {
     this.factories = factories;
-    this.eventListeners = eventListeners;
+    this.eventListeners = {
+      own: createEventListeners(),
+      parent: eventListeners,
+      banned: createEventListenersBanned(),
+    };
     this.exchangeTimeouts = exchangeTimeouts;
     this.dispatchMap = new Map();
     this.thisArgMap = new Map();
@@ -154,30 +166,43 @@ export class CommonBus<SO, TO> {
       user: createOrCompleteShinka(messageTypeUser, handlerRegistries.user),
     };
 
-    thisArgMapHelper(this.thisArgMap, messageTypeBus, {
+    thisArgMapHelper(this.thisArgMap, messageTypeBus, 1, {
       bus: this,
       shinka: this.shinkaAll.bus,
       vars: this.vars,
       exchangeTimeouts: exchangeTimeouts,
     });
 
-    thisArgMapHelper(this.thisArgMap, messageTypeSerializer, {
+    thisArgMapHelper(this.thisArgMap, messageTypeSerializer, 1, {
       bus: this,
       shinka: this.shinkaAll.serializer,
     });
 
-    thisArgMapHelper(this.thisArgMap, messageTypeTransport, {
+    thisArgMapHelper(this.thisArgMap, messageTypeTransport, 1, {
       bus: this,
       shinka: this.shinkaAll.transport,
     });
 
-    thisArgMapHelper(this.thisArgMap, messageTypeUser, this);
+    thisArgMapHelper(this.thisArgMap, messageTypeUser, 0, this);
 
     this.request = this.shinkaAll.user.request;
     this.dataEvent = this.shinkaAll.user.dataEvent;
 
     this.extra = {};
   }
+
+  private callEventListeners = (type: EventListenerType) => {
+    const own = this.eventListeners.own[type];
+    for (const listener of own)
+      // @ts-expect-error: 2769
+      queueMicrotask(microTaskHelper.bind([listener, this]));
+
+    const banned = this.eventListeners.banned[type];
+    for (const listener of this.eventListeners.parent[type])
+      if (!(banned.has(listener) || own.has(listener)))
+        // @ts-expect-error: 2769
+        queueMicrotask(microTaskHelper.bind([listener, this]));
+  };
 
   public start = async () => {
     if (this.vars.state === BusState.STARTED) return;
@@ -262,12 +287,8 @@ export class CommonBus<SO, TO> {
         : this.stop;
 
       this.clenaupDelegate.set(banshee(this, wail));
-
       this.vars.state = BusState.STARTED;
-
-      for (const listener of this.eventListeners.connect)
-        // @ts-expect-error: 2769
-        queueMicrotask(microTaskHelper.bind([listener, this]));
+      this.callEventListeners("connect");
     } catch (e) {
       try {
         await this.closeDelegate.call();
@@ -286,10 +307,6 @@ export class CommonBus<SO, TO> {
 
     if (this.vars.bye) busEvents.terminate(this.shinkaAll.bus.dataEvent);
 
-    for (const listener of this.eventListeners.disconnect)
-      // @ts-expect-error: 2769
-      queueMicrotask(microTaskHelper.bind([listener, this]));
-
     try {
       await this.closeDelegate.call();
     } catch (e) {
@@ -297,6 +314,8 @@ export class CommonBus<SO, TO> {
     }
 
     this.clenaup();
+
+    this.callEventListeners("disconnect");
   };
 
   public restart = async () => {
@@ -314,11 +333,15 @@ export class CommonBus<SO, TO> {
     return performance.now() - begin;
   };
 
-  public addEventListener: AddRemoveEventListener<this> = (type, target) =>
-    this.eventListeners[type].add(target);
+  public addEventListener: ManageEventListener<this> = (type, target) => {
+    this.eventListeners.banned[type].delete(target);
+    this.eventListeners.own[type].add(target);
+  };
 
-  public removeEventListener: AddRemoveEventListener<this> = (type, target) =>
-    this.eventListeners[type].delete(target);
+  public removeEventListener: ManageEventListener<this> = (type, target) => {
+    this.eventListeners.banned[type].add(target);
+    this.eventListeners.own[type].delete(target);
+  };
 
   private dispatch = (message: Message<any>) => {
     const messageType = message[0];

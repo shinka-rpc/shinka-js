@@ -1,6 +1,7 @@
 import { createHandlerRegistries } from "./shinka";
 import { defaultRequestTimeout, defaultSerializerRoot } from "./constants";
 import { CommonBus } from "./common";
+import { createEventListeners } from "./factory/event-listeners";
 
 import type {
   ClientBusProps,
@@ -31,12 +32,7 @@ export class ClientBus<SO, TO> extends CommonBus<SO, TO> {
       transport: transportRegistries,
       user: userRegistries,
     };
-    super(
-      factories,
-      registries,
-      { connect: new Set(), disconnect: new Set() },
-      responseTimeout,
-    );
+    super(factories, registries, createEventListeners(), responseTimeout);
     this.onRequest = userRegistries.onRequest;
     this.dataEvent = userRegistries.onDataEvent;
     Object.freeze(this);

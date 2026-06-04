@@ -7,6 +7,7 @@ import {
   type TransportRoot,
   type TransportFactory,
   type SerializedData,
+  type ShinkaOn,
   SerializerRoot,
 } from "@shinka-rpc/core";
 
@@ -82,7 +83,7 @@ export const createMockSerializerSync = <TO, B>(
   ]) as SerializerRoot<any, TO, B>;
 
 export const createSyncHandler = (
-  bus: ClientBus<any, any>,
+  bus: ShinkaOn<any, any, any>,
   results: Record<string, any>[],
 ) =>
   bus.onRequest(

@@ -228,16 +228,34 @@ export type SerializerRoot<SO, TO, B> = () => [
   InternalHandlerRegistries<SO, TO, B>?,
 ];
 
-export type ShinkaConnectEventListener<B> = (bus: B) => void;
+export type ShinkaEventListener<B> = (bus: B) => void;
+export type ShinkaEventListenerSet<B> = Set<ShinkaEventListener<B>>;
+export type ShinkaEventListenerWeakSet<B> = WeakSet<ShinkaEventListener<B>>;
 
-export type ShinkaEventListeners<B> = {
-  connect: Set<ShinkaConnectEventListener<B>>;
-  disconnect: Set<ShinkaConnectEventListener<B>>;
+export type BaseShinkaEventListeners<S> = {
+  connect: S;
+  disconnect: S;
 };
 
-export type AddRemoveEventListener<B> = (
-  type: "connect" | "disconnect",
-  target: ShinkaConnectEventListener<B>,
+export type ShinkaEventListeners<B> = BaseShinkaEventListeners<
+  ShinkaEventListenerSet<B>
+>;
+
+export type ShinkaEventListenersBanned<B> = BaseShinkaEventListeners<
+  ShinkaEventListenerWeakSet<B>
+>;
+
+export type ShinkaListenerLayers<B> = {
+  own: ShinkaEventListeners<B>;
+  parent: ShinkaEventListeners<B>; // modification is restricted
+  banned: ShinkaEventListenersBanned<B>;
+};
+
+export type EventListenerType = "connect" | "disconnect";
+
+export type ManageEventListener<B> = (
+  type: EventListenerType,
+  target: ShinkaEventListener<B>,
 ) => void;
 
 export type TransportAPI = { hi: () => void; bye: () => void };

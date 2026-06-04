@@ -1,6 +1,6 @@
-import type { ShinkaConnectEventListener } from "./types";
+import type { ShinkaEventListener } from "./types";
 
-export type MicroTaskHelperThis<B> = [ShinkaConnectEventListener<B>, B];
+export type MicroTaskHelperThis<B> = [ShinkaEventListener<B>, B];
 
 export function microTaskHelper<B>(this: MicroTaskHelperThis<B>) {
   this[0](this[1]);
