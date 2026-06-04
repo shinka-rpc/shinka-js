@@ -31,6 +31,7 @@ const setupClientHub = async (
     transport: fakeTransportClient(pipe1to2, "client1", results),
     serializer: createSerializer("client1", results),
   });
+
   const hub = new Hub({});
 
   client.addEventListener("connect", () =>

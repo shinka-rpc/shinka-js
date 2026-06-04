@@ -1,3 +1,5 @@
+import { DataSignal } from "@shinka-rpc/util";
+
 import {
   defaultRequestTimeout,
   defaultExchangeTimeoutThrashold,
@@ -20,7 +22,7 @@ import type {
 
 import { createHandlerRegistries, type HandlerRegistries } from "./shinka";
 
-export type ServerOptions = {
+export type HubOptions = {
   responseTimeout?: number;
   exchangeTimeouts?: ExchangeTimeouts;
 };
@@ -40,8 +42,9 @@ export class Hub<SO, TO> {
   private eventListeners!: ShinkaEventListeners<CommonBus<SO, TO>>;
   private responseTimeout!: number;
   private exchangeTimeouts!: ExchangeTimeouts;
+  private clients!: Set<CommonBus<SO, TO>>;
+  private disposing!: DataSignal<void>;
 
-  public clients!: Set<CommonBus<SO, TO>>;
   public onRequest!: ShinkaOnRequest<SO, TO, CommonBus<SO, TO>>;
   public onDataEvent!: ShinkaOnDataEvent<CommonBus<SO, TO>>;
   public extra!: Record<string | symbol, any>;
@@ -52,16 +55,18 @@ export class Hub<SO, TO> {
       value: 0,
       thrashold: defaultExchangeTimeoutThrashold,
     },
-  }: ServerOptions) {
+  }: HubOptions) {
     this.responseTimeout = responseTimeout;
     this.exchangeTimeouts = exchangeTimeouts;
     this.userRegistries = createHandlerRegistries<SO, TO, CommonBus<SO, TO>>();
     this.clients = new Set<CommonBus<SO, TO>>();
+    this.disposing = new DataSignal();
     this.eventListeners = createEventListeners();
     this.extra = {};
     this.onRequest = this.userRegistries.onRequest;
     this.onDataEvent = this.userRegistries.onDataEvent;
     Object.freeze(this);
+    this.disposing.set();
   }
 
   private onClientDisconnect = (bus: CommonBus<SO, TO>) =>
@@ -79,6 +84,7 @@ export class Hub<SO, TO> {
       ...handlerRegistries,
       user: this.userRegistries,
     };
+    await this.disposing.wait();
 
     const bus = new CommonBus(
       factories,
@@ -94,6 +100,18 @@ export class Hub<SO, TO> {
 
     await bus.start();
     return bus;
+  };
+
+  public dispose = async () => {
+    this.disposing.reset();
+    const clientStopPromises = Array<Promise<void>>(this.clients.size);
+    let i = 0;
+    for (const client of this.clients) clientStopPromises[i++] = client.stop();
+    try {
+      await Promise.all(clientStopPromises);
+    } finally {
+      this.disposing.set();
+    }
   };
 
   public addEventListener: ManageEventListener<CommonBus<SO, TO>> = (
