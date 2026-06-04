@@ -75,7 +75,7 @@ import { banshee } from "@shinka-rpc/util";
 
 const onWail = () => console.log("I hear banshee wail. It looks I'll die soon");
 const target = {};
-const die: () => void = banshee(target, onWail);
+const die: (callOnWail?: boolean | undefined) => void = banshee(target, onWail);
 ```
 
 Banshee guarantee that `onWail` function will be called exactly once. If `die`
