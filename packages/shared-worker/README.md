@@ -11,17 +11,17 @@ This package implements the transport implementation of
 ## `client` case
 
 ```typescript
-import { ClientBus, TransportFactory } from "@shinka-rpc/core";
+import { Client, TransportFactory } from "@shinka-rpc/core";
 import { SharedWorker2Transport } from "@shinka-rpc/shared-worker";
 import serializer from "@shinka-rpc/serializer-json";  // for example
 
-const transport: TransportFactory<ClientBus> = async (bus) =>
+const transport: TransportFactory<Client> = async (bus) =>
   SharedWorker2Transport(
     new SharedWorker(new URL("./worker.ts", import.meta.url)),
     bus,
   );
 
-export const bus = new ClientBus({ factory, serializer });
+export const bus = new Client({ factory, serializer });
 
 bus.start();
 ```
@@ -32,7 +32,7 @@ bus.start();
 
 - **Required** instance: [SharedWorker](https://developer.mozilla.org/en-US/docs/Web/API/SharedWorker)
 
-- **Required** bus: `ClientBus`
+- **Required** bus: `Client`
 
 - **Optional** `binary`: `Boolean` &mdash; enable binary-specific `transfer` optimization. **Default**: `false`
 

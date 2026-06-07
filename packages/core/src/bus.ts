@@ -34,7 +34,7 @@ import type {
   ThisArgMap,
   HandlerRegistriesAll,
   InternalHandlerThisArg,
-  Factories,
+  FactoriesGeneric,
   VarsTimeout,
   ExchangeTimeouts,
   BusHandlerThisArg,
@@ -56,6 +56,7 @@ const thisArgMapHelper = <SO, TO, B>(
 ) => {
   if (freeze) Object.freeze(thisArg);
   for (const i of messageTypeGroup) thisArgMap.set(i, thisArg);
+  return thisArg;
 };
 
 const enum BusState {
@@ -98,13 +99,23 @@ type BusVars = VarsTimeout &
     state: BusState;
   };
 
+type ThisArgInternal<SO, TO, TA> = {
+  serializer: InternalHandlerThisArg<SO, TO, TA>;
+  transport: InternalHandlerThisArg<SO, TO, TA>;
+};
+
 export class Bus<SO, TO> {
-  private factories!: Factories<SO, TO>;
+  private factories!: FactoriesGeneric<
+    SO,
+    TO,
+    InternalHandlerThisArg<SO, TO, typeof this>
+  >;
   private shinkaAll!: ShinkaAll<SO, TO, typeof this>;
   private dispatchMap!: DispatchMap<
     InternalHandlerThisArg<SO, TO, typeof this> | typeof this
   >;
   private thisArgMap!: ThisArgMap<SO, TO, typeof this>;
+  private thisArgInternal!: ThisArgInternal<SO, TO, typeof this>;
   private sendDelegate!: DelegateType<SendFn<SO, TO>>;
   private closeDelegate!: DelegateType<() => Promise<void>>;
   private clenaupDelegate!: DelegateType<(callOnWail?: boolean) => void>;
@@ -118,7 +129,11 @@ export class Bus<SO, TO> {
   public extra!: Record<string | symbol, any>;
 
   constructor(
-    factories: Factories<SO, TO>,
+    factories: FactoriesGeneric<
+      SO,
+      TO,
+      InternalHandlerThisArg<SO, TO, typeof this>
+    >,
     handlerRegistries: HandlerRegistriesAll<SO, TO, typeof this>,
     eventListeners: ShinkaEventListeners<typeof this>,
     responseTimeout = defaultRequestTimeout,
@@ -178,15 +193,30 @@ export class Bus<SO, TO> {
       exchangeTimeouts: exchangeTimeouts,
     });
 
-    thisArgMapHelper(this.thisArgMap, messageTypeSerializer, 1, {
-      bus: this,
-      shinka: this.shinkaAll.serializer,
-    });
+    const serializerTA = thisArgMapHelper(
+      this.thisArgMap,
+      messageTypeSerializer,
+      1,
+      {
+        bus: this,
+        shinka: this.shinkaAll.serializer,
+      },
+    );
 
-    thisArgMapHelper(this.thisArgMap, messageTypeTransport, 1, {
-      bus: this,
-      shinka: this.shinkaAll.transport,
-    });
+    const transportrTA = thisArgMapHelper(
+      this.thisArgMap,
+      messageTypeTransport,
+      1,
+      {
+        bus: this,
+        shinka: this.shinkaAll.transport,
+      },
+    );
+
+    this.thisArgInternal = {
+      serializer: serializerTA as InternalHandlerThisArg<SO, TO, this>,
+      transport: transportrTA as InternalHandlerThisArg<SO, TO, this>,
+    };
 
     thisArgMapHelper(this.thisArgMap, messageTypeUser, 0, this);
 
@@ -264,12 +294,16 @@ export class Bus<SO, TO> {
       this.sendDelegate.set(send);
 
       if (onReadyTransport) {
-        const onReadyTransportPromise = onReadyTransport();
+        const onReadyTransportPromise = onReadyTransport(
+          this.thisArgInternal.transport,
+        );
         if (onReadyTransportPromise instanceof Promise)
           await onReadyTransportPromise;
       }
       if (onReadySerializer) {
-        const onReadySerializerPromise = onReadySerializer();
+        const onReadySerializerPromise = onReadySerializer(
+          this.thisArgInternal.serializer,
+        );
         if (onReadySerializerPromise instanceof Promise)
           await onReadySerializerPromise;
       }

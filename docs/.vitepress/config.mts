@@ -32,7 +32,7 @@ export default defineConfig({
           items: [
             { text: "Core", link: "/core/" },
             { text: "Usage Example", link: "/core/usage-example" },
-            { text: "ClientBus", link: "/core/client-bus" },
+            { text: "Client", link: "/core/client-bus" },
             { text: "ServerBus", link: "/core/server-bus" },
           ],
         },

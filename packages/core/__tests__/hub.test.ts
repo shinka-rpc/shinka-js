@@ -1,7 +1,7 @@
 import { expect, test } from "@jest/globals";
 
 import {
-  ClientBus,
+  Client,
   Hub,
   type SerializerRoot,
   type Factories,
@@ -29,7 +29,7 @@ const setupClientHub = async (
 
   const [pipe1to2, pipe2to1] = mkPipePair(0, 0);
 
-  const client = new ClientBus({
+  const client = new Client({
     transport: fakeTransportClient(pipe1to2, "client1", results),
     serializer: createSerializer("client1", results),
   });
@@ -80,7 +80,7 @@ test("hub-classic", async () => {
   const { results, client, hub, start } = await setupClientHub(
     createMockSerializerSync,
   );
-  createSyncHandler(hub, results);
+  createSyncHandler("bus1-sync", hub, results);
   const clientService = createMockBusService("bus1-sync", client);
   const common = await start();
 
@@ -109,7 +109,7 @@ test("hub-reverse", async () => {
   const { results, client, hub, start } = await setupClientHub(
     createMockSerializerSync,
   );
-  createSyncHandler(client, results);
+  createSyncHandler("bus1-sync", client, results);
   const common = await start();
   const commonService = createMockBusService("bus1-sync", common);
 

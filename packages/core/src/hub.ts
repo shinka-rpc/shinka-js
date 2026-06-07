@@ -82,8 +82,8 @@ export class Hub<SO, TO> {
       user: this.userRegistries,
     };
 
-    const bus = new Bus(
-      factories,
+    const bus = new Bus<SO, TO>(
+      factories as any,
       handlerRegistriesAll as any,
       this.eventListeners as any,
       this.responseTimeout,

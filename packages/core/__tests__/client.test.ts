@@ -1,6 +1,6 @@
 import { expect, test } from "@jest/globals";
 
-import { ClientBus, SerializerRoot } from "@shinka-rpc/core";
+import { Client, SerializerRoot } from "@shinka-rpc/core";
 
 import {
   mkPipePair,
@@ -22,11 +22,11 @@ const setupClientClient = async <TO, B>(
 
   const [pipe1to2, pipe2to1] = mkPipePair(0, 0);
 
-  const bus1 = new ClientBus({
+  const bus1 = new Client({
     transport: fakeTransportClient(pipe1to2, "bus1", results),
     serializer: createSerializer("bus1", results),
   });
-  const bus2 = new ClientBus({
+  const bus2 = new Client({
     transport: fakeTransportClient(pipe2to1, "bus2", results),
     serializer: createSerializer("bus2", results),
   });
@@ -67,7 +67,7 @@ test("sync-simple-ok", async () => {
     createMockSerializerSync,
   );
   const bus1Sync = createMockBusService("bus1-sync", bus2);
-  createSyncHandler(bus1, results);
+  createSyncHandler("bus1-sync", bus1, results);
   await start();
 
   results.push({
@@ -96,7 +96,7 @@ test("sync-simple-ok-serializer-async", async () => {
     createMockSerializerAsync,
   );
   const bus1Sync = createMockBusService("bus1-sync", bus2);
-  createSyncHandler(bus1, results);
+  createSyncHandler("bus1-sync", bus1, results);
   await start();
 
   results.push({
@@ -125,7 +125,7 @@ test("sync-nested-ok", async () => {
     createMockSerializerSync,
   );
   const bus1Sync = createMockBusService("bus1-sync", bus2);
-  createSyncHandler(bus1, results);
+  createSyncHandler("bus1-sync", bus1, results);
   await start();
 
   results.push({
@@ -154,7 +154,7 @@ test("sync-simple-err", async () => {
     createMockSerializerSync,
   );
   const bus1Sync = createMockBusService("bus1-sync", bus2);
-  createSyncHandler(bus1, results);
+  createSyncHandler("bus1-sync", bus1, results);
   await start();
 
   try {
@@ -187,7 +187,7 @@ test("sync-nested-err", async () => {
     createMockSerializerSync,
   );
   const bus1Sync = createMockBusService("bus1-sync", bus2);
-  createSyncHandler(bus1, results);
+  createSyncHandler("bus1-sync", bus1, results);
   await start();
 
   try {
@@ -222,7 +222,7 @@ test("async-simple-ok", async () => {
     createMockSerializerSync,
   );
   const bus1Sync = createMockBusService("bus1-async", bus2);
-  createAsyncHandler(bus1, results);
+  createAsyncHandler("bus1-async", bus1, results);
   await start();
 
   results.push({
@@ -251,7 +251,7 @@ test("async-nested-ok", async () => {
     createMockSerializerSync,
   );
   const bus1Sync = createMockBusService("bus1-async", bus2);
-  createAsyncHandler(bus1, results);
+  createAsyncHandler("bus1-async", bus1, results);
   await start();
 
   results.push({
@@ -280,7 +280,7 @@ test("async-simple-err", async () => {
     createMockSerializerSync,
   );
   const bus1Sync = createMockBusService("bus1-async", bus2);
-  createAsyncHandler(bus1, results);
+  createAsyncHandler("bus1-async", bus1, results);
   await start();
 
   try {
@@ -313,7 +313,7 @@ test("async-nested-err", async () => {
     createMockSerializerSync,
   );
   const bus1Sync = createMockBusService("bus1-async", bus2);
-  createAsyncHandler(bus1, results);
+  createAsyncHandler("bus1-async", bus1, results);
   await start();
 
   try {

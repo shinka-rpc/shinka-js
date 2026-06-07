@@ -11,18 +11,18 @@ This package implements the transport implementation of
 ## `client` case
 
 ```typescript
-import { ClientBus, type TransportFactory } from "@shinka-rpc/core";
+import { Client, type TransportFactory } from "@shinka-rpc/core";
 import { WebSocketTransport } from "@shinka-rpc/web-socket";
 import serializer from "@shinka-rpc/serializer-json";  // for example
 
-const transport: TransportFactory<ClientBus> = (bus) => {
+const transport: TransportFactory<Client> = (bus) => {
   const socket = new WebSocket(process.env.WEBSOCKET_URL!);
   // Here you are able to do everything with `socket`. For example,
   // switch it to binary mode
   return WebSocketTransport(socket, bus);
 };
 
-export const bus = new ClientBus({ factory, serializer });
+export const bus = new Client({ factory, serializer });
 
 // You are able to start / stop the bus where you need it
 bus.start();
@@ -31,4 +31,4 @@ bus.start();
 **API Reference**: WebSocketTransport
 
 - **Required** instance: `WebSocket`
-- **Required** bus: `ClientBus`
+- **Required** bus: `Client`

@@ -1,8 +1,8 @@
-import type { Transport, ClientBus, MessageDataEvent } from "@shinka-rpc/core";
+import type { Transport, Client, MessageDataEvent } from "@shinka-rpc/core";
 
 export const DedicatedWorker2Transport = (
   instance: Worker,
-  bus: ClientBus,
+  bus: Client,
   binary = false,
 ) => {
   const _onmessage = (e: MessageDataEvent<any>) => bus.onMessage(e.data);

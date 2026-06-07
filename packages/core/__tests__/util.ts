@@ -2,7 +2,7 @@ import {
   Response,
   TransportInitOpts,
   type Bus,
-  type ClientBus,
+  type Client,
   type SerializerFactory,
   type TransportClient,
   type TransportFactory,
@@ -34,7 +34,7 @@ export const fakeTransportClient = <SO, B extends Bus<SO, any>>(
   key: string,
   results: Record<string, any>[],
 ) => {
-  const tf: TransportFactory<any> = async (
+  const tf: TransportFactory<any, any> = async (
     onRawData: (data: SerializedData) => void,
     onClosed: () => void,
     opts: TransportInitOpts,
@@ -64,7 +64,7 @@ export const createMockSerializerAsync = <TO, B>(
       deserialize: async (data: unknown) => data,
       transportInitOpts: { mode: "not-serialized" },
       typeHints: { serialize: "AsyncFunction", deserialize: "AsyncFunction" },
-    })) as SerializerFactory<any>) as SerializerRoot<any, TO, B>;
+    })) as SerializerFactory<any, any>) as SerializerRoot<any, TO, B>;
 
 export const createMockSerializerSync = <TO, B>(
   key: string,
@@ -79,14 +79,15 @@ export const createMockSerializerSync = <TO, B>(
       deserialize: async (data: unknown) => data,
       transportInitOpts: { mode: "not-serialized" },
       typeHints: { serialize: "AsyncFunction", deserialize: "AsyncFunction" },
-    })) as SerializerFactory<any>) as SerializerRoot<any, TO, B>;
+    })) as SerializerFactory<any, B>) as SerializerRoot<any, TO, B>;
 
 export const createSyncHandler = (
+  key: string,
   bus: ShinkaOn<any, any, any>,
   results: Record<string, any>[],
 ) =>
   bus.onRequest(
-    "bus1-sync",
+    key,
     ([arg, simple, ok]: any) => {
       results.push({ key: "sync-request", arg });
       const result = simple
@@ -105,11 +106,12 @@ export const createSyncHandler = (
   );
 
 export const createAsyncHandler = (
-  bus: ClientBus<any, any>,
+  key: string,
+  bus: ShinkaOn<any, any, any>,
   results: Record<string, any>[],
 ) =>
   bus.onRequest(
-    "bus1-async",
+    key,
     async ([arg, simple, ok]: any) => {
       results.push({ key: "async-request", arg });
       const result = simple
@@ -128,7 +130,7 @@ export const createAsyncHandler = (
   );
 
 export const createMockBusService =
-  (KEY: string, bus: ClientBus<any, any> | Bus<any, any>) =>
+  (KEY: string, bus: Client<any, any> | Bus<any, any>) =>
   (arg: any, simple: Boolean, ok: Boolean, withOpts: Boolean) =>
     bus.request(
       KEY,

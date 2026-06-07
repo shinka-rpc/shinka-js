@@ -11,16 +11,16 @@ This package implements the transport implementation of
 ## `client` case
 
 ```typescript
-import { ClientBus, TransportFactory } from "@shinka-rpc/core";
+import { Client, TransportFactory } from "@shinka-rpc/core";
 import { DedicatedWorker2Transport } from "@shinka-rpc/dedicated-worker";
 
-const transport: TransportFactory<ClientBus> = async (bus) =>
+const transport: TransportFactory<Client> = async (bus) =>
   DedicatedWorker2Transport(
     new Worker(new URL("./worker.ts", import.meta.url)),
     bus,
   );
 
-export const bus = new ClientBus({ factory });
+export const bus = new Client({ factory });
 
 bus.start();
 ```
@@ -29,20 +29,20 @@ bus.start();
 
 **IMPORTANT**: on
 [Worker](https://developer.mozilla.org/en-US/docs/Web/API/Worker) side you have
-to use `ClientBus`
+to use `Client`
 
 ```typescript
 // @ts-nocheck
 declare let onmessage: (event: MessageDataEvent) => void;
 
-import { ClientBus } from "@shinka-rpc/core";
+import { Client } from "@shinka-rpc/core";
 import {
   DedicatedWorkerServer,
   createOnMessage,
 } from "@shinka-rpc/dedicated-worker";
 import serializer from "@shinka-rpc/serializer-json";  // for example
 
-export const server = new ClientBus({
+export const server = new Client({
   transport: DedicatedWorkerServer,
   serializer,
 });

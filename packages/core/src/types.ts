@@ -203,28 +203,29 @@ export type DeserializerFn<I extends Message<any>, O extends SerializedData> =
   | DeserializerFnSync<I, O>
   | DeserializerFnAsync<I, O>;
 
-export type OnReadyFn = () => void | Promise<void>;
+export type OnReadyFn<TA> = (thisArg: TA) => void | Promise<void>;
 
 export type GenericSerializer<
   I extends Message<any>,
   O extends SerializedData,
   SO,
+  TA,
 > = {
   serialize: SerializerFn<I, O, SO>;
   deserialize: DeserializerFn<I, O>;
-  onReady?: OnReadyFn;
+  onReady?: OnReadyFn<TA>;
   typeHints: SerializerTypeHints;
   transportInitOpts: TransportInitOpts;
 };
 
-export type Serializer<SO> = GenericSerializer<Message<any>, any, SO>;
-export type SerializerFactory<SO> = () =>
-  | Serializer<SO>
-  | Promise<Serializer<SO>>;
+export type Serializer<SO, TA> = GenericSerializer<Message<any>, any, SO, TA>;
+export type SerializerFactory<SO, TA> = () =>
+  | Serializer<SO, TA>
+  | Promise<Serializer<SO, TA>>;
 
 export type SerializerRoot<SO, TO, TA> = (
   shinkaOn: ShinkaOn<SO, TO, TA>,
-) => SerializerFactory<SO>;
+) => SerializerFactory<SO, TA>;
 
 export type ShinkaEventListener<B> = (bus: B) => void;
 export type ShinkaEventListenerSet<B> = Set<ShinkaEventListener<B>>;
@@ -258,31 +259,41 @@ export type ManageEventListener<B> = (
 
 export type TransportAPI = { hi: () => void; bye: () => void };
 
-export type Transport<TO> = {
+export type Transport<TO, TA> = {
   send: (data: any, opts?: TO) => void;
   close: () => Promise<void>;
-  onReady?: OnReadyFn;
+  onReady?: OnReadyFn<TA>;
   instruction: { hi?: boolean; bye?: boolean };
 };
 
-export type TransportFactory<TO> = (
+export type TransportFactory<TO, TA> = (
   onRawData: (data: SerializedData) => void,
   onClosed: () => void,
   opts: TransportInitOpts,
-) => Promise<Transport<TO>>;
+) => Promise<Transport<TO, TA>>;
 
 export type TransportClient<SO, TO, TA> = (
   shinkaOn: ShinkaOn<SO, TO, TA>,
-) => TransportFactory<TO>;
+) => TransportFactory<TO, TA>;
 
-export type Factories<SO, TO> = {
-  transport: TransportFactory<TO>;
-  serializer: SerializerFactory<SO>;
+export type FactoriesGeneric<SO, TO, TA> = {
+  transport: TransportFactory<TO, TA>;
+  serializer: SerializerFactory<SO, TA>;
 };
+
+export type Factories<SO, TO> = FactoriesGeneric<
+  SO,
+  TO,
+  InternalHandlerThisArg<SO, TO, Bus<SO, TO>>
+>;
+
+export type TransportConnectFn<TO, TA> = (
+  transport: TransportFactory<TO, TA>,
+) => void;
 
 export type TransportServer<SO, TO> = (
   shinkaOn: ShinkaOn<SO, TO, InternalHandlerThisArg<SO, TO, Bus<SO, TO>>>,
-  connect: (transport: TransportFactory<TO>) => void,
+  connect: TransportConnectFn<TO, InternalHandlerThisArg<SO, TO, Bus<SO, TO>>>,
 ) => void;
 
 export type RejectResolve = [(reason?: any) => void, (value: any) => void];
@@ -304,10 +315,6 @@ export type BusProps<SO, TO, B extends Bus<SO, TO>> = {
   responseTimeout?: number;
 };
 
-export type ClientBusProps<SO, TO, B extends Bus<SO, TO>> = BusProps<
-  SO,
-  TO,
-  B
-> & {
+export type ClientProps<SO, TO, B extends Bus<SO, TO>> = BusProps<SO, TO, B> & {
   restartTimeout?: number;
 };

@@ -13,8 +13,7 @@ export const WebSocketTransport =
     const instance = createWebSocket();
     if (opts.mode === "binary") instance.binaryType = "arraybuffer";
     instance.addEventListener("message", onRawData);
-    // it looks there are no methods to detect the server is not available
-    // instance.addEventListener("close", onClosed);
+    instance.addEventListener("close", onClosed);
     const close = async () => instance.close();
     const send = (data: any) => instance.send(data);
     await new Promise((resolve, reject) => {

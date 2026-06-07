@@ -4,14 +4,15 @@ import { Bus } from "./bus";
 import { createEventListeners } from "./factory/event-listeners";
 
 import type {
-  ClientBusProps,
+  ClientProps,
   HandlerRegistriesAll,
-  Factories,
+  FactoriesGeneric,
   ShinkaOnDataEvent,
   ShinkaOnRequest,
+  InternalHandlerThisArg,
 } from "./types";
 
-export class ClientBus<SO, TO> extends Bus<SO, TO> {
+export class Client<SO, TO> extends Bus<SO, TO> {
   public onRequest!: ShinkaOnRequest<SO, TO, this>;
   public onDataEvent!: ShinkaOnDataEvent<this>;
 
@@ -19,12 +20,16 @@ export class ClientBus<SO, TO> extends Bus<SO, TO> {
     transport,
     serializer = defaultSerializerRoot,
     responseTimeout = defaultRequestTimeout,
-  }: ClientBusProps<SO, TO, any>) {
+  }: ClientProps<SO, TO, any>) {
     const transportRegistries = createHandlerRegistries<SO, TO, any>();
     const transportFactory = transport(transportRegistries);
     const serializerRegistries = createHandlerRegistries<SO, TO, any>();
     const serializerFactory = serializer(serializerRegistries);
-    const factories: Factories<SO, TO> = {
+    const factories: FactoriesGeneric<
+      SO,
+      TO,
+      InternalHandlerThisArg<SO, TO, this>
+    > = {
       serializer: serializerFactory,
       transport: transportFactory,
     };
@@ -34,7 +39,12 @@ export class ClientBus<SO, TO> extends Bus<SO, TO> {
       transport: transportRegistries,
       user: userRegistries,
     };
-    super(factories, registries, createEventListeners(), responseTimeout);
+    super(
+      factories as any,
+      registries,
+      createEventListeners(),
+      responseTimeout,
+    );
     this.onRequest = userRegistries.onRequest;
     this.dataEvent = userRegistries.onDataEvent;
     Object.freeze(this);

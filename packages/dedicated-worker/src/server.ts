@@ -1,4 +1,4 @@
-import type { ClientBus } from "@shinka-rpc/core";
+import type { Client } from "@shinka-rpc/core";
 
 export const DedicatedWorkerServer = (binary = false, targetOrigin = "/") => {
   const send = binary
@@ -8,5 +8,5 @@ export const DedicatedWorkerServer = (binary = false, targetOrigin = "/") => {
   return { send, close };
 };
 
-export const createOnMessage = (bus: ClientBus) => (e: MessageDataEvent) =>
+export const createOnMessage = (bus: Client) => (e: MessageEvent) =>
   bus.onMessage(e.data);

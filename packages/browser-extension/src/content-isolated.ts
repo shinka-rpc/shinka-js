@@ -1,9 +1,9 @@
-import { ClientBus, TransportFactory } from "@shinka-rpc/core";
+import { Client, TransportFactory } from "@shinka-rpc/core";
 
 // @ts-expect-error: 2304
 if (window.chrome === undefined) window.chrome = browser;
 
-export const extensionBusTransport: TransportFactory<ClientBus> = async (
+export const extensionBusTransport: TransportFactory<Client> = async (
   bus,
   opts,
 ) => {
@@ -16,7 +16,7 @@ export const extensionBusTransport: TransportFactory<ClientBus> = async (
 };
 
 export type CreateIsolatedPairProps = {
-  contentBusTransport: TransportFactory<ClientBus>;
+  contentBusTransport: TransportFactory<Client>;
   responseTimeout: number;
 };
 
@@ -24,12 +24,12 @@ export const createIsolatedPair = ({
   contentBusTransport,
   responseTimeout,
 }: CreateIsolatedPairProps) => {
-  const contentBus = new ClientBus({
+  const contentBus = new Client({
     transport: contentBusTransport,
     responseTimeout,
   });
 
-  const extensionBus = new ClientBus({
+  const extensionBus = new Client({
     transport: extensionBusTransport,
     responseTimeout,
     restartTimeout: 750,

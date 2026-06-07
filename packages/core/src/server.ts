@@ -25,6 +25,7 @@ import type {
   TransportFactory,
   Factories,
   ShinkaOn,
+  TransportConnectFn,
 } from "./types";
 
 import { setupHandlerRegistries } from "./shinka";
@@ -32,12 +33,12 @@ import { setupHandlerRegistries } from "./shinka";
 type ConnectFnThis<SO, TO> = [
   (props: HubConnectProps<SO, TO>) => Promise<Bus<SO, TO>>,
   HandlerRegistriesHub<SO, TO>,
-  SerializerFactory<SO>,
+  SerializerFactory<SO, InternalHandlerThisArg<SO, TO, Bus<SO, TO>>>,
 ];
 
 function connectFn<SO, TO>(
   this: ConnectFnThis<SO, TO>,
-  transport: TransportFactory<TO>,
+  transport: TransportFactory<TO, InternalHandlerThisArg<SO, TO, Bus<SO, TO>>>,
 ) {
   const [connect, handlerRegistries, serializer] = this;
   const factories: Factories<SO, TO> = { transport, serializer };
@@ -45,9 +46,10 @@ function connectFn<SO, TO>(
   connect(props);
 }
 
-type ConnectFn<TO> = (transportFactory: TransportFactory<TO>) => void;
-
-type TransportHelperThis<SO, TO> = [TransportServer<SO, TO>, ConnectFn<TO>];
+type TransportHelperThis<SO, TO> = [
+  TransportServer<SO, TO>,
+  TransportConnectFn<TO, InternalHandlerThisArg<SO, TO, Bus<SO, TO>>>,
+];
 
 function transportHelper<SO, TO>(
   this: TransportHelperThis<SO, TO>,
@@ -71,7 +73,9 @@ export type ServerOptions<SO, TO> = HubOptions & {
 
 export class Server<SO, TO> {
   private hub!: Hub<SO, TO>;
-  private connectDelegate!: DelegateType<ConnectFn<TO>>;
+  private connectDelegate!: DelegateType<
+    TransportConnectFn<TO, InternalHandlerThisArg<SO, TO, Bus<SO, TO>>>
+  >;
 
   public onRequest!: ShinkaOnRequest<SO, TO, Bus<SO, TO>>;
   public onDataEvent!: ShinkaOnDataEvent<Bus<SO, TO>>;
@@ -90,7 +94,12 @@ export class Server<SO, TO> {
     },
   }: ServerOptions<SO, TO>) {
     this.hub = new Hub({ responseTimeout, exchangeTimeouts });
-    this.connectDelegate = delegate(connectDefault as ConnectFn<TO>);
+    this.connectDelegate = delegate(
+      connectDefault as TransportConnectFn<
+        TO,
+        InternalHandlerThisArg<SO, TO, Bus<SO, TO>>
+      >,
+    );
     const [transportRegistries] = setupHandlerRegistries(
       (transportHelper<SO, TO>).bind([
         transportServerFactory,
