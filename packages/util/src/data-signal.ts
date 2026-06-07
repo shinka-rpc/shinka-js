@@ -38,6 +38,9 @@ export class DataSignal<P> {
     this.state.resolve(value);
   };
 
-  public isSet = () => this.state.done;
+  public get isSet() {
+    return this.state.done;
+  }
+
   public wait = () => this.state.promise;
 }

@@ -5,8 +5,7 @@ import type {
   MessageTypeAllResponse,
   MessageTypeAllEvent,
 } from "./constants";
-import type { CommonBus } from "./common";
-// import type { ClientBus } from "./client";
+import type { Bus } from "./bus";
 import type { HandlerRegistries } from "./shinka";
 
 export type ExchangeTimeouts = {
@@ -21,7 +20,7 @@ export type VarsLastDataAt = {
 
 export type VarsTimeout = VarsLastDataAt & {
   externalTimeout: number;
-  exchangeTimeoutId: ReturnType<typeof setTimeout> | null;
+  schedulerTimeoutId: ReturnType<typeof setTimeout> | null;
 };
 
 export type FnConstructorName = "Function" | "AsyncFunction";
@@ -223,10 +222,9 @@ export type SerializerFactory<SO> = () =>
   | Serializer<SO>
   | Promise<Serializer<SO>>;
 
-export type SerializerRoot<SO, TO, B> = () => [
-  SerializerFactory<SO>,
-  InternalHandlerRegistries<SO, TO, B>?,
-];
+export type SerializerRoot<SO, TO, TA> = (
+  shinkaOn: ShinkaOn<SO, TO, TA>,
+) => SerializerFactory<SO>;
 
 export type ShinkaEventListener<B> = (bus: B) => void;
 export type ShinkaEventListenerSet<B> = Set<ShinkaEventListener<B>>;
@@ -269,20 +267,23 @@ export type Transport<TO> = {
 
 export type TransportFactory<TO> = (
   onRawData: (data: SerializedData) => void,
+  onClosed: () => void,
   opts: TransportInitOpts,
 ) => Promise<Transport<TO>>;
 
-export type TransportRoot<SO, TO, B> = () => [
-  TransportFactory<TO>,
-  InternalHandlerRegistries<SO, TO, B>?,
-];
+export type TransportClient<SO, TO, TA> = (
+  shinkaOn: ShinkaOn<SO, TO, TA>,
+) => TransportFactory<TO>;
 
 export type Factories<SO, TO> = {
   transport: TransportFactory<TO>;
   serializer: SerializerFactory<SO>;
 };
 
-// export type CompleteFN = (bus: B) => void;
+export type TransportServer<SO, TO> = (
+  shinkaOn: ShinkaOn<SO, TO, InternalHandlerThisArg<SO, TO, Bus<SO, TO>>>,
+  connect: (transport: TransportFactory<TO>) => void,
+) => void;
 
 export type RejectResolve = [(reason?: any) => void, (value: any) => void];
 
@@ -297,24 +298,16 @@ export type SendFn<SO, TO> = (
 ) => void;
 
 // Synthetic
-export type CommonBusProps<SO, TO, B extends CommonBus<SO, TO>> = {
-  transport: TransportRoot<SO, TO, B>;
+export type BusProps<SO, TO, B extends Bus<SO, TO>> = {
+  transport: TransportClient<SO, TO, B>;
   serializer?: SerializerRoot<SO, TO, B>;
   responseTimeout?: number;
 };
 
-export type ClientBusProps<
+export type ClientBusProps<SO, TO, B extends Bus<SO, TO>> = BusProps<
   SO,
   TO,
-  B extends CommonBus<SO, TO>,
-> = CommonBusProps<SO, TO, B> & {
+  B
+> & {
   restartTimeout?: number;
-};
-
-export type ServerBusConnectProps<
-  SO,
-  TO,
-  B extends CommonBus<SO, TO>,
-> = CommonBusProps<SO, TO, B> & {
-  // complete?: CompleteFN<B>;
 };

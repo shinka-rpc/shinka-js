@@ -1,10 +1,10 @@
 import {
   Response,
   TransportInitOpts,
-  type CommonBus,
+  type Bus,
   type ClientBus,
   type SerializerFactory,
-  type TransportRoot,
+  type TransportClient,
   type TransportFactory,
   type SerializedData,
   type ShinkaOn,
@@ -29,13 +29,14 @@ export const mkPipePair = (delay1: number, delay2: number) => {
   ] as [ReturnType<typeof mkPipe>, ReturnType<typeof mkPipe>];
 };
 
-export const fakeTransportClient = <SO, B extends CommonBus<SO, any>>(
+export const fakeTransportClient = <SO, B extends Bus<SO, any>>(
   pipe: ReturnType<typeof mkPipe>,
   key: string,
   results: Record<string, any>[],
 ) => {
   const tf: TransportFactory<any> = async (
     onRawData: (data: SerializedData) => void,
+    onClosed: () => void,
     opts: TransportInitOpts,
   ) => {
     const [send_, dispatch] = pipe;
@@ -47,14 +48,14 @@ export const fakeTransportClient = <SO, B extends CommonBus<SO, any>>(
     dispatch(onRawData);
     return { send, close, instruction: {} };
   };
-  return (() => [tf]) as TransportRoot<SO, any, B>;
+  return (() => tf) as TransportClient<SO, any, B>;
 };
 
 export const createMockSerializerAsync = <TO, B>(
   key: string,
   results: Record<string, any>[],
 ) =>
-  (() => [
+  (() =>
     (async () => ({
       serialize: async (data: unknown, opts: any) => {
         results.push({ key: `${key}-serializer-async`, opts });
@@ -63,14 +64,13 @@ export const createMockSerializerAsync = <TO, B>(
       deserialize: async (data: unknown) => data,
       transportInitOpts: { mode: "not-serialized" },
       typeHints: { serialize: "AsyncFunction", deserialize: "AsyncFunction" },
-    })) as SerializerFactory<any>,
-  ]) as SerializerRoot<any, TO, B>;
+    })) as SerializerFactory<any>) as SerializerRoot<any, TO, B>;
 
 export const createMockSerializerSync = <TO, B>(
   key: string,
   results: Record<string, any>[],
 ) =>
-  (() => [
+  (() =>
     (() => ({
       serialize: async (data: unknown, opts: any) => {
         results.push({ key: `${key}-serializer-sync`, opts });
@@ -79,8 +79,7 @@ export const createMockSerializerSync = <TO, B>(
       deserialize: async (data: unknown) => data,
       transportInitOpts: { mode: "not-serialized" },
       typeHints: { serialize: "AsyncFunction", deserialize: "AsyncFunction" },
-    })) as SerializerFactory<any>,
-  ]) as SerializerRoot<any, TO, B>;
+    })) as SerializerFactory<any>) as SerializerRoot<any, TO, B>;
 
 export const createSyncHandler = (
   bus: ShinkaOn<any, any, any>,
@@ -129,7 +128,7 @@ export const createAsyncHandler = (
   );
 
 export const createMockBusService =
-  (KEY: string, bus: ClientBus<any, any> | CommonBus<any, any>) =>
+  (KEY: string, bus: ClientBus<any, any> | Bus<any, any>) =>
   (arg: any, simple: Boolean, ok: Boolean, withOpts: Boolean) =>
     bus.request(
       KEY,

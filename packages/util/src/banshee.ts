@@ -72,6 +72,7 @@ export const banshee = (target: any, onWail: OnBansheeWail) => {
   const eventHandler = bansheeEventHandler.bind([onWailRef, reset]);
   set(eventHandler);
   const token: Token = {};
+  registry.unregister(target);
   registry.register(target, call, token);
   listeners[1](call);
   return createDie.bind([token, call, reset]);

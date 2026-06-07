@@ -111,7 +111,7 @@ args, and then unpack them
 
 - **2nd** handler arg: `thisArg`
   - In `client` case it's `ClientBus` itself
-  - In `server` case it's `CommonBus` -- `client`'s representation
+  - In `server` case it's `Bus` -- `client`'s representation
 
 ```typescript
 server.onRequest("load-meta", async () => {

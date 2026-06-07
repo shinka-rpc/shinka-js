@@ -1,9 +1,9 @@
-import type { ServerBus, CommonBus } from "@shinka-rpc/core";
+import type { ServerBus, Bus } from "@shinka-rpc/core";
 
 export const SharedWorkerServer =
   (server: ServerBus, binary = false) =>
   (e: MessageDataEvent) => {
-    const transport = async (bus: CommonBus) => {
+    const transport = async (bus: Bus) => {
       const port = e.source as any as MessagePort;
       const _onmessage = (e: MessageDataEvent) => bus.onMessage(e.data);
       port.onmessage = _onmessage;

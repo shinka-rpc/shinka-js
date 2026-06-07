@@ -15,7 +15,9 @@ import type {
   SendFn,
   DataEventKey,
   Shinka,
+  ShinkaOn,
 } from "./types";
+import type { Bus } from "./bus";
 import type { MessageTypeAllEvent, MessageTypeGroup } from "./constants";
 
 const createEventSend =
@@ -110,3 +112,14 @@ export const makeCreateOrCompleteShinka =
       messageTypeGroup,
       maybeHandlerRegistries,
     );
+
+export const setupHandlerRegistries = <SO, TO, TA, R>(
+  fn: (shinkaOn: ShinkaOn<SO, TO, TA>) => R,
+) => {
+  const registries = createHandlerRegistries<SO, TO, TA>();
+  const { onRequest, onDataEvent } = registries;
+  return [registries, fn({ onRequest, onDataEvent })] as [
+    typeof registries,
+    ReturnType<typeof fn>,
+  ];
+};

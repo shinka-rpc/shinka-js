@@ -1,6 +1,6 @@
 import { createHandlerRegistries } from "./shinka";
 import { defaultRequestTimeout, defaultSerializerRoot } from "./constants";
-import { CommonBus } from "./common";
+import { Bus } from "./bus";
 import { createEventListeners } from "./factory/event-listeners";
 
 import type {
@@ -11,7 +11,7 @@ import type {
   ShinkaOnRequest,
 } from "./types";
 
-export class ClientBus<SO, TO> extends CommonBus<SO, TO> {
+export class ClientBus<SO, TO> extends Bus<SO, TO> {
   public onRequest!: ShinkaOnRequest<SO, TO, this>;
   public onDataEvent!: ShinkaOnDataEvent<this>;
 
@@ -20,8 +20,10 @@ export class ClientBus<SO, TO> extends CommonBus<SO, TO> {
     serializer = defaultSerializerRoot,
     responseTimeout = defaultRequestTimeout,
   }: ClientBusProps<SO, TO, any>) {
-    const [transportFactory, transportRegistries] = transport();
-    const [serializerFactory, serializerRegistries] = serializer();
+    const transportRegistries = createHandlerRegistries<SO, TO, any>();
+    const transportFactory = transport(transportRegistries);
+    const serializerRegistries = createHandlerRegistries<SO, TO, any>();
+    const serializerFactory = serializer(serializerRegistries);
     const factories: Factories<SO, TO> = {
       serializer: serializerFactory,
       transport: transportFactory,

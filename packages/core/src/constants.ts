@@ -105,9 +105,8 @@ export const defaultSerializer: SerializerFactory<any> = () => ({
   typeHints: { serialize: "Function", deserialize: "Function" },
 });
 
-export const defaultSerializerRoot: SerializerRoot<any, any, any> = () => [
-  defaultSerializer,
-];
+export const defaultSerializerRoot: SerializerRoot<any, any, any> = () =>
+  defaultSerializer;
 
 export const defaultRequestTimeout = 30_000;
 export const defaultExchangeTimeoutThrashold = 1000;

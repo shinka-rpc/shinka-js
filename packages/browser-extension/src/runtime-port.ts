@@ -1,17 +1,17 @@
 import type {
   ServerBus,
   CompleteFN,
-  CommonBus,
+  Bus,
   // TransportAPI,
   TransportInitOpts,
 } from "@shinka-rpc/core";
 
-export type CompleteCB = (port: chrome.runtime.Port) => CompleteFN<CommonBus>;
+export type CompleteCB = (port: chrome.runtime.Port) => CompleteFN<Bus>;
 
 export const messagePortTransport =
   (bus: ServerBus, complete: CompleteCB = () => () => {}) =>
   async (port: chrome.runtime.Port) => {
-    const transport = async (bus: CommonBus, opts: TransportInitOpts) => {
+    const transport = async (bus: Bus, opts: TransportInitOpts) => {
       port.onMessage.addListener(bus.onMessage);
       port.onDisconnect.addListener(() => client.stop());
       const send = async (data: unknown) => port.postMessage(data);

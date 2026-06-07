@@ -1,5 +1,5 @@
 export * from "./types";
-export * from "./common";
+export * from "./bus";
 export * from "./hub";
 export * from "./client";
 export * from "./pass-through";

@@ -7,7 +7,6 @@ import type {
   MetadataWithHint,
 } from "../types";
 import type { Context } from "../context";
-import type { CommonBus } from "../common";
 
 const separateMetadataHint = <SO, TO>(
   metadataWithHint?: MetadataWithHint<SO, TO>,

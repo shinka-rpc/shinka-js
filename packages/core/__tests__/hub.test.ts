@@ -7,6 +7,8 @@ import {
   type Factories,
 } from "@shinka-rpc/core";
 
+import { createHandlerRegistries } from "../src/shinka";
+
 import {
   mkPipePair,
   fakeTransportClient,
@@ -43,17 +45,15 @@ const setupClientHub = async (
   );
 
   hub.addEventListener("connect", () =>
-    results.push({ key: "server-event", val: "connect" }),
+    results.push({ key: "hub-event", val: "connect" }),
   );
 
   hub.addEventListener("disconnect", () =>
-    results.push({ key: "server-event", val: "disconnect" }),
+    results.push({ key: "hub-event", val: "disconnect" }),
   );
 
-  const [serializer, serializerHandlers] = createSerializer(
-    "server",
-    results,
-  )();
+  const serializerHandlers = createHandlerRegistries<any, any, any>();
+  const serializer = createSerializer("hub", results)(serializerHandlers);
 
   const factories: Factories<any, any> = {
     serializer,
@@ -70,18 +70,13 @@ const setupClientHub = async (
 
   const start = async () => {
     await client.start();
-
-    const common = await hub.connect({ factories, handlerRegistries });
-
-    return common;
+    return await hub.connect({ factories, handlerRegistries });
   };
 
   return { results, client, hub, start };
 };
 
-// === server
-
-test("server-classic", async () => {
+test("hub-classic", async () => {
   const { results, client, hub, start } = await setupClientHub(
     createMockSerializerSync,
   );
@@ -99,18 +94,18 @@ test("server-classic", async () => {
 
   expect(results).toStrictEqual([
     { key: "client1-event", val: "connect" },
-    { key: "server-event", val: "connect" },
+    { key: "hub-event", val: "connect" },
     { key: "client1-serializer-sync", opts: "bus1-sync-req-serialize" },
     { key: "client1-transport", opts: "bus1-sync-req-transport" },
     { key: "sync-request", arg: "client-sync-classic-ok" },
-    { key: "server-serializer-sync", opts: "sync-serialize-default" },
+    { key: "hub-serializer-sync", opts: "sync-serialize-default" },
     { key: "bus1-sync-response-got", out: "bus1-simple-response-send" },
     { key: "client1-event", val: "disconnect" },
-    { key: "server-event", val: "disconnect" },
+    { key: "hub-event", val: "disconnect" },
   ]);
 });
 
-test("server-reverse", async () => {
+test("hub-reverse", async () => {
   const { results, client, hub, start } = await setupClientHub(
     createMockSerializerSync,
   );
@@ -128,13 +123,13 @@ test("server-reverse", async () => {
 
   expect(results).toStrictEqual([
     { key: "client1-event", val: "connect" },
-    { key: "server-event", val: "connect" },
-    { key: "server-serializer-sync", opts: "bus1-sync-req-serialize" },
+    { key: "hub-event", val: "connect" },
+    { key: "hub-serializer-sync", opts: "bus1-sync-req-serialize" },
     { key: "sync-request", arg: "client-sync-reverse-ok" },
     { key: "client1-serializer-sync", opts: "sync-serialize-default" },
     { key: "client1-transport", opts: "sync-transport-default" },
     { key: "bus1-sync-response-got", out: "bus1-simple-response-send" },
     { key: "client1-event", val: "disconnect" },
-    { key: "server-event", val: "disconnect" },
+    { key: "hub-event", val: "disconnect" },
   ]);
 });

@@ -1,16 +1,16 @@
+import { delegate, type DelegateType, banshee } from "@shinka-rpc/util";
+
 import { createSendData, createOnRawData } from "./factory/serializer-strategy";
+import { makeCreateOrCompleteShinka } from "./shinka";
+import { busEvents, busRequests } from "./bus-handler/do";
+import { busHandlerRegistries } from "./bus-handler/on";
+import { scheduler } from "./scheduler";
+import { microTaskHelper } from "./microtask-helper";
+
 import {
   createEventListeners,
   createEventListenersBanned,
 } from "./factory/event-listeners";
-
-import { makeCreateOrCompleteShinka } from "./shinka";
-import {
-  busHandlerRegistries,
-  exchangeTimeoutHandler,
-  busEvents,
-  busRequests,
-} from "./bus-handler-registries";
 
 import {
   messageTypeTransport,
@@ -21,8 +21,6 @@ import {
   defaultExchangeTimeoutThrashold,
   type MessageTypeGroup,
 } from "./constants";
-
-import { microTaskHelper } from "./microtask-helper";
 
 import type {
   SendFn,
@@ -43,8 +41,6 @@ import type {
   ShinkaDataEvent,
   ShinkaRequest,
 } from "./types";
-
-import { delegate, type DelegateType, banshee } from "@shinka-rpc/util";
 
 const transportNotInitialized = () => {
   throw new Error("Transport is not initialized");
@@ -89,12 +85,20 @@ function gracefulShutdown(this: GracefulShutdownThis) {
   this[2]();
 }
 
-type CommonBusVars = VarsTimeout &
+type OnTerminateThis = [VarsBye, () => void, () => void];
+
+function onTerminated(this: OnTerminateThis) {
+  this[0].bye = 0;
+  this[1]();
+  this[2]();
+}
+
+type BusVars = VarsTimeout &
   VarsBye & {
     state: BusState;
   };
 
-export class CommonBus<SO, TO> {
+export class Bus<SO, TO> {
   private factories!: Factories<SO, TO>;
   private shinkaAll!: ShinkaAll<SO, TO, typeof this>;
   private dispatchMap!: DispatchMap<
@@ -105,8 +109,9 @@ export class CommonBus<SO, TO> {
   private closeDelegate!: DelegateType<() => Promise<void>>;
   private clenaupDelegate!: DelegateType<(callOnWail?: boolean) => void>;
   private eventListeners!: ShinkaListenerLayers<typeof this>;
-  private vars!: CommonBusVars;
+  private vars!: BusVars;
   private exchangeTimeouts!: ExchangeTimeouts;
+  private onTerminated!: () => void;
 
   public request!: ShinkaRequest<SO, TO>;
   public dataEvent!: ShinkaDataEvent<SO, TO>;
@@ -137,7 +142,7 @@ export class CommonBus<SO, TO> {
       lastReceivedAt: 0,
       lastSendAt: 0,
       externalTimeout: 0,
-      exchangeTimeoutId: null,
+      schedulerTimeoutId: null,
       bye: 0,
     };
 
@@ -184,6 +189,12 @@ export class CommonBus<SO, TO> {
     });
 
     thisArgMapHelper(this.thisArgMap, messageTypeUser, 0, this);
+
+    this.onTerminated = onTerminated.bind([
+      this.vars,
+      this.closeDelegate.reset,
+      this.stop,
+    ]);
 
     this.request = this.shinkaAll.user.request;
     this.dataEvent = this.shinkaAll.user.dataEvent;
@@ -235,7 +246,11 @@ export class CommonBus<SO, TO> {
         close,
         instruction,
         onReady: onReadyTransport,
-      } = await this.factories.transport(onRawData, transportInitOpts);
+      } = await this.factories.transport(
+        onRawData,
+        this.onTerminated,
+        transportInitOpts,
+      );
 
       this.closeDelegate.set(close);
 
@@ -260,8 +275,8 @@ export class CommonBus<SO, TO> {
       }
 
       if (this.exchangeTimeouts.value)
-        this.vars.exchangeTimeoutId = setTimeout(
-          exchangeTimeoutHandler,
+        this.vars.schedulerTimeoutId = setTimeout(
+          scheduler,
           this.exchangeTimeouts.value,
           this,
           this.shinkaAll.bus,
@@ -358,9 +373,9 @@ export class CommonBus<SO, TO> {
     this.clenaupDelegate.reset();
     this.vars.bye = 0;
 
-    if (this.vars.exchangeTimeoutId !== null) {
-      clearTimeout(this.vars.exchangeTimeoutId);
-      this.vars.exchangeTimeoutId = null;
+    if (this.vars.schedulerTimeoutId !== null) {
+      clearTimeout(this.vars.schedulerTimeoutId);
+      this.vars.schedulerTimeoutId = null;
     }
 
     this.vars.state = BusState.STOPPED;

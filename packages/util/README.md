@@ -109,14 +109,14 @@ await voidSignal.wait();  // waits untill `signal.set()` is called
 // ===
 
 const numSignal = new DataSignal<Number>();
-console.log(numSignal.isSet());  // false
+console.log(numSignal.isSet);  // false
 
 numSignal.set(123);  // of course this would be called in different app part
 
 const value1 = await numSignal.wait();  // value will be 123
 const value2 = await numSignal.wait();  // value will be 123 again
-console.log(numSignal.isSet());  // true
+console.log(numSignal.isSet);  // true
 
 numSignal.reset();  // numSignal resets into initial empty state
-console.log(numSignal.isSet());  // false
+console.log(numSignal.isSet);  // false
 ```

@@ -5,7 +5,7 @@ import {
   defaultExchangeTimeoutThrashold,
 } from "./constants";
 
-import { CommonBus } from "./common";
+import { Bus } from "./bus";
 
 import { createEventListeners } from "./factory/event-listeners";
 
@@ -27,26 +27,26 @@ export type HubOptions = {
   exchangeTimeouts?: ExchangeTimeouts;
 };
 
-export type HandlerRegistriesHub<SO, TO, B> = {
-  transport?: InternalHandlerRegistries<SO, TO, B>;
-  serializer?: InternalHandlerRegistries<SO, TO, B>;
+export type HandlerRegistriesHub<SO, TO> = {
+  transport?: InternalHandlerRegistries<SO, TO, Bus<SO, TO>>;
+  serializer?: InternalHandlerRegistries<SO, TO, Bus<SO, TO>>;
 };
 
-export type ConnectProps<SO, TO, B> = {
+export type HubConnectProps<SO, TO> = {
   factories: Factories<SO, TO>;
-  handlerRegistries: HandlerRegistriesHub<SO, TO, B>;
+  handlerRegistries: HandlerRegistriesHub<SO, TO>;
 };
 
 export class Hub<SO, TO> {
-  private userRegistries!: HandlerRegistries<SO, TO, CommonBus<SO, TO>>;
-  private eventListeners!: ShinkaEventListeners<CommonBus<SO, TO>>;
+  private userRegistries!: HandlerRegistries<SO, TO, Bus<SO, TO>>;
+  private eventListeners!: ShinkaEventListeners<Bus<SO, TO>>;
   private responseTimeout!: number;
   private exchangeTimeouts!: ExchangeTimeouts;
-  private clients!: Set<CommonBus<SO, TO>>;
+  private clients!: Set<Bus<SO, TO>>;
   private disposing!: DataSignal<void>;
 
-  public onRequest!: ShinkaOnRequest<SO, TO, CommonBus<SO, TO>>;
-  public onDataEvent!: ShinkaOnDataEvent<CommonBus<SO, TO>>;
+  public onRequest!: ShinkaOnRequest<SO, TO, Bus<SO, TO>>;
+  public onDataEvent!: ShinkaOnDataEvent<Bus<SO, TO>>;
   public extra!: Record<string | symbol, any>;
 
   constructor({
@@ -58,8 +58,8 @@ export class Hub<SO, TO> {
   }: HubOptions) {
     this.responseTimeout = responseTimeout;
     this.exchangeTimeouts = exchangeTimeouts;
-    this.userRegistries = createHandlerRegistries<SO, TO, CommonBus<SO, TO>>();
-    this.clients = new Set<CommonBus<SO, TO>>();
+    this.userRegistries = createHandlerRegistries<SO, TO, Bus<SO, TO>>();
+    this.clients = new Set<Bus<SO, TO>>();
     this.disposing = new DataSignal();
     this.eventListeners = createEventListeners();
     this.extra = {};
@@ -69,24 +69,20 @@ export class Hub<SO, TO> {
     this.disposing.set();
   }
 
-  private onClientDisconnect = (bus: CommonBus<SO, TO>) =>
-    this.clients.delete(bus);
+  private onClientDisconnect = (bus: Bus<SO, TO>) => this.clients.delete(bus);
 
   public connect = async ({
     factories,
     handlerRegistries,
-  }: ConnectProps<SO, TO, CommonBus<SO, TO>>) => {
-    const handlerRegistriesAll: HandlerRegistriesAll<
-      SO,
-      TO,
-      CommonBus<SO, TO>
-    > = {
+  }: HubConnectProps<SO, TO>) => {
+    await this.disposing.wait();
+
+    const handlerRegistriesAll: HandlerRegistriesAll<SO, TO, Bus<SO, TO>> = {
       ...handlerRegistries,
       user: this.userRegistries,
     };
-    await this.disposing.wait();
 
-    const bus = new CommonBus(
+    const bus = new Bus(
       factories,
       handlerRegistriesAll as any,
       this.eventListeners as any,
@@ -97,8 +93,8 @@ export class Hub<SO, TO> {
     Object.freeze(bus);
     bus.addEventListener("disconnect", this.onClientDisconnect);
     this.clients.add(bus);
-
     await bus.start();
+
     return bus;
   };
 
@@ -114,13 +110,19 @@ export class Hub<SO, TO> {
     }
   };
 
-  public addEventListener: ManageEventListener<CommonBus<SO, TO>> = (
-    type,
-    target,
-  ) => this.eventListeners[type].add(target);
+  public addEventListener: ManageEventListener<Bus<SO, TO>> = (type, target) =>
+    this.eventListeners[type].add(target);
 
-  public removeEventListener: ManageEventListener<CommonBus<SO, TO>> = (
+  public removeEventListener: ManageEventListener<Bus<SO, TO>> = (
     type,
     target,
   ) => this.eventListeners[type].delete(target);
+
+  public get size() {
+    return this.clients.size;
+  }
+
+  public get isDisposing() {
+    return !this.disposing.isSet;
+  }
 }
