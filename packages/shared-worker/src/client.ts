@@ -1,22 +1,18 @@
 import type { TransportInitOpts, ShinkaOn } from "@shinka-rpc/core";
+import makeSendRawFn from "@shinka-rpc/libtransport-message-port-send";
 
-export const SharedWorkerTransport =
-  (createSharedWorker: () => SharedWorker) =>
+export const sharedWorkerClient =
+  (create: () => SharedWorker) =>
   <SO, TA>(shinka: ShinkaOn<SO, any, TA>) =>
-  async (
+  (
     onRawData: (data: any) => void,
     onClosed: () => void,
     opts: TransportInitOpts,
   ) => {
-    // SharedWorker *REQUIRE* serialization
-    if (opts.mode === "not-serialized") throw new Error("Invalid mode");
-    const instance = createSharedWorker();
+    const instance = create();
     instance.port.onmessage = onRawData;
     instance.port.onmessageerror = onClosed;
     const close = async () => instance.port.close();
-    const send =
-      opts.mode === "binary"
-        ? (data: Uint8Array) => instance.port.postMessage(data, [data.buffer])
-        : (data: string) => instance.port.postMessage(data);
+    const send = makeSendRawFn[opts.mode](instance.port);
     return { send, close, instruction: {} };
   };

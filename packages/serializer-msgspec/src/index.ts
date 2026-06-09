@@ -7,4 +7,4 @@ export default (() =>
     deserialize: decode,
     transportInitOpts: { mode: "binary" },
     typeHints: { serialize: "Function", deserialize: "Function" },
-  })) as SerializerFactory<any>) as SerializerRoot<any, any, any>;
+  })) as SerializerFactory<any, any>) as SerializerRoot<any, any, any>;

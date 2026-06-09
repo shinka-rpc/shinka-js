@@ -6,6 +6,7 @@ import type {
   MessageTypeAllEvent,
 } from "./constants";
 import type { Bus } from "./bus";
+import type { Client } from "./client";
 import type { HandlerRegistries } from "./shinka";
 
 export type ExchangeTimeouts = {
@@ -88,6 +89,12 @@ export type ShinkaDo<SO, TO> = {
 
 export type Shinka<SO, TO, TA> = ShinkaOn<SO, TO, TA> & ShinkaDo<SO, TO>;
 
+export type ShinkaOnClient<SO, TO> = ShinkaOn<
+  SO,
+  TO,
+  InternalHandlerThisArg<SO, TO, Client<SO, TO>>
+>;
+
 export type MetadataWithHint<SO, TO> = ShinkaMeta<SO, TO> & {
   hint?: FnConstructorName;
 };
@@ -161,8 +168,10 @@ export type RequestHandler<SO, TO, TA, B> = (
   context: Context<SO, TO, TA>,
 ) => void;
 
+export type TransportInitOptsMode = "text" | "binary" | "not-serialized";
+
 export type TransportInitOpts = {
-  mode: "text" | "binary" | "not-serialized";
+  mode: TransportInitOptsMode;
   contentType?: string;
 };
 
@@ -227,6 +236,12 @@ export type SerializerRoot<SO, TO, TA> = (
   shinkaOn: ShinkaOn<SO, TO, TA>,
 ) => SerializerFactory<SO, TA>;
 
+export type SerializerClient<SO, TO> = SerializerRoot<
+  SO,
+  TO,
+  InternalHandlerThisArg<SO, TO, Client<SO, TO>>
+>;
+
 export type ShinkaEventListener<B> = (bus: B) => void;
 export type ShinkaEventListenerSet<B> = Set<ShinkaEventListener<B>>;
 export type ShinkaEventListenerWeakSet<B> = WeakSet<ShinkaEventListener<B>>;
@@ -270,11 +285,17 @@ export type TransportFactory<TO, TA> = (
   onRawData: (data: SerializedData) => void,
   onClosed: () => void,
   opts: TransportInitOpts,
-) => Promise<Transport<TO, TA>>;
+) => Promise<Transport<TO, TA>> | Transport<TO, TA>;
 
-export type TransportClient<SO, TO, TA> = (
+export type TransportSubscribe<SO, TO, TA> = (
   shinkaOn: ShinkaOn<SO, TO, TA>,
 ) => TransportFactory<TO, TA>;
+
+export type TransportClient<SO, TO> = TransportSubscribe<
+  SO,
+  TO,
+  InternalHandlerThisArg<SO, TO, Client<SO, TO>>
+>;
 
 export type FactoriesGeneric<SO, TO, TA> = {
   transport: TransportFactory<TO, TA>;
@@ -309,12 +330,8 @@ export type SendFn<SO, TO> = (
 ) => void;
 
 // Synthetic
-export type BusProps<SO, TO, B extends Bus<SO, TO>> = {
-  transport: TransportClient<SO, TO, B>;
+export type BusProps<SO, TO, B> = {
+  transport: TransportSubscribe<SO, TO, B>;
   serializer?: SerializerRoot<SO, TO, B>;
   responseTimeout?: number;
-};
-
-export type ClientProps<SO, TO, B extends Bus<SO, TO>> = BusProps<SO, TO, B> & {
-  restartTimeout?: number;
 };

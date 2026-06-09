@@ -34,6 +34,7 @@
     "types": "./src/index.ts"
   },
   "dependencies": {
-    "@shinka-rpc/core": "^0.1.0"
+    "@shinka-rpc/core": "^0.1.0",
+    "@shinka-rpc/libtransport-message-port-send": "^0.0.1"
   }
 }

@@ -1,18 +1,34 @@
-import type { ServerBus, Bus } from "@shinka-rpc/core";
+import type {
+  Bus,
+  TransportServer,
+  ShinkaOn,
+  InternalHandlerThisArg,
+  TransportConnectFn,
+  TransportInitOpts,
+} from "@shinka-rpc/core";
+import makeSendRawFn from "@shinka-rpc/libtransport-message-port-send";
 
-export const SharedWorkerServer =
-  (server: ServerBus, binary = false) =>
-  (e: MessageEvent) => {
-    const transport = async (bus: Bus) => {
-      const port = e.source as any as MessagePort;
-      const _onmessage = (e: MessageEvent) => bus.onMessage(e.data);
-      port.onmessage = _onmessage;
-      const send = binary
-        ? (data: Uint8Array) => port.postMessage(data, [data.buffer])
-        : (data: string) => port.postMessage(data);
-      const close = async () => port.close();
-      port.start();
-      return { send, close, instruction: {} };
-    };
-    server.connect({ transport });
-  };
+export const sharedWorkerServer = ((
+  shinkaOn: ShinkaOn<any, any, InternalHandlerThisArg<any, any, Bus<any, any>>>,
+  connect: TransportConnectFn<
+    any,
+    InternalHandlerThisArg<any, any, Bus<any, any>>
+  >,
+) =>
+  addEventListener("connect", (connectEvent: Event) => {
+    const port = (connectEvent as any as MessageEvent)
+      .source as any as MessagePort;
+    const close = async () => port.close();
+    connect(
+      (
+        onRawData: (data: any) => void,
+        onClosed: () => void,
+        opts: TransportInitOpts,
+      ) => {
+        const send = makeSendRawFn[opts.mode](port);
+        port.onmessage = onRawData;
+        port.onmessageerror = onClosed;
+        return { send, close, instruction: {} };
+      },
+    );
+  })) as TransportServer<any, any>;

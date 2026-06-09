@@ -6,4 +6,4 @@ export default (() =>
     deserialize: JSON.parse,
     transportInitOpts: { mode: "text" },
     typeHints: { serialize: "Function", deserialize: "Function" },
-  })) as SerializerFactory<any>) as SerializerRoot<any, any, any>;
+  })) as SerializerFactory<any, any>) as SerializerRoot<any, any, any>;

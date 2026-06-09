@@ -4,8 +4,8 @@ import {
   type Bus,
   type Client,
   type SerializerFactory,
-  type TransportClient,
   type TransportFactory,
+  type TransportClient,
   type SerializedData,
   type ShinkaOn,
   SerializerRoot,
@@ -29,7 +29,7 @@ export const mkPipePair = (delay1: number, delay2: number) => {
   ] as [ReturnType<typeof mkPipe>, ReturnType<typeof mkPipe>];
 };
 
-export const fakeTransportClient = <SO, B extends Bus<SO, any>>(
+export const fakeTransportClient = <SO>(
   pipe: ReturnType<typeof mkPipe>,
   key: string,
   results: Record<string, any>[],
@@ -48,7 +48,7 @@ export const fakeTransportClient = <SO, B extends Bus<SO, any>>(
     dispatch(onRawData);
     return { send, close, instruction: {} };
   };
-  return (() => tf) as TransportClient<SO, any, B>;
+  return (() => tf) as TransportClient<SO, any>;
 };
 
 export const createMockSerializerAsync = <TO, B>(

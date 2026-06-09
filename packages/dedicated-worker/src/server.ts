@@ -1,12 +1,33 @@
-import type { Client } from "@shinka-rpc/core";
+import type {
+  ShinkaOn,
+  TransportInitOpts,
+  TransportInitOptsMode,
+} from "@shinka-rpc/core";
 
-export const DedicatedWorkerServer = (binary = false, targetOrigin = "/") => {
-  const send = binary
-    ? (data: Uint8Array) => postMessage(data, targetOrigin, [data.buffer])
-    : (data: string) => postMessage(data, targetOrigin);
-  const close = async () => {};
-  return { send, close };
-};
+export type DedicatedWorkerServerConnect = (messageEvent: MessageEvent) => void;
 
-export const createOnMessage = (bus: Client) => (e: MessageEvent) =>
-  bus.onMessage(e.data);
+const makeSendRawFn = {
+  "not-serialized": () => {
+    throw new Error("invalid mode");
+  },
+  text: (targetOrigin) => (raw: string) => postMessage(raw, targetOrigin),
+  binary: (targetOrigin) => (raw: Uint8Array) =>
+    postMessage(raw, targetOrigin, [raw.buffer]),
+} as Record<
+  TransportInitOptsMode,
+  (targetOrigin: string) => (raw: any) => void
+>;
+
+export const dedicatedWorkerServer =
+  (targetOrigin = "/") =>
+  <SO, TA>(shinka: ShinkaOn<SO, any, TA>) =>
+  (
+    onRawData: (data: any) => void,
+    onClosed: () => void,
+    opts: TransportInitOpts,
+  ) => {
+    addEventListener("message", (event) => onRawData(event.data));
+    addEventListener("messageerror", onClosed);
+    const send = makeSendRawFn[opts.mode](targetOrigin);
+    return { send, close: async () => close(), instruction: {} };
+  };

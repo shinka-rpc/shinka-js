@@ -1,15 +1,18 @@
-import type { Transport, Client, MessageDataEvent } from "@shinka-rpc/core";
+import type { ShinkaOn, TransportInitOpts } from "@shinka-rpc/core";
+import makeSendRawFn from "@shinka-rpc/libtransport-message-port-send";
 
-export const DedicatedWorker2Transport = (
-  instance: Worker,
-  bus: Client,
-  binary = false,
-) => {
-  const _onmessage = (e: MessageDataEvent<any>) => bus.onMessage(e.data);
-  instance.onmessage = _onmessage;
-  const close = async () => instance.terminate();
-  const send = binary
-    ? (data: Uint8Array) => instance.postMessage(data, [data.buffer])
-    : (data: string) => instance.postMessage(data);
-  return { send, close, instruction: {} } as Transport;
-};
+export const dedicatedWorkerClient =
+  (create: () => Worker) =>
+  <SO, TA>(shinka: ShinkaOn<SO, any, TA>) =>
+  (
+    onRawData: (data: any) => void,
+    onClosed: () => void,
+    opts: TransportInitOpts,
+  ) => {
+    const instance = create();
+    instance.onmessage = onRawData;
+    instance.onmessageerror = onClosed;
+    const close = async () => instance.terminate();
+    const send = makeSendRawFn[opts.mode](instance);
+    return { send, close, instruction: {} };
+  };

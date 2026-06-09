@@ -1,6 +1,6 @@
 import { expect, test } from "@jest/globals";
 
-import { Client, SerializerRoot } from "@shinka-rpc/core";
+import { Client, SerializerClient } from "@shinka-rpc/core";
 
 import {
   mkPipePair,
@@ -12,11 +12,11 @@ import {
   createAsyncHandler,
 } from "./util";
 
-const setupClientClient = async <TO, B>(
+const setupClientClient = async <TO>(
   createSerializer: (
     key: string,
     results: Record<string, any>[],
-  ) => SerializerRoot<any, TO, B>,
+  ) => SerializerClient<any, TO>,
 ) => {
   const results: Record<string, any>[] = [];
 

@@ -4,13 +4,21 @@ import { Bus } from "./bus";
 import { createEventListeners } from "./factory/event-listeners";
 
 import type {
-  ClientProps,
+  BusProps,
   HandlerRegistriesAll,
   FactoriesGeneric,
   ShinkaOnDataEvent,
   ShinkaOnRequest,
   InternalHandlerThisArg,
 } from "./types";
+
+export type ClientProps<SO, TO> = BusProps<
+  SO,
+  TO,
+  InternalHandlerThisArg<SO, TO, Client<SO, TO>>
+> & {
+  restartTimeout?: number;
+};
 
 export class Client<SO, TO> extends Bus<SO, TO> {
   public onRequest!: ShinkaOnRequest<SO, TO, this>;
@@ -20,7 +28,7 @@ export class Client<SO, TO> extends Bus<SO, TO> {
     transport,
     serializer = defaultSerializerRoot,
     responseTimeout = defaultRequestTimeout,
-  }: ClientProps<SO, TO, any>) {
+  }: ClientProps<SO, TO>) {
     const transportRegistries = createHandlerRegistries<SO, TO, any>();
     const transportFactory = transport(transportRegistries);
     const serializerRegistries = createHandlerRegistries<SO, TO, any>();
@@ -28,7 +36,7 @@ export class Client<SO, TO> extends Bus<SO, TO> {
     const factories: FactoriesGeneric<
       SO,
       TO,
-      InternalHandlerThisArg<SO, TO, this>
+      InternalHandlerThisArg<SO, TO, Client<SO, TO>>
     > = {
       serializer: serializerFactory,
       transport: transportFactory,

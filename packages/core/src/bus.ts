@@ -271,16 +271,19 @@ export class Bus<SO, TO> {
         this.vars,
       );
 
+      const maybeTransportInstance = this.factories.transport(
+        onRawData,
+        this.onTerminated,
+        transportInitOpts,
+      );
       const {
         send: sendSerialized,
         close,
         instruction,
         onReady: onReadyTransport,
-      } = await this.factories.transport(
-        onRawData,
-        this.onTerminated,
-        transportInitOpts,
-      );
+      } = maybeTransportInstance instanceof Promise
+        ? await maybeTransportInstance
+        : maybeTransportInstance;
 
       this.closeDelegate.set(close);
 
