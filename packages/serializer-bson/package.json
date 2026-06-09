@@ -1,6 +1,6 @@
 {
   "name": "@shinka-rpc/serializer-bson",
-  "version": "0.0.1",
+  "version": "0.1.0-alpha.0",
   "description": "",
   "main": "./src/index.ts",
   "scripts": {
@@ -35,6 +35,6 @@
   },
   "dependencies": {
     "@kai3341/bsonfy": "^1.0.2",
-    "@shinka-rpc/core": "^0.1.0"
+    "@shinka-rpc/core": "^0.1.0-alpha.0"
   }
 }

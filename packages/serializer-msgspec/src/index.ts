@@ -5,6 +5,9 @@ export default (() =>
   (() => ({
     serialize: encode,
     deserialize: decode,
-    transportInitOpts: { mode: "binary" },
+    transportInitOpts: {
+      mode: "binary",
+      contentType: "application/vnd.msgpack",
+    },
     typeHints: { serialize: "Function", deserialize: "Function" },
   })) as SerializerFactory<any, any>) as SerializerRoot<any, any, any>;

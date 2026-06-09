@@ -24,8 +24,8 @@ import type {
   TransportServer,
   TransportFactory,
   Factories,
-  ShinkaOn,
-  TransportConnectFn,
+  TransportConnectFnBus,
+  ShinkaOnBus,
 } from "./types";
 
 import { setupHandlerRegistries } from "./shinka";
@@ -48,12 +48,12 @@ function connectFn<SO, TO>(
 
 type TransportHelperThis<SO, TO> = [
   TransportServer<SO, TO>,
-  TransportConnectFn<TO, InternalHandlerThisArg<SO, TO, Bus<SO, TO>>>,
+  TransportConnectFnBus<SO, TO>,
 ];
 
 function transportHelper<SO, TO>(
   this: TransportHelperThis<SO, TO>,
-  shinkaOn: ShinkaOn<SO, TO, InternalHandlerThisArg<SO, TO, Bus<SO, TO>>>,
+  shinkaOn: ShinkaOnBus<SO, TO>,
 ) {
   return this[0](shinkaOn, this[1]);
 }
@@ -73,9 +73,7 @@ export type ServerOptions<SO, TO> = HubOptions & {
 
 export class Server<SO, TO> {
   private hub!: Hub<SO, TO>;
-  private connectDelegate!: DelegateType<
-    TransportConnectFn<TO, InternalHandlerThisArg<SO, TO, Bus<SO, TO>>>
-  >;
+  private connectDelegate!: DelegateType<TransportConnectFnBus<SO, TO>>;
 
   public onRequest!: ShinkaOnRequest<SO, TO, Bus<SO, TO>>;
   public onDataEvent!: ShinkaOnDataEvent<Bus<SO, TO>>;
@@ -95,10 +93,7 @@ export class Server<SO, TO> {
   }: ServerOptions<SO, TO>) {
     this.hub = new Hub({ responseTimeout, exchangeTimeouts });
     this.connectDelegate = delegate(
-      connectDefault as TransportConnectFn<
-        TO,
-        InternalHandlerThisArg<SO, TO, Bus<SO, TO>>
-      >,
+      connectDefault as TransportConnectFnBus<SO, TO>,
     );
     const [transportRegistries] = setupHandlerRegistries(
       (transportHelper<SO, TO>).bind([

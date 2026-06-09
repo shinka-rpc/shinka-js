@@ -1,8 +1,8 @@
-import type { TransportInitOpts, ShinkaOn } from "@shinka-rpc/core";
+import type { TransportInitOpts, ShinkaOnClient } from "@shinka-rpc/core";
 
-export const WebSocketTransport =
-  (createWebSocket: () => WebSocket) =>
-  <SO, TA>(shinka: ShinkaOn<SO, any, TA>) =>
+export const clientWebSocketTransport =
+  (create: () => WebSocket) =>
+  <SO>(shinka: ShinkaOnClient<SO, any>) =>
   async (
     onRawData: (data: any) => void,
     onClosed: () => void,
@@ -10,7 +10,7 @@ export const WebSocketTransport =
   ) => {
     // WebSocket *REQUIRE* serialization
     if (opts.mode === "not-serialized") throw new Error("Invalid mode");
-    const instance = createWebSocket();
+    const instance = create();
     if (opts.mode === "binary") instance.binaryType = "arraybuffer";
     instance.addEventListener("message", onRawData);
     instance.addEventListener("close", onClosed);
@@ -20,5 +20,5 @@ export const WebSocketTransport =
       instance.addEventListener("open", resolve);
       instance.addEventListener("error", reject);
     });
-    return { send, close, instruction: { hi: true, bye: true } };
+    return { send, close, instruction: {} };
   };

@@ -1,19 +1,14 @@
 import type {
-  Bus,
   TransportServer,
-  ShinkaOn,
-  InternalHandlerThisArg,
-  TransportConnectFn,
+  ShinkaOnBus,
+  TransportConnectFnBus,
   TransportInitOpts,
 } from "@shinka-rpc/core";
 import makeSendRawFn from "@shinka-rpc/libtransport-message-port-send";
 
 export const sharedWorkerServer = ((
-  shinkaOn: ShinkaOn<any, any, InternalHandlerThisArg<any, any, Bus<any, any>>>,
-  connect: TransportConnectFn<
-    any,
-    InternalHandlerThisArg<any, any, Bus<any, any>>
-  >,
+  shinkaOn: ShinkaOnBus<any, any>,
+  connect: TransportConnectFnBus<any, any>,
 ) =>
   addEventListener("connect", (connectEvent: Event) => {
     const port = (connectEvent as any as MessageEvent)

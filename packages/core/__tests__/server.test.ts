@@ -5,9 +5,8 @@ import {
   Server,
   type Bus,
   type SerializerRoot,
-  type ShinkaOn,
-  type TransportConnectFn,
-  type InternalHandlerThisArg,
+  type ShinkaOnBus,
+  type TransportConnectFnBus,
   type TransportFactory,
   type SerializedData,
   type TransportInitOpts,
@@ -46,12 +45,8 @@ const fakeTransportServer = (
     return { send, close, instruction: {} };
   };
   return (
-    shinkaOn: ShinkaOn<
-      any,
-      any,
-      InternalHandlerThisArg<any, any, Bus<any, any>>
-    >,
-    connect: TransportConnectFn<any, any>,
+    shinkaOn: ShinkaOnBus<any, any>,
+    connect: TransportConnectFnBus<any, any>,
   ) => setTimeout(connect, 0, tf);
 };
 

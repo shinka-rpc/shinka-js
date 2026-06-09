@@ -1,5 +1,5 @@
 import type {
-  ShinkaOn,
+  ShinkaOnBus,
   TransportInitOpts,
   TransportInitOptsMode,
 } from "@shinka-rpc/core";
@@ -20,7 +20,7 @@ const makeSendRawFn = {
 
 export const dedicatedWorkerServer =
   (targetOrigin = "/") =>
-  <SO, TA>(shinka: ShinkaOn<SO, any, TA>) =>
+  <SO>(shinka: ShinkaOnBus<SO, any>) =>
   (
     onRawData: (data: any) => void,
     onClosed: () => void,

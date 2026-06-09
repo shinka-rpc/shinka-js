@@ -95,6 +95,12 @@ export type ShinkaOnClient<SO, TO> = ShinkaOn<
   InternalHandlerThisArg<SO, TO, Client<SO, TO>>
 >;
 
+export type ShinkaOnBus<SO, TO> = ShinkaOn<
+  SO,
+  TO,
+  InternalHandlerThisArg<SO, TO, Bus<SO, TO>>
+>;
+
 export type MetadataWithHint<SO, TO> = ShinkaMeta<SO, TO> & {
   hint?: FnConstructorName;
 };
@@ -311,6 +317,11 @@ export type Factories<SO, TO> = FactoriesGeneric<
 export type TransportConnectFn<TO, TA> = (
   transport: TransportFactory<TO, TA>,
 ) => void;
+
+export type TransportConnectFnBus<SO, TO> = TransportConnectFn<
+  TO,
+  InternalHandlerThisArg<SO, TO, Bus<SO, TO>>
+>;
 
 export type TransportServer<SO, TO> = (
   shinkaOn: ShinkaOn<SO, TO, InternalHandlerThisArg<SO, TO, Bus<SO, TO>>>,

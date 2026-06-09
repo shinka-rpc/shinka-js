@@ -1,9 +1,9 @@
-import type { TransportInitOpts, ShinkaOn } from "@shinka-rpc/core";
+import type { TransportInitOpts, ShinkaOnBus } from "@shinka-rpc/core";
 import makeSendRawFn from "@shinka-rpc/libtransport-message-port-send";
 
 export const sharedWorkerClient =
   (create: () => SharedWorker) =>
-  <SO, TA>(shinka: ShinkaOn<SO, any, TA>) =>
+  <SO>(shinka: ShinkaOnBus<SO, any>) =>
   (
     onRawData: (data: any) => void,
     onClosed: () => void,
