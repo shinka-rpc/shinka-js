@@ -1,4 +1,4 @@
-import { createHandlerRegistries } from "./shinka";
+import { setupHandlerRegistries, createHandlerRegistries } from "./shinka";
 import { defaultRequestTimeout, defaultSerializerRoot } from "./constants";
 import { Bus } from "./bus";
 import { createEventListeners } from "./factory/event-listeners";
@@ -29,10 +29,10 @@ export class Client<SO, TO> extends Bus<SO, TO> {
     serializer = defaultSerializerRoot,
     responseTimeout = defaultRequestTimeout,
   }: ClientProps<SO, TO>) {
-    const transportRegistries = createHandlerRegistries<SO, TO, any>();
-    const transportFactory = transport(transportRegistries);
-    const serializerRegistries = createHandlerRegistries<SO, TO, any>();
-    const serializerFactory = serializer(serializerRegistries);
+    const [transportRegistries, transportFactory] =
+      setupHandlerRegistries(transport);
+    const [serializerRegistries, serializerFactory] =
+      setupHandlerRegistries(serializer);
     const factories: FactoriesGeneric<
       SO,
       TO,

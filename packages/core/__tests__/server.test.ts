@@ -95,6 +95,8 @@ const setupClientServer = async (
     results.push({ key: "server-event", val: "disconnect" }),
   );
 
+  server.start();
+
   await client.start();
   const bus = await connectPromise;
 

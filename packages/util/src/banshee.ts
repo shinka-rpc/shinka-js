@@ -50,9 +50,11 @@ const registry = new FinalizationRegistry(cleanupCallback);
 
 type Token = {};
 
-type CreateDieThis = [Token, () => void, () => void];
+type CreateDieThis = readonly [Token, () => void, () => void];
 
-function bansheeEventHandler(this: [WeakRef<OnBansheeWail>, () => void]) {
+type BansheeEventHandlerThis = readonly [WeakRef<OnBansheeWail>, () => void];
+
+function bansheeEventHandler(this: BansheeEventHandlerThis) {
   this[0].deref()!();
   this[1]();
 }

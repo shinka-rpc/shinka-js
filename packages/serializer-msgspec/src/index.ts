@@ -1,5 +1,5 @@
 import type { SerializerFactory, SerializerRoot } from "@shinka-rpc/core";
-import { encode, decode } from "@msgpack/msgpack";
+import { encode, decode, type EncoderOptions } from "@msgpack/msgpack";
 
 export default (() =>
   (() => ({
@@ -10,4 +10,8 @@ export default (() =>
       contentType: "application/vnd.msgpack",
     },
     typeHints: { serialize: "Function", deserialize: "Function" },
-  })) as SerializerFactory<any, any>) as SerializerRoot<any, any, any>;
+  })) as SerializerFactory<EncoderOptions, any>) as SerializerRoot<
+  EncoderOptions,
+  any,
+  any
+>;

@@ -26,8 +26,14 @@ export const dedicatedWorkerServer =
     onClosed: () => void,
     opts: TransportInitOpts,
   ) => {
-    addEventListener("message", (event) => onRawData(event.data));
+    const messageHandler = (event: MessageEvent) => onRawData(event.data);
+    addEventListener("message", messageHandler);
     addEventListener("messageerror", onClosed);
     const send = makeSendRawFn[opts.mode](targetOrigin);
-    return { send, close: async () => close(), instruction: {} };
+    const _close = async () => {
+      removeEventListener("message", messageHandler);
+      removeEventListener("messageerror", onClosed);
+      close();
+    };
+    return { send, close: _close, instruction: {} };
   };

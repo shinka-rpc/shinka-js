@@ -9,7 +9,11 @@ export const extensionBusTransport: TransportClient<any, any> =
     port.onMessage.addListener(onRawData);
     port.onDisconnect.addListener(onClosed);
     const send = async (data: unknown) => port.postMessage(data);
-    const close = async () => port.disconnect();
+    const close = async () => {
+      port.onMessage.removeListener(onRawData);
+      port.onDisconnect.removeListener(onClosed);
+      port.disconnect();
+    };
     return { send, close, instruction: {} };
   };
 

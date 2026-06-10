@@ -1,17 +1,14 @@
-import type { ShinkaEventListener, BaseShinkaEventListeners } from "../types";
+import type { ShinkaEventListener, EventListenerType } from "../types";
+import { baseListenerFactory } from "./base-listener-factory";
 
-const createBaseEventListeners =
-  <S>(Type: new () => S) =>
-  () =>
-    ({
-      connect: new Type(),
-      disconnect: new Type(),
-    }) as BaseShinkaEventListeners<S>;
+const eventListenerTypes: EventListenerType[] = ["connect", "disconnect"];
 
-export const createEventListeners = createBaseEventListeners(
+export const createEventListeners = baseListenerFactory(
+  eventListenerTypes,
   Set<ShinkaEventListener<any>>,
 );
 
-export const createEventListenersBanned = createBaseEventListeners(
+export const createEventListenersBanned = baseListenerFactory(
+  eventListenerTypes,
   WeakSet<ShinkaEventListener<any>>,
 );

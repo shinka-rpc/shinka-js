@@ -74,7 +74,7 @@ function byeReset(this: VarsBye) {
   this.bye = 0;
 }
 
-type GracefulShutdownThis = [
+type GracefulShutdownThis = readonly [
   ShinkaDataEvent<any, any>,
   () => void,
   () => Promise<void>,
@@ -86,7 +86,7 @@ function gracefulShutdown(this: GracefulShutdownThis) {
   this[2]();
 }
 
-type OnTerminateThis = [VarsBye, () => void, () => void];
+type OnTerminateThis = readonly [VarsBye, () => void, () => void];
 
 function onTerminated(this: OnTerminateThis) {
   this[0].bye = 0;
@@ -132,10 +132,10 @@ export class Bus<SO, TO> {
     factories: FactoriesGeneric<
       SO,
       TO,
-      InternalHandlerThisArg<SO, TO, typeof this>
+      InternalHandlerThisArg<SO, TO, Bus<SO, TO>>
     >,
-    handlerRegistries: HandlerRegistriesAll<SO, TO, typeof this>,
-    eventListeners: ShinkaEventListeners<typeof this>,
+    handlerRegistries: HandlerRegistriesAll<SO, TO, Bus<SO, TO>>,
+    eventListeners: ShinkaEventListeners<Bus<SO, TO>>,
     responseTimeout = defaultRequestTimeout,
     exchangeTimeouts: ExchangeTimeouts = {
       value: 0,
@@ -331,11 +331,13 @@ export class Bus<SO, TO> {
 
       if (instruction.bye) this.vars.bye = 1;
       const wail = instruction.bye
-        ? gracefulShutdown.bind([
-            this.shinkaAll.bus.dataEvent,
-            byeReset.bind(this.vars),
-            this.stop,
-          ])
+        ? gracefulShutdown.bind(
+            Object.freeze([
+              this.shinkaAll.bus.dataEvent,
+              byeReset.bind(this.vars),
+              this.stop,
+            ]),
+          )
         : this.stop;
 
       this.clenaupDelegate.set(banshee(this, wail));

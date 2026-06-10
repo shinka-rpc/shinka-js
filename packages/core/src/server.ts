@@ -26,15 +26,51 @@ import type {
   Factories,
   TransportConnectFnBus,
   ShinkaOnBus,
+  ServerManageEventListenerAll,
+  ServerEventType,
+  ServerEventListener,
 } from "./types";
 
 import { setupHandlerRegistries } from "./shinka";
 
-type ConnectFnThis<SO, TO> = [
+import { baseListenerFactory } from "./factory/base-listener-factory";
+
+type ConnectFnThis<SO, TO> = readonly [
   (props: HubConnectProps<SO, TO>) => Promise<Bus<SO, TO>>,
   HandlerRegistriesHub<SO, TO>,
   SerializerFactory<SO, InternalHandlerThisArg<SO, TO, Bus<SO, TO>>>,
 ];
+
+const serverEventTypes: ServerEventType[] = [
+  "connect",
+  "predisconnect",
+  "postdisconnect",
+];
+
+const createServerEventListeners = baseListenerFactory(
+  serverEventTypes,
+  Set<ServerEventListener>,
+);
+
+const createServerEventListenerPair = () => {
+  const listeners = createServerEventListeners();
+
+  const add = (type: ServerEventType, cb: ServerEventListener) => {
+    listeners[type].add(cb);
+  };
+
+  const remove = (type: ServerEventType, cb: ServerEventListener) => {
+    listeners[type].delete(cb);
+  };
+
+  const call = (type: ServerEventType) => {
+    for (const cb of listeners[type]) cb();
+  };
+
+  const all: ServerManageEventListenerAll = Object.freeze({ add, remove });
+
+  return [all, call] as [typeof all, typeof call];
+};
 
 function connectFn<SO, TO>(
   this: ConnectFnThis<SO, TO>,
@@ -46,20 +82,21 @@ function connectFn<SO, TO>(
   connect(props);
 }
 
-type TransportHelperThis<SO, TO> = [
+type TransportHelperThis<SO, TO> = readonly [
   TransportServer<SO, TO>,
   TransportConnectFnBus<SO, TO>,
+  ServerManageEventListenerAll,
 ];
 
 function transportHelper<SO, TO>(
   this: TransportHelperThis<SO, TO>,
   shinkaOn: ShinkaOnBus<SO, TO>,
 ) {
-  return this[0](shinkaOn, this[1]);
+  return this[0](shinkaOn, this[1], this[2]);
 }
 
 const connectDefault = () => {
-  throw new Error("Server is not ready!");
+  throw new Error("Server is not started!");
 };
 
 export type ServerOptions<SO, TO> = HubOptions & {
@@ -74,6 +111,8 @@ export type ServerOptions<SO, TO> = HubOptions & {
 export class Server<SO, TO> {
   private hub!: Hub<SO, TO>;
   private connectDelegate!: DelegateType<TransportConnectFnBus<SO, TO>>;
+  private connectFn!: TransportConnectFnBus<SO, TO>;
+  private callEvent!: (type: ServerEventType) => void;
 
   public onRequest!: ShinkaOnRequest<SO, TO, Bus<SO, TO>>;
   public onDataEvent!: ShinkaOnDataEvent<Bus<SO, TO>>;
@@ -92,6 +131,8 @@ export class Server<SO, TO> {
     },
   }: ServerOptions<SO, TO>) {
     this.hub = new Hub({ responseTimeout, exchangeTimeouts });
+    const [listeners, callEvent] = createServerEventListenerPair();
+    this.callEvent = callEvent;
     this.connectDelegate = delegate(
       connectDefault as TransportConnectFnBus<SO, TO>,
     );
@@ -99,6 +140,7 @@ export class Server<SO, TO> {
       (transportHelper<SO, TO>).bind([
         transportServerFactory,
         this.connectDelegate.call,
+        listeners,
       ]),
     );
 
@@ -110,13 +152,11 @@ export class Server<SO, TO> {
       serializer: serializerRegistries,
     };
 
-    const connect = (connectFn<SO, TO>).bind([
+    this.connectFn = (connectFn<SO, TO>).bind([
       this.hub.connect,
       handlerRegistries,
       serializerFactory,
     ]);
-
-    this.connectDelegate.set(connect);
 
     this.onDataEvent = this.hub.onDataEvent;
     this.onRequest = this.hub.onRequest;
@@ -126,6 +166,18 @@ export class Server<SO, TO> {
 
     Object.freeze(this);
   }
+
+  start = () => {
+    this.connectDelegate.set(this.connectFn);
+    this.callEvent("connect");
+  };
+
+  stop = async () => {
+    this.callEvent("predisconnect");
+    this.connectDelegate.reset();
+    await this.hub.dispose();
+    this.callEvent("postdisconnect");
+  };
 
   public get size() {
     return this.hub.size;

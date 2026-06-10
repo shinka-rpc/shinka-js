@@ -273,10 +273,15 @@ export type ShinkaListenerLayers<B> = {
 
 export type EventListenerType = "connect" | "disconnect";
 
-export type ManageEventListener<B> = (
-  type: EventListenerType,
-  target: ShinkaEventListener<B>,
+export type BaseManageEventListener<TYPE, TARGET> = (
+  type: TYPE,
+  target: TARGET,
 ) => void;
+
+export type ManageEventListener<B> = BaseManageEventListener<
+  EventListenerType,
+  ShinkaEventListener<B>
+>;
 
 export type TransportAPI = { hi: () => void; bye: () => void };
 
@@ -323,9 +328,24 @@ export type TransportConnectFnBus<SO, TO> = TransportConnectFn<
   InternalHandlerThisArg<SO, TO, Bus<SO, TO>>
 >;
 
+export type ServerEventType = "connect" | "predisconnect" | "postdisconnect";
+
+export type ServerEventListener = () => void;
+
+export type ServerManageEventListener = BaseManageEventListener<
+  ServerEventType,
+  ServerEventListener
+>;
+
+export type ServerManageEventListenerAll = {
+  add: ServerManageEventListener;
+  remove: ServerManageEventListener;
+};
+
 export type TransportServer<SO, TO> = (
   shinkaOn: ShinkaOn<SO, TO, InternalHandlerThisArg<SO, TO, Bus<SO, TO>>>,
   connect: TransportConnectFn<TO, InternalHandlerThisArg<SO, TO, Bus<SO, TO>>>,
+  eventListeners: ServerManageEventListenerAll,
 ) => void;
 
 export type RejectResolve = [(reason?: any) => void, (value: any) => void];
