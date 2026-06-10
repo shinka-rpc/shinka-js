@@ -1,7 +1,7 @@
 import { setupHandlerRegistries, createHandlerRegistries } from "./shinka";
 import { defaultRequestTimeout, defaultSerializerRoot } from "./constants";
 import { Bus } from "./bus";
-import { createEventListeners } from "./factory/event-listeners";
+import { createEventListeners } from "./factory/event-listeners-bus";
 
 import type {
   BusProps,

@@ -10,7 +10,7 @@ import { microTaskHelper } from "./microtask-helper";
 import {
   createEventListeners,
   createEventListenersBanned,
-} from "./factory/event-listeners";
+} from "./factory/event-listeners-bus";
 
 import {
   messageTypeTransport,
@@ -232,7 +232,7 @@ export class Bus<SO, TO> {
     this.extra = {};
   }
 
-  private callEventListeners = (type: EventListenerType) => {
+  private callEventListeners = (type: EventListenerType, target: any) => {
     const own = this.eventListeners.own[type];
     for (const listener of own)
       // @ts-expect-error: 2769
@@ -342,11 +342,13 @@ export class Bus<SO, TO> {
 
       this.clenaupDelegate.set(banshee(this, wail));
       this.vars.state = BusState.STARTED;
-      this.callEventListeners("connect");
+      this.callEventListeners("connect", null);
     } catch (e) {
       try {
         await this.closeDelegate.call();
-      } catch (e) {}
+      } catch (e) {
+        this.callEventListeners("error", e);
+      }
       this.clenaup();
       throw e;
     }
@@ -364,19 +366,19 @@ export class Bus<SO, TO> {
     try {
       await this.closeDelegate.call();
     } catch (e) {
-      console.error(e);
+      this.callEventListeners("error", e);
     }
 
     this.clenaup();
 
-    this.callEventListeners("disconnect");
+    this.callEventListeners("disconnect", null);
   };
 
   public restart = async () => {
     try {
       await this.stop();
     } catch (e) {
-      console.warn(e);
+      this.callEventListeners("error", e);
     }
     await this.start();
   };
@@ -398,11 +400,15 @@ export class Bus<SO, TO> {
   };
 
   private dispatch = (message: Message<any>) => {
-    const messageType = message[0];
-    const dispatchHandler = this.dispatchMap.get(messageType);
-    if (!dispatchHandler) return console.error("Unknown message type");
-    const thisArg = this.thisArgMap.get(messageType)!;
-    dispatchHandler(message as any, thisArg);
+    try {
+      const messageType = message[0];
+      const dispatchHandler = this.dispatchMap.get(messageType);
+      if (!dispatchHandler) return console.error("Unknown message type");
+      const thisArg = this.thisArgMap.get(messageType)!;
+      dispatchHandler(message as any, thisArg);
+    } catch (e) {
+      this.callEventListeners("error", e);
+    }
   };
 
   private clenaup = () => {

@@ -7,7 +7,7 @@ import {
 
 import { Bus } from "./bus";
 
-import { createEventListeners } from "./factory/event-listeners";
+import { createEventListeners } from "./factory/event-listeners-bus";
 
 import type {
   ShinkaEventListeners,

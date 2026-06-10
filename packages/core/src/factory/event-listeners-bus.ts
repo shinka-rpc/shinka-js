@@ -1,7 +1,15 @@
+/**
+ * Used by `Bus` and `Client`
+ */
+
 import type { ShinkaEventListener, EventListenerType } from "../types";
 import { baseListenerFactory } from "./base-listener-factory";
 
-const eventListenerTypes: EventListenerType[] = ["connect", "disconnect"];
+const eventListenerTypes: EventListenerType[] = [
+  "connect",
+  "disconnect",
+  "error",
+];
 
 export const createEventListeners = baseListenerFactory(
   eventListenerTypes,

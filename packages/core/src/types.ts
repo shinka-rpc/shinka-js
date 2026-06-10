@@ -248,14 +248,13 @@ export type SerializerClient<SO, TO> = SerializerRoot<
   InternalHandlerThisArg<SO, TO, Client<SO, TO>>
 >;
 
-export type ShinkaEventListener<B> = (bus: B) => void;
+export type ShinkaEventListener<B> = (bus: B, payload: any) => void;
 export type ShinkaEventListenerSet<B> = Set<ShinkaEventListener<B>>;
 export type ShinkaEventListenerWeakSet<B> = WeakSet<ShinkaEventListener<B>>;
 
-export type BaseShinkaEventListeners<S> = {
-  connect: S;
-  disconnect: S;
-};
+export type EventListenerType = "connect" | "disconnect" | "error";
+
+export type BaseShinkaEventListeners<S> = Record<EventListenerType, S>;
 
 export type ShinkaEventListeners<B> = BaseShinkaEventListeners<
   ShinkaEventListenerSet<B>
@@ -270,8 +269,6 @@ export type ShinkaListenerLayers<B> = {
   parent: ShinkaEventListeners<B>; // modification is restricted
   banned: ShinkaEventListenersBanned<B>;
 };
-
-export type EventListenerType = "connect" | "disconnect";
 
 export type BaseManageEventListener<TYPE, TARGET> = (
   type: TYPE,
