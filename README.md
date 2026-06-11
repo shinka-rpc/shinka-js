@@ -1,7 +1,7 @@
 # shinka-js
 
 Symmetric RPC bus. This page explains basic concepts only.
-[Documentation is here](https://example.com)
+[Documentation is here](https://shinka-rpc-js.readthedocs.io/latest/)
 
 Package `@shinka-rpc/core` implements main functionality of `@shinka-rpc`.
 Ironically the `core` know how to do everything but made so abstract that as is

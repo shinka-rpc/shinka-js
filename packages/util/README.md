@@ -89,34 +89,51 @@ function is called, all event listeners are removed
 **Returns**: `(callOnWail = true) => void` function. This function calls `onWail`
 if `callOnWail` (by default is `true`) and removes registered eventListeners
 
-## DataSignal
+## ReusablePromise
 
-As is it's typescript port of
+Initially it was typescript port of
 [python's asyncio.Event](https://docs.python.org/3/library/asyncio-sync.html#asyncio.Event).
 But there are some difference:
 
 - Name. In javascript [Event](https://developer.mozilla.org/en-US/docs/Web/API/Event) is already exists
 - Payload. It's possible to pass it in javascript. Why not to do it?
+- Rejectable. Why not?
+- Awaitable / PromiseLike as is, `.wait()` is not needed
+
+So, it still may be used as syncronization primitive
 
 Usage example:
 
 ```typescript
-import { DataSignal } from "@shinka-rpc/util";
+import { ReusablePromise } from "@shinka-rpc/util";
 
-const voidSignal = new DataSignal<void>();
-await voidSignal.wait();  // waits untill `signal.set()` is called
+const voidRP = new ReusablePromise<void>();
+await voidRP;  // waits untill `signal.set()` is called
 
 // ===
 
-const numSignal = new DataSignal<Number>();
-console.log(numSignal.isSet);  // false
+const numRP = new ReusablePromise<Number>();
+console.log(numRP.isDone);  // false
 
-numSignal.set(123);  // of course this would be called in different app part
+// resolve branch ===
 
-const value1 = await numSignal.wait();  // value will be 123
-const value2 = await numSignal.wait();  // value will be 123 again
-console.log(numSignal.isSet);  // true
+numRP.resolve(123);  // of course this would be called in different app part
+console.log(numRP.isDone);  // true
 
-numSignal.reset();  // numSignal resets into initial empty state
-console.log(numSignal.isSet);  // false
+const value1 = await numRP;  // value will be 123
+const value2 = await numRP;  // value will be 123 again
+
+numRP.reset();  // numSignal resets into initial empty state
+console.log(numRP.isDone);  // false
+
+// reject branch ===
+
+numRP.reject(321);
+console.log(numRP.isDone);  // true
+
+try {
+  await numRP;
+} catch (e) {
+  // e will be 321
+}
 ```

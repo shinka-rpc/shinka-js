@@ -1,4 +1,4 @@
-import { DataSignal } from "@shinka-rpc/util";
+import { ReusablePromise } from "@shinka-rpc/util";
 
 import {
   defaultRequestTimeout,
@@ -43,7 +43,7 @@ export class Hub<SO, TO> {
   private responseTimeout!: number;
   private exchangeTimeouts!: ExchangeTimeouts;
   private clients!: Set<Bus<SO, TO>>;
-  private disposing!: DataSignal<void>;
+  private disposing!: ReusablePromise<void>;
 
   public onRequest!: ShinkaOnRequest<SO, TO, Bus<SO, TO>>;
   public onDataEvent!: ShinkaOnDataEvent<Bus<SO, TO>>;
@@ -61,12 +61,12 @@ export class Hub<SO, TO> {
     this.eventListeners = createEventListeners();
     this.userRegistries = createHandlerRegistries<SO, TO, Bus<SO, TO>>();
     this.clients = new Set<Bus<SO, TO>>();
-    this.disposing = new DataSignal();
+    this.disposing = new ReusablePromise();
     this.extra = {};
     this.onRequest = this.userRegistries.onRequest;
     this.onDataEvent = this.userRegistries.onDataEvent;
     Object.freeze(this);
-    this.disposing.set();
+    this.disposing.resolve();
   }
 
   private onClientDisconnect = (bus: Bus<SO, TO>) => this.clients.delete(bus);
@@ -75,7 +75,7 @@ export class Hub<SO, TO> {
     factories,
     handlerRegistries,
   }: HubConnectProps<SO, TO>) => {
-    await this.disposing.wait();
+    await this.disposing;
 
     const handlerRegistriesAll: HandlerRegistriesAll<SO, TO, Bus<SO, TO>> = {
       ...handlerRegistries,
@@ -106,7 +106,7 @@ export class Hub<SO, TO> {
     try {
       await Promise.all(clientStopPromises);
     } finally {
-      this.disposing.set();
+      this.disposing.resolve();
     }
   };
 
@@ -123,6 +123,6 @@ export class Hub<SO, TO> {
   }
 
   public get isDisposing() {
-    return !this.disposing.isSet;
+    return !this.disposing.isDone;
   }
 }
