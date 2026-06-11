@@ -34,7 +34,6 @@ export const createIsolatedPair = ({
   const extensionBus = new Client<any, any>({
     transport: extensionBusTransport,
     responseTimeout,
-    restartTimeout: 750,
   });
 
   return { contentBus, extensionBus };

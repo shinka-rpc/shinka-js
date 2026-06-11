@@ -252,19 +252,22 @@ export class Bus<SO, TO> {
     const own = this.eventListeners.own[type];
     for (const listener of own)
       // @ts-expect-error: 2769
-      queueMicrotask(microTaskHelper.bind([listener, this]));
+      queueMicrotask(microTaskHelper.bind([listener, this, target]));
 
     const banned = this.eventListeners.banned[type];
     for (const listener of this.eventListeners.parent[type])
       if (!(banned.has(listener) || own.has(listener)))
         // @ts-expect-error: 2769
-        queueMicrotask(microTaskHelper.bind([listener, this]));
+        queueMicrotask(microTaskHelper.bind([listener, this, target]));
   };
 
   public start = async () => {
     if (this.vars.state === BusState.STARTED) return;
     if (this.vars.state !== BusState.STOPPED)
-      return console.warn("Bus is not in `STOPPED` state");
+      return this.callEventListeners("error", {
+        message: "Bus is not in `STOPPED` state",
+        when: "start",
+      });
 
     try {
       this.vars.state = BusState.STARTING;
@@ -367,7 +370,7 @@ export class Bus<SO, TO> {
       } catch (e) {
         this.callEventListeners("error", e);
       }
-      this.clenaup();
+      this.cleanup();
       throw e;
     }
   };
@@ -375,7 +378,10 @@ export class Bus<SO, TO> {
   public stop = async () => {
     if (this.vars.state === BusState.STOPPED) return;
     if (this.vars.state !== BusState.STARTED)
-      return console.warn("Bus is not in `STARTED` state");
+      return this.callEventListeners("error", {
+        message: "Bus is not in `STARTED` state",
+        when: "stop",
+      });
 
     this.vars.state = BusState.STOPPING;
 
@@ -387,7 +393,7 @@ export class Bus<SO, TO> {
       this.callEventListeners("error", e);
     }
 
-    this.clenaup();
+    this.cleanup();
 
     this.callEventListeners("disconnect", null);
   };
@@ -431,7 +437,7 @@ export class Bus<SO, TO> {
     }
   };
 
-  private clenaup = () => {
+  private cleanup = () => {
     this.cleanupDelegate.call(false);
     this.sendDelegate.reset();
     this.closeDelegate.reset();

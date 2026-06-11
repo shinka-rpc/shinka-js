@@ -28,10 +28,7 @@
   },
   "homepage": "https://github.com/shinka-rpc/shinka-js",
   "exports": {
-    "default": "./src/index.ts",
-    "require": "./src/index.ts",
-    "import": "./src/index.ts",
-    "types": "./src/index.ts"
+    "default": "./src/index.ts"
   },
   "dependencies": {
     "@kai3341/bsonfy": "^1.0.2",

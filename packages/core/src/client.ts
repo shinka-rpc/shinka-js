@@ -16,9 +16,7 @@ export type ClientProps<SO, TO> = BusProps<
   SO,
   TO,
   InternalHandlerThisArg<SO, TO, Client<SO, TO>>
-> & {
-  restartTimeout?: number;
-};
+>;
 
 export class Client<SO, TO> extends Bus<SO, TO> {
   public onRequest!: ShinkaOnRequest<SO, TO, this>;
