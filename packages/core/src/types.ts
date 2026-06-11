@@ -105,13 +105,13 @@ export type MetadataWithHint<SO, TO> = ShinkaMeta<SO, TO> & {
   hint?: FnConstructorName;
 };
 
-export type MessageDispatchHandler<TA, M> = (message: M, thisArg: TA) => void;
+export type MessageDispatchHandler<M> = (message: M) => void;
 
-export type DispatchMap<TA> = Map<
+export type DispatchMap = Map<
   MessageType,
-  | MessageDispatchHandler<TA, MessageRequest<any>>
-  | MessageDispatchHandler<TA, MessageResponse<any>>
-  | MessageDispatchHandler<TA, MessageDataEvent<any>>
+  | MessageDispatchHandler<MessageRequest<any>>
+  | MessageDispatchHandler<MessageResponse<any>>
+  | MessageDispatchHandler<MessageDataEvent<any>>
 >;
 
 export type ThisArgMap<SO, TO, TA> = Map<
@@ -171,7 +171,9 @@ export type DataEventHandler<TA, B> = (
 export type RequestHandler<SO, TO, TA, B> = (
   key: DataEventKey,
   body: B,
-  context: Context<SO, TO, TA>,
+  context: Context<SO, TO>,
+  thisArg: TA,
+  dispatchError: DispatchError,
 ) => void;
 
 export type TransportInitOptsMode = "text" | "binary" | "not-serialized";
@@ -253,6 +255,8 @@ export type ShinkaEventListenerSet<B> = Set<ShinkaEventListener<B>>;
 export type ShinkaEventListenerWeakSet<B> = WeakSet<ShinkaEventListener<B>>;
 
 export type EventListenerType = "connect" | "disconnect" | "error";
+
+export type DispatchError = (error: any) => void;
 
 export type BaseShinkaEventListeners<S> = Record<EventListenerType, S>;
 

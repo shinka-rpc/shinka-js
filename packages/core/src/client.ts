@@ -47,12 +47,8 @@ export class Client<SO, TO> extends Bus<SO, TO> {
       transport: transportRegistries,
       user: userRegistries,
     };
-    super(
-      factories as any,
-      registries,
-      createEventListeners(),
-      responseTimeout,
-    );
+    const eventListeners = createEventListeners();
+    super(factories as any, registries, eventListeners, responseTimeout);
     this.onRequest = userRegistries.onRequest;
     this.dataEvent = userRegistries.onDataEvent;
     Object.freeze(this);

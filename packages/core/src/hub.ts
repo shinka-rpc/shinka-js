@@ -58,10 +58,10 @@ export class Hub<SO, TO> {
   }: HubOptions) {
     this.responseTimeout = responseTimeout;
     this.exchangeTimeouts = exchangeTimeouts;
+    this.eventListeners = createEventListeners();
     this.userRegistries = createHandlerRegistries<SO, TO, Bus<SO, TO>>();
     this.clients = new Set<Bus<SO, TO>>();
     this.disposing = new DataSignal();
-    this.eventListeners = createEventListeners();
     this.extra = {};
     this.onRequest = this.userRegistries.onRequest;
     this.onDataEvent = this.userRegistries.onDataEvent;

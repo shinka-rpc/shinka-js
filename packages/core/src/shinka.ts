@@ -16,8 +16,8 @@ import type {
   DataEventKey,
   Shinka,
   ShinkaOn,
+  DispatchError,
 } from "./types";
-import type { Bus } from "./bus";
 import type { MessageTypeAllEvent, MessageTypeGroup } from "./constants";
 
 const createEventSend =
@@ -30,10 +30,11 @@ const createEventSend =
 export const createHandlerRegistries = <SO, TO, TA>() => {
   const [reqGet, reqSet] = createReqRegistry<SO, TO, TA, any, any>();
   const [evGet, onDataEvent] = createEventRegistry<TA, any>();
-  const dispatchDataEvent = createDispatchDataEvent(evGet);
+  const [setEventVars, dispatchDataEvent] = createDispatchDataEvent(evGet);
   const onRequest = asOnRequest(reqSet);
   const dispatchRequest = createDispatchRequest(reqGet);
   return Object.freeze({
+    setEventVars,
     dispatchRequest,
     onRequest,
     dispatchDataEvent,
@@ -45,12 +46,21 @@ export type HandlerRegistries<SO, TO, TA> = ReturnType<
   typeof createHandlerRegistries<SO, TO, TA>
 >;
 
+type SetVarsFn<TA> = (thisArg: TA, dispatchError: DispatchError) => void;
+
+const composeSetVars =
+  <TA>(...cbs: SetVarsFn<TA>[]) =>
+  (thisArg: TA, dispatchError: DispatchError) => {
+    for (const cb of cbs) cb(thisArg, dispatchError);
+  };
+
 export const complteShinka = <SO, TO, TA>(
   send: SendFn<SO, TO>,
   messageTypeGroup: MessageTypeGroup,
-  dispatchMap: DispatchMap<TA>,
+  dispatchMap: DispatchMap,
   responseTimeout: number,
   {
+    setEventVars,
     dispatchRequest,
     onRequest,
     dispatchDataEvent,
@@ -58,13 +68,14 @@ export const complteShinka = <SO, TO, TA>(
   }: HandlerRegistries<SO, TO, TA>,
 ) => {
   const [REQUEST, RESPONSE_OK, RESPONSE_ERR, EVENT] = messageTypeGroup;
-  const [request, onResponseOK, onResponseERR, onMessageRequest] = reqrsp(
-    REQUEST,
-    [RESPONSE_ERR, RESPONSE_OK],
-    send,
-    dispatchRequest,
-    responseTimeout,
-  );
+  const [setReqVars, request, onResponseOK, onResponseERR, onMessageRequest] =
+    reqrsp(
+      REQUEST,
+      [RESPONSE_ERR, RESPONSE_OK],
+      send,
+      dispatchRequest,
+      responseTimeout,
+    );
   const dataEvent = createEventSend(EVENT, send);
 
   dispatchMap.set(REQUEST, onMessageRequest);
@@ -72,17 +83,22 @@ export const complteShinka = <SO, TO, TA>(
   dispatchMap.set(RESPONSE_ERR, onResponseERR);
   dispatchMap.set(EVENT, dispatchDataEvent);
 
-  return Object.freeze({
-    onRequest,
-    request,
-    onDataEvent,
-    dataEvent,
-  }) as Shinka<SO, TO, TA>;
+  const setVars = composeSetVars(setEventVars, setReqVars);
+
+  return [
+    setVars,
+    Object.freeze({
+      onRequest,
+      request,
+      onDataEvent,
+      dataEvent,
+    }),
+  ] as [typeof setVars, Shinka<SO, TO, TA>];
 };
 
 export const createOrCompleteShinka = <SO, TO, TA>(
   send: SendFn<SO, TO>,
-  dispatchMap: DispatchMap<TA>,
+  dispatchMap: DispatchMap,
   responseTimeout: number,
   messageTypeGroup: MessageTypeGroup,
   maybeHandlerRegistries?: HandlerRegistries<SO, TO, TA>,
@@ -98,7 +114,7 @@ export const createOrCompleteShinka = <SO, TO, TA>(
 export const makeCreateOrCompleteShinka =
   <SO, TO, TA>(
     send: SendFn<SO, TO>,
-    dispatchMap: DispatchMap<TA>,
+    dispatchMap: DispatchMap,
     responseTimeout: number,
   ) =>
   (

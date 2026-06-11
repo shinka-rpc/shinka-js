@@ -14,6 +14,7 @@ export const scheduler = <B extends Bus<any, any>>(
   vars: VarsTimeout,
   exchangeTimeouts: ExchangeTimeouts,
 ) => {
+  vars.schedulerTimeoutId = null;
   let when = Number.POSITIVE_INFINITY;
   const now = performance.now();
 

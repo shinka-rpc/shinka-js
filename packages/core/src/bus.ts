@@ -19,7 +19,6 @@ import {
   messageTypeUser,
   defaultRequestTimeout,
   defaultExchangeTimeoutThrashold,
-  type MessageTypeGroup,
 } from "./constants";
 
 import type {
@@ -31,7 +30,6 @@ import type {
   ShinkaEventListeners,
   ShinkaListenerLayers,
   ShinkaAll,
-  ThisArgMap,
   HandlerRegistriesAll,
   InternalHandlerThisArg,
   FactoriesGeneric,
@@ -47,17 +45,6 @@ const transportNotInitialized = () => {
 };
 
 const dummy = () => {};
-
-const thisArgMapHelper = <SO, TO, B>(
-  thisArgMap: ThisArgMap<SO, TO, B>,
-  messageTypeGroup: MessageTypeGroup,
-  freeze: 0 | 1,
-  thisArg: InternalHandlerThisArg<SO, TO, B> | BusHandlerThisArg<SO, TO, B> | B,
-) => {
-  if (freeze) Object.freeze(thisArg);
-  for (const i of messageTypeGroup) thisArgMap.set(i, thisArg);
-  return thisArg;
-};
 
 const enum BusState {
   STOPPED = 0,
@@ -100,28 +87,32 @@ type BusVars = VarsTimeout &
   };
 
 type ThisArgInternal<SO, TO, TA> = {
+  bus: BusHandlerThisArg<SO, TO, TA>;
   serializer: InternalHandlerThisArg<SO, TO, TA>;
   transport: InternalHandlerThisArg<SO, TO, TA>;
+};
+
+type DispatchErrors = {
+  send: (error: any) => void;
+  recv: (error: any) => void;
 };
 
 export class Bus<SO, TO> {
   private factories!: FactoriesGeneric<
     SO,
     TO,
-    InternalHandlerThisArg<SO, TO, typeof this>
+    InternalHandlerThisArg<SO, TO, Bus<SO, TO>>
   >;
-  private shinkaAll!: ShinkaAll<SO, TO, typeof this>;
-  private dispatchMap!: DispatchMap<
-    InternalHandlerThisArg<SO, TO, typeof this> | typeof this
-  >;
-  private thisArgMap!: ThisArgMap<SO, TO, typeof this>;
-  private thisArgInternal!: ThisArgInternal<SO, TO, typeof this>;
+  private shinkaAll!: ShinkaAll<SO, TO, Bus<SO, TO>>;
+  private dispatchMap!: DispatchMap;
+  private thisArgInternal!: ThisArgInternal<SO, TO, Bus<SO, TO>>;
   private sendDelegate!: DelegateType<SendFn<SO, TO>>;
   private closeDelegate!: DelegateType<() => Promise<void>>;
-  private clenaupDelegate!: DelegateType<(callOnWail?: boolean) => void>;
+  private cleanupDelegate!: DelegateType<(callOnWail?: boolean) => void>;
   private eventListeners!: ShinkaListenerLayers<typeof this>;
   private vars!: BusVars;
   private exchangeTimeouts!: ExchangeTimeouts;
+  private dispatchErrors!: DispatchErrors;
   private onTerminated!: () => void;
 
   public request!: ShinkaRequest<SO, TO>;
@@ -150,7 +141,6 @@ export class Bus<SO, TO> {
     };
     this.exchangeTimeouts = exchangeTimeouts;
     this.dispatchMap = new Map();
-    this.thisArgMap = new Map();
 
     this.vars = {
       state: BusState.STOPPED,
@@ -165,7 +155,23 @@ export class Bus<SO, TO> {
     this.closeDelegate = delegate(
       transportNotInitialized as () => Promise<void>,
     );
-    this.clenaupDelegate = delegate(dummy);
+    this.cleanupDelegate = delegate(dummy);
+
+    this.dispatchErrors = {
+      send: (error) =>
+        this.callEventListeners("error", {
+          message: "Failed to send data",
+          error,
+        }),
+      recv: (error) =>
+        this.callEventListeners("error", {
+          message: "Failed to handle received data",
+          error,
+        }),
+    };
+
+    const dispatchError = (error: any) =>
+      this.callEventListeners("error", error);
 
     const createOrCompleteShinka = makeCreateOrCompleteShinka<SO, TO, any>(
       this.sendDelegate.call,
@@ -173,52 +179,62 @@ export class Bus<SO, TO> {
       responseTimeout,
     );
 
+    const [busSetVars, busShinka] = createOrCompleteShinka(
+      messageTypeBus,
+      busHandlerRegistries,
+    );
+
+    const [serializerSetVars, serializerShinka] = createOrCompleteShinka(
+      messageTypeSerializer,
+      handlerRegistries.serializer,
+    );
+
+    const [transportSetVars, transportShinka] = createOrCompleteShinka(
+      messageTypeTransport,
+      handlerRegistries.transport,
+    );
+
+    const [userSetVars, userShinka] = createOrCompleteShinka(
+      messageTypeUser,
+      handlerRegistries.user,
+    );
+
     this.shinkaAll = {
-      bus: createOrCompleteShinka(messageTypeBus, busHandlerRegistries),
-      serializer: createOrCompleteShinka(
-        messageTypeSerializer,
-        handlerRegistries.serializer,
-      ),
-      transport: createOrCompleteShinka(
-        messageTypeTransport,
-        handlerRegistries.transport,
-      ),
-      user: createOrCompleteShinka(messageTypeUser, handlerRegistries.user),
+      bus: busShinka,
+      serializer: serializerShinka,
+      transport: transportShinka,
+      user: userShinka,
     };
 
-    thisArgMapHelper(this.thisArgMap, messageTypeBus, 1, {
+    const busTA: BusHandlerThisArg<SO, TO, Bus<SO, TO>> = Object.freeze({
       bus: this,
-      shinka: this.shinkaAll.bus,
+      shinka: busShinka,
       vars: this.vars,
       exchangeTimeouts: exchangeTimeouts,
     });
 
-    const serializerTA = thisArgMapHelper(
-      this.thisArgMap,
-      messageTypeSerializer,
-      1,
-      {
-        bus: this,
-        shinka: this.shinkaAll.serializer,
-      },
-    );
+    const serializerTA: InternalHandlerThisArg<
+      SO,
+      TO,
+      Bus<SO, TO>
+    > = Object.freeze({ bus: this, shinka: serializerShinka });
 
-    const transportrTA = thisArgMapHelper(
-      this.thisArgMap,
-      messageTypeTransport,
-      1,
-      {
-        bus: this,
-        shinka: this.shinkaAll.transport,
-      },
-    );
+    const transportrTA: InternalHandlerThisArg<
+      SO,
+      TO,
+      Bus<SO, TO>
+    > = Object.freeze({ bus: this, shinka: transportShinka });
 
     this.thisArgInternal = {
+      bus: busTA,
       serializer: serializerTA as InternalHandlerThisArg<SO, TO, this>,
       transport: transportrTA as InternalHandlerThisArg<SO, TO, this>,
     };
 
-    thisArgMapHelper(this.thisArgMap, messageTypeUser, 0, this);
+    busSetVars(busTA, dispatchError);
+    serializerSetVars(serializerTA, dispatchError);
+    transportSetVars(transportrTA, dispatchError);
+    userSetVars(this, dispatchError);
 
     this.onTerminated = onTerminated.bind([
       this.vars,
@@ -268,6 +284,7 @@ export class Bus<SO, TO> {
         typeHints.deserialize,
         deserialize,
         this.dispatch,
+        this.dispatchErrors.recv,
         this.vars,
       );
 
@@ -291,6 +308,7 @@ export class Bus<SO, TO> {
         typeHints.serialize,
         serialize,
         sendSerialized,
+        this.dispatchErrors.send,
         this.vars,
       );
 
@@ -340,7 +358,7 @@ export class Bus<SO, TO> {
           )
         : this.stop;
 
-      this.clenaupDelegate.set(banshee(this, wail));
+      this.cleanupDelegate.set(banshee(this, wail));
       this.vars.state = BusState.STARTED;
       this.callEventListeners("connect", null);
     } catch (e) {
@@ -403,19 +421,21 @@ export class Bus<SO, TO> {
     try {
       const messageType = message[0];
       const dispatchHandler = this.dispatchMap.get(messageType);
-      if (!dispatchHandler) return console.error("Unknown message type");
-      const thisArg = this.thisArgMap.get(messageType)!;
-      dispatchHandler(message as any, thisArg);
+
+      if (!dispatchHandler)
+        throw { message: "Unknown message type", messageType };
+
+      dispatchHandler(message as any);
     } catch (e) {
       this.callEventListeners("error", e);
     }
   };
 
   private clenaup = () => {
-    this.clenaupDelegate.call(false);
+    this.cleanupDelegate.call(false);
     this.sendDelegate.reset();
     this.closeDelegate.reset();
-    this.clenaupDelegate.reset();
+    this.cleanupDelegate.reset();
     this.vars.bye = 0;
 
     if (this.vars.schedulerTimeoutId !== null) {

@@ -5,6 +5,7 @@ import type {
   FnConstructorName,
   MessageDataEvent,
   MetadataWithHint,
+  DispatchError,
 } from "../types";
 import type { Context } from "../context";
 
@@ -26,9 +27,9 @@ const requestRegistryHookSync =
     cb: (body: B, thisArg: TA) => R | Response<SO, TO, R>,
     metadata?: ShinkaMeta<SO, TO>,
   ) =>
-  (body: B, ctx: Context<SO, TO, TA>) => {
+  (body: B, ctx: Context<SO, TO>, thisArg: TA) => {
     try {
-      const response = cb(body, ctx.thisArg);
+      const response = cb(body, thisArg);
       response instanceof Response
         ? ctx.answer(response.value, { ...metadata, ...response.metadata })
         : ctx.answer(response, metadata);
@@ -44,9 +45,9 @@ const requestRegistryHookAsync =
     cb: (body: B, thisArg: TA) => R,
     metadata?: ShinkaMeta<SO, TO>,
   ) =>
-  async (body: B, ctx: Context<SO, TO, TA>) => {
+  async (body: B, ctx: Context<SO, TO>, thisArg: TA) => {
     try {
-      const response = await cb(body, ctx.thisArg);
+      const response = await cb(body, thisArg);
       response instanceof Response
         ? ctx.answer(response.value, { ...metadata, ...response.metadata })
         : ctx.answer(response, metadata);
@@ -86,34 +87,63 @@ export const createRegistry = <K, V, H = V>(
 };
 
 type MaybeReqHandler<SO, TO, TA> =
-  | ((body: any, ctx: Context<SO, TO, TA>) => any)
+  | ((
+      body: any,
+      ctx: Context<SO, TO>,
+      thisArg: TA,
+      dispatchError: DispatchError,
+    ) => any)
   | undefined;
 
 export const createDispatchRequest =
   <SO, TO, TA>(
     getRequest: (key: DataEventKey) => MaybeReqHandler<SO, TO, TA>,
   ) =>
-  (key: DataEventKey, body: any, ctx: Context<SO, TO, TA>) => {
+  (
+    key: DataEventKey,
+    body: any,
+    ctx: Context<SO, TO>,
+    thisArg: TA,
+    dispatchError: DispatchError,
+  ) => {
     const cb = getRequest(key);
-    if (!cb) return console.error("NO REQUEST HANDLER");
-    cb(body, ctx);
+    if (!cb) return dispatchError({ type: "no request handler", key });
+    cb(body, ctx, thisArg, dispatchError);
   };
 
-type MaybeEventHandler<TA> = ((body: any, thisArg: TA) => void) | undefined;
+type MaybeEventHandler<TA> =
+  | ((body: any, thisArg: TA, dispatchError: DispatchError) => void)
+  | undefined;
 
-export const createDispatchDataEvent =
-  <TA, B>(getDataEvent: (key: DataEventKey) => MaybeEventHandler<TA>) =>
-  (message: MessageDataEvent<B>, thisArg: TA) => {
+export const createDispatchDataEvent = <TA, B>(
+  getDataEvent: (key: DataEventKey) => MaybeEventHandler<TA>,
+) => {
+  let thisArgVar: TA, dispatchErrorVar: DispatchError;
+
+  const setVars = (thisArg: TA, dispatchError: DispatchError) => {
+    thisArgVar = thisArg;
+    dispatchErrorVar = dispatchError;
+  };
+
+  const dispatchEvent = (message: MessageDataEvent<B>) => {
     const [_, body, key] = message;
     const cb = getDataEvent(key);
-    if (!cb) return console.error("NO EVENT HANDLER");
-    cb(body, thisArg);
+    if (!cb) return dispatchErrorVar({ type: "no event handler", key });
+    cb(body, thisArgVar, dispatchErrorVar);
   };
+
+  return [setVars, dispatchEvent] as [typeof setVars, typeof dispatchEvent];
+};
 
 export const createReqRegistry = <SO, TO, TA, B, R>() =>
   createRegistry<
     DataEventKey,
-    (body: B, ctx: Context<SO, TO, TA>) => void,
+    (
+      body: B,
+      ctx: Context<SO, TO>,
+      thisArg: TA,
+      dispatchError: DispatchError,
+    ) => void,
     {
       cb: (body: B, thisArg: TA) => R;
       metadata?: ShinkaMeta<SO, TO>;
