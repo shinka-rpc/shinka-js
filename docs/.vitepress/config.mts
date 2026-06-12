@@ -1,24 +1,22 @@
 import { defineConfig } from "vitepress";
 
-const baseUrl = process.env.READTHEDOCS_VERSION_NAME
-  ? `/${process.env.READTHEDOCS_VERSION_NAME}/`
-  : "/";
-
-const faviconPath = process.env.READTHEDOCS_VERSION_NAME
-  ? `${baseUrl}favicon.png`
-  : "/img/favicon.png";
+const faviconPath = `${process.env.READTHEDOCS_VERSION_NAME || "/img"}/favicon.png`;
+// const logoPath = `${process.env.READTHEDOCS_VERSION_NAME || "/img"}/logo.png`;
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
   title: "shinka-rpc",
   description: "Symmetric RPC bus",
   cleanUrls: true,
-  base: baseUrl,
+  base: `${process.env.READTHEDOCS_VERSION_NAME || ""}/`,
 
   head: [["link", { rel: "icon", href: faviconPath }]],
 
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
+
+    // logo: logoPath,
+
     nav: [
       { text: "Home", link: "/" },
       { text: "Core", link: "/core/" },

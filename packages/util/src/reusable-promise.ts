@@ -31,8 +31,7 @@ const renewState = <P>(
 };
 
 const toResolver =
-  <P>(state: State<P>) =>
-  (key: "resolve" | "reject") =>
+  <P>(state: State<P>, key: "resolve" | "reject") =>
   (value: P) => {
     if (state.done) throw new Error("Already done");
     state.done = true;
@@ -50,11 +49,8 @@ export class ReusablePromise<P> {
     const state: Partial<State<P>> = {};
     this.renewExecutor = (renewExecutor<P>).bind(state);
     this.state = renewState(state, this.renewExecutor);
-
-    const resolver = toResolver(this.state);
-
-    this.resolve = resolver("resolve");
-    this.reject = resolver("reject");
+    this.resolve = toResolver(this.state, "resolve");
+    this.reject = toResolver(this.state, "reject");
 
     Object.freeze(this);
   }
