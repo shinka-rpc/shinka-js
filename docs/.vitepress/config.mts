@@ -24,6 +24,7 @@ export default defineConfig({
       { text: "Core", link: "/core/" },
       { text: "Transports", link: "/transports/" },
       { text: "Serializers", link: "/serializers/" },
+      { text: "Util", link: "/util/" },
     ],
 
     sidebar: {
@@ -31,9 +32,10 @@ export default defineConfig({
         {
           items: [
             { text: "Core", link: "/core/" },
+            { text: "Shinka", link: "/core/shinka" },
             { text: "Usage Example", link: "/core/usage-example" },
-            { text: "Client", link: "/core/client-bus" },
-            { text: "ServerBus", link: "/core/server-bus" },
+            { text: "Client", link: "/core/client" },
+            { text: "ServerBus", link: "/core/server" },
           ],
         },
       ],

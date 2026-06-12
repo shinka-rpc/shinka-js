@@ -16,13 +16,18 @@ hero:
     - theme: alt
       text: Serializers
       link: /serializers
+    - theme: alt
+      text: Util
+      link: /util
 
 features:
   - title: Symmetricity
+    icon: ☯
     details: Every participant may register his request and event handlers,
       initialize connestions, and send events and requests to the interlocutor
 
   - title: External transports
+    icon: 🚂
     details: We provide
       <a href="https://www.npmjs.com/package/@shinka-rpc/shared-worker">SharedWorker</a>,
       <a href="https://www.npmjs.com/package/@shinka-rpc/dedicated-worker">DedicatedWorker</a>,
@@ -31,6 +36,7 @@ features:
       transports, but you are able to define your own
 
   - title: External serializers
+    icon: 🖭
     details: We provide by default
       <a href="https://www.npmjs.com/package/@shinka-rpc/serializer-json">json</a>,
       <a href="https://www.npmjs.com/package/@shinka-rpc/serializer-bson">bson</a> and
@@ -38,8 +44,20 @@ features:
       serializers, but you are able to create your own
 
   - title: Multi Language
+    icon: 🕬
     details: On the other side of the communication channel there may be an
       application written in another language. At the least python is already
       implemented and waiting to be published
----
 
+  - title: Slim Protocol
+    icon: 🤏
+    details: As compact as possible exchange protocol minifies parasitic load on
+      the network
+  
+  - title: Minimal dependency tree
+    icon: 🔗
+    details: reduces the attack vector across the supply chain. No external
+      dependencies for
+      <a href="https://www.npmjs.com/package/@shinka-rpc/core">Core</a> and
+      <a href="https://www.npmjs.com/package/@shinka-rpc/util">Util</a> packages
+---

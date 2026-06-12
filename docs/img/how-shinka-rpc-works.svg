@@ -6,7 +6,7 @@
     <g>
       <rect style="fill: none; fill-opacity: 1; stroke-opacity: 1; stroke-width: 2; stroke: #000000" x="400" y="260" width="100" height="100" rx="0" ry="0"/>
       <text font-size="17.5" style="fill: #000000; fill-opacity: 1; stroke: none;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="450" y="313.9">
-        <tspan x="450" y="313.9">client</tspan>
+        <tspan x="450" y="313.9">Bus</tspan>
       </text>
     </g>
     <g>
@@ -42,7 +42,7 @@
     <g>
       <rect style="fill: none; fill-opacity: 1; stroke-opacity: 1; stroke-width: 2; stroke: #000000" x="980" y="260" width="100" height="100" rx="0" ry="0"/>
       <text font-size="17.5" style="fill: #000000; fill-opacity: 1; stroke: none;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="1030" y="313.9">
-        <tspan x="1030" y="313.9">server</tspan>
+        <tspan x="1030" y="313.9">Bus</tspan>
       </text>
     </g>
     <g>
@@ -215,7 +215,7 @@
     <g>
       <path style="fill: none; fill-opacity: 1; stroke-opacity: 1; stroke-width: 2; stroke: #000000" fill-rule="evenodd" d="M 420 180 L 480,180 L 480,212 L 450,220 L 420,212 L 420,180z"/>
       <text font-size="17.5" style="fill: #000000; fill-opacity: 1; stroke: none;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="450" y="200">
-        <tspan x="450" y="200">API</tspan>
+        <tspan x="450" y="200">extra</tspan>
       </text>
     </g>
     <g>
@@ -225,7 +225,7 @@
     <g>
       <path style="fill: none; fill-opacity: 1; stroke-opacity: 1; stroke-width: 2; stroke: #000000" fill-rule="evenodd" d="M 1000 180 L 1060,180 L 1060,212 L 1030,220 L 1000,212 L 1000,180z"/>
       <text font-size="17.5" style="fill: #000000; fill-opacity: 1; stroke: none;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="1030" y="200">
-        <tspan x="1030" y="200">API</tspan>
+        <tspan x="1030" y="200">extra</tspan>
       </text>
     </g>
     <g>

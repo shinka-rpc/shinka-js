@@ -5,29 +5,35 @@ as it unable to do anything. So to make `@shinka-rpc` be able to do things, you
 have to pass the **transport** &mdash; commonly very small function, returning 2
 functions: `send` and `close`, and subscribing the `bus` instance to `onMessage`.
 
-# Structure of `@shinka-rpc`
+# How `@shinka-rpc` works
 
-There are main components of `@shinka-rpc`
+There are main components of `@shinka-rpc`:
 
-![diagram](../img/shinka-structure.svg "Structure of `@shinka-rpc`")
+![diagram](../img/how-shinka-rpc-works.svg "How `@shinka-rpc` works")
 
-## [Client](./client-bus) and [Server](./server-bus)
+But actually `bus` is a bit more complex:
 
-The only difference between [Server](./server-bus) and [Client](./client-bus)
-that [Server](./server-bus) accepts multiple connections, but the
-[Client](./client-bus) accepts only one
+![diagram](../img/bus-shinka.svg "`Bus` structure")
+
+I explain this at [Shinka](./shinka) article
+
+# [Client](./client) and [Server](./server)
+
+The only difference between [Server](./server) and [Client](./client)
+that [Server](./server) accepts multiple connections, but the
+[Client](./client) accepts only one
 
 ::: tip
 In some cases like
 [@shinka-rpc/dedicated-worker](https://www.npmjs.com/package/@shinka-rpc/dedicated-worker)
-both sides accepts only one connection. Who of them is [Server](./server-bus)?
+both sides accepts only one connection. Who of them is [Server](./server)?
 
-No one. It's OK scenario [Client](./client-bus) &longleftrightarrow; [Client](./client-bus)
+No one. It's OK scenario [Client](./client) &longleftrightarrow; [Client](./client)
 :::
 
-[Server](./server-bus) can initialize connections by itself, so reverse-server
+[Server](./server) can initialize connections by itself, so reverse-server
 and hybrid scenarios are also available
 
-## Registry
+# Registry
 
 This is the way how to control client's connect and disconnect

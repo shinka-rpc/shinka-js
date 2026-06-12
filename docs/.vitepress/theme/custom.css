@@ -13,3 +13,8 @@ html.dark {
     }
   }
 }
+
+img[alt="diagram"] {
+  margin-left: auto;
+  margin-right: auto;
+}
