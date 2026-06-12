@@ -5,6 +5,7 @@ layout: home
 hero:
   name: "shinka-rpc"
   text: Symmetric RPC bus
+  image: "./img/logo.png"
   tagline: Remote procedure call framework
   actions:
     - theme: brand

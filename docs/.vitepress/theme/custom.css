@@ -18,3 +18,7 @@ img[alt="diagram"] {
   margin-left: auto;
   margin-right: auto;
 }
+
+.VPHomeFeatures article.box > .icon {
+  font-size: 36px;
+}
