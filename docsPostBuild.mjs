@@ -15,7 +15,7 @@ const docsDistDir = join(docsDir, ".vitepress", "dist");
       `src="/${process.env.READTHEDOCS_VERSION_NAME || "assets"}/logo.png"`,
     )
     .replaceAll('href="/img/favicon.png"', 'href="/favicon.png"');
-  await writeFile(indexHTMLPath, indexHTML);
+  await writeFile(indexHTMLPath, indexHTML, { encoding: "utf-8" });
   await copyFile(
     join(docsDir, "img", "logo.png"),
     join(docsDistDir, "assets", "logo.png"),
