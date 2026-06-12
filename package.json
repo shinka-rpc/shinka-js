@@ -10,7 +10,6 @@
     "publishall": "node publishAll.mjs",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
-    "postdocs:build": "node docsPostBuild.mjs",
     "docs:preview": "vitepress preview docs"
   },
   "repository": {

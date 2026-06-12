@@ -1,4 +1,10 @@
 import { defineConfig } from "vitepress";
+import { dirname, join } from "path";
+import { copyFile } from "fs/promises";
+
+const __dirname = new URL(import.meta.url + "/..").pathname;
+const docsDir = dirname(__dirname);
+const docsDistDir = join(__dirname, "dist");
 
 const baseUrl = process.env.READTHEDOCS_VERSION_NAME
   ? `/${process.env.READTHEDOCS_VERSION_NAME}/`
@@ -16,6 +22,26 @@ export default defineConfig({
   base: baseUrl,
 
   head: [["link", { rel: "icon", href: faviconPath }]],
+
+  transformPageData: (pageData, context) => {
+    if (pageData.filePath === "index.md") {
+      const { hero } = pageData.frontmatter;
+      hero.image.src = process.env.READTHEDOCS_VERSION_NAME
+        ? `${baseUrl}assets/logo.png`
+        : "/assets/logo.png";
+    }
+  },
+
+  buildEnd: async (siteConfig) => {
+    await copyFile(
+      join(docsDir, "img", "logo.png"),
+      join(docsDistDir, "assets", "logo.png"),
+    );
+    await copyFile(
+      join(docsDir, "img", "favicon.png"),
+      join(docsDistDir, "favicon.png"),
+    );
+  },
 
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
