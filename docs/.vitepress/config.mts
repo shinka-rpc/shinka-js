@@ -26,9 +26,7 @@ export default defineConfig({
   transformPageData: (pageData, context) => {
     if (pageData.filePath === "index.md") {
       const { hero } = pageData.frontmatter;
-      hero.image.src = process.env.READTHEDOCS_VERSION_NAME
-        ? `${baseUrl}assets/logo.png`
-        : "/assets/logo.png";
+      hero.image.src = "/assets/logo.png";
     }
   },
 
