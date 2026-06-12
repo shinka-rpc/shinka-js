@@ -1,7 +1,7 @@
 import { defineConfig } from "vitepress";
 
-const faviconPath = `${process.env.READTHEDOCS_VERSION_NAME || "/img"}/favicon.png`;
-// const logoPath = `${process.env.READTHEDOCS_VERSION_NAME || "/img"}/logo.png`;
+const faviconPath = `/${process.env.READTHEDOCS_VERSION_NAME || "img"}/favicon.png`;
+// const logoPath = `/${process.env.READTHEDOCS_VERSION_NAME || "img"}/logo.png`;
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
