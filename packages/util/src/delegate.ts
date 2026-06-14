@@ -1,6 +1,7 @@
-export const delegate = <T>(defaultFn: T) => {
+type AnyFn = (...args: any) => any;
+
+export const delegate = <T extends AnyFn>(defaultFn: T) => {
   let current = defaultFn;
-  // @ts-expect-error: 2349, 7019
   const call = ((...args) => current(...args)) as T;
   const set = (value: T) => {
     current = value;
@@ -11,4 +12,4 @@ export const delegate = <T>(defaultFn: T) => {
   return { call, set, reset };
 };
 
-export type DelegateType<T> = ReturnType<typeof delegate<T>>;
+export type DelegateType<T extends AnyFn> = ReturnType<typeof delegate<T>>;

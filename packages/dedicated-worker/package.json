@@ -32,6 +32,6 @@
   },
   "dependencies": {
     "@shinka-rpc/core": "^0.1.0-alpha.0",
-    "@shinka-rpc/libtransport-message-port-send": "^0.0.1"
+    "@shinka-rpc/libtransport-message-port-send": "^0.1.0-alpha.0"
   }
 }

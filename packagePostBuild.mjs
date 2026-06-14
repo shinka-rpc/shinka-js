@@ -15,7 +15,7 @@ const handlePackageJSON = async () => {
 
   delete packageJSON.exports;
   packageJSON.main = "./index.js";
-  packageJSON.exports = { types: "./index.d.ts" };
+  // packageJSON.exports = { types: "./index.d.ts" };
 
   await writeFile(
     join(descDir, package_json),

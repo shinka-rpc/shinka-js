@@ -10,9 +10,9 @@ export const sharedWorkerClient =
     opts: TransportInitOpts,
   ) => {
     const instance = create();
-    instance.port.onmessage = onRawData;
+    instance.port.onmessage = (ev) => onRawData(ev.data);
     instance.port.onmessageerror = onClosed;
     const close = async () => instance.port.close();
     const send = makeSendRawFn[opts.mode](instance.port);
-    return { send, close, instruction: {} };
+    return { send, close, instruction: { hi: true, bye: true } };
   };

@@ -1,25 +1,9 @@
-import type {
-  ShinkaOnBus,
-  TransportInitOpts,
-  TransportInitOptsMode,
-} from "@shinka-rpc/core";
+/// <reference lib="webworker" />
 
-export type DedicatedWorkerServerConnect = (messageEvent: MessageEvent) => void;
-
-const makeSendRawFn = {
-  "not-serialized": () => {
-    throw new Error("invalid mode");
-  },
-  text: (targetOrigin) => (raw: string) => postMessage(raw, targetOrigin),
-  binary: (targetOrigin) => (raw: Uint8Array) =>
-    postMessage(raw, targetOrigin, [raw.buffer]),
-} as Record<
-  TransportInitOptsMode,
-  (targetOrigin: string) => (raw: any) => void
->;
+import type { ShinkaOnBus, TransportInitOpts } from "@shinka-rpc/core";
+import makeSendRawFn from "@shinka-rpc/libtransport-message-port-send";
 
 export const dedicatedWorkerServer =
-  (targetOrigin = "/") =>
   <SO>(shinka: ShinkaOnBus<SO, any>) =>
   (
     onRawData: (data: any) => void,
@@ -29,7 +13,7 @@ export const dedicatedWorkerServer =
     const messageHandler = (event: MessageEvent) => onRawData(event.data);
     addEventListener("message", messageHandler);
     addEventListener("messageerror", onClosed);
-    const send = makeSendRawFn[opts.mode](targetOrigin);
+    const send = makeSendRawFn[opts.mode](self);
     const _close = async () => {
       removeEventListener("message", messageHandler);
       removeEventListener("messageerror", onClosed);

@@ -22,7 +22,7 @@ export const sharedWorkerServer = ((
         opts: TransportInitOpts,
       ) => {
         const send = makeSendRawFn[opts.mode](port);
-        port.onmessage = onRawData;
+        port.onmessage = (ev) => onRawData(ev.data);
         port.onmessageerror = onClosed;
         return { send, close, instruction: {} };
       },

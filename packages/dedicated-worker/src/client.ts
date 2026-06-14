@@ -10,9 +10,9 @@ export const dedicatedWorkerClient =
     opts: TransportInitOpts,
   ) => {
     const instance = create();
-    instance.onmessage = onRawData;
+    instance.onmessage = (ev) => onRawData(ev.data);
     instance.onmessageerror = onClosed;
     const close = async () => instance.terminate();
     const send = makeSendRawFn[opts.mode](instance);
-    return { send, close, instruction: {} };
+    return { send, close, instruction: { hi: true, bye: true } };
   };
