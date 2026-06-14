@@ -1,0 +1,38 @@
+{
+  "name": "@shinka-rpc/serializer-gzip",
+  "version": "0.1.0-alpha.0",
+  "description": "",
+  "main": "./src/index.ts",
+  "scripts": {
+    "build": "tsgo -p tsconfig.build.json",
+    "postbuild": "node ../../packagePostBuild.mjs",
+    "test": "echo \"No test specified\""
+  },
+  "keywords": [
+    "rpc",
+    "background",
+    "worker",
+    "websocket",
+    "communication",
+    "remote"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shinka-rpc/shinka-js.git",
+    "directory": "packages/serializer-gzip"
+  },
+  "author": "AI Kavalevich",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/shinka-rpc/shinka-js/issues"
+  },
+  "homepage": "https://github.com/shinka-rpc/shinka-js",
+  "exports": {
+    "default": "./src/index.ts"
+  },
+  "dependencies": {
+    "pako": "^2.1.0",
+    "@types/pako": "^2.0.4",
+    "@shinka-rpc/core": "^0.1.0-alpha.0"
+  }
+}

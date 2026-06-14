@@ -35,7 +35,9 @@
     "@msgpack/msgpack": "^3",
     "@types/chrome": "*",
     "@types/node": "*",
-    "lerna": "^9"
+    "@types/pako": "^2.0.4",
+    "lerna": "^9",
+    "pako": "^2.1.0"
   },
   "devDependencies": {
     "@jest/globals": "^30.3.0",

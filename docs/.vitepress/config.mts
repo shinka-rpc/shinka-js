@@ -6,13 +6,13 @@ const __dirname = new URL(import.meta.url + "/..").pathname;
 const docsDir = dirname(__dirname);
 const docsDistDir = join(__dirname, "dist");
 
+const PROD = process.env.NODE_ENV === "production";
+
 const baseUrl = process.env.READTHEDOCS_VERSION_NAME
   ? `/${process.env.READTHEDOCS_VERSION_NAME}/`
   : "/";
 
-const faviconPath = process.env.READTHEDOCS_VERSION_NAME
-  ? `${baseUrl}favicon.png`
-  : "/img/favicon.png";
+const faviconPath = PROD ? `${baseUrl}favicon.png` : "/img/favicon.png";
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
@@ -24,7 +24,7 @@ export default defineConfig({
   head: [["link", { rel: "icon", href: faviconPath }]],
 
   transformPageData: (pageData, context) => {
-    if (pageData.filePath === "index.md") {
+    if (PROD && pageData.filePath === "index.md") {
       const { hero } = pageData.frontmatter;
       hero.image.src = "/assets/logo.png";
     }
@@ -85,6 +85,7 @@ export default defineConfig({
             { text: "JSON", link: "/serializers/json" },
             { text: "BSON", link: "/serializers/bson" },
             { text: "Msgspec", link: "/serializers/msgspec" },
+            { text: "GZIP", link: "/serializers/gzip" },
           ],
         },
       ],
