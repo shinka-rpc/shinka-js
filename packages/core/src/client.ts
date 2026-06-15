@@ -1,5 +1,10 @@
 import { setupHandlerRegistries, createHandlerRegistries } from "./shinka";
-import { defaultRequestTimeout, defaultSerializerRoot } from "./constants";
+import {
+  defaultRequestTimeout,
+  defaultSerializerRoot,
+  defaultExchangeTimeout,
+  defaultExchangeTimeoutThrashold,
+} from "./constants";
 import { Bus } from "./bus";
 import { createEventListeners } from "./factory/event-listeners-bus";
 
@@ -16,7 +21,10 @@ export type ClientProps<SO, TO> = BusProps<
   SO,
   TO,
   InternalHandlerThisArg<SO, TO, Client<SO, TO>>
->;
+> & {
+  exchangeTimeout?: number;
+  exchangeTimeoutThrashold?: number;
+};
 
 export class Client<SO, TO> extends Bus<SO, TO> {
   public onRequest!: ShinkaOnRequest<SO, TO, this>;
@@ -26,6 +34,8 @@ export class Client<SO, TO> extends Bus<SO, TO> {
     transport,
     serializer = defaultSerializerRoot,
     responseTimeout = defaultRequestTimeout,
+    exchangeTimeout = defaultExchangeTimeout,
+    exchangeTimeoutThrashold = defaultExchangeTimeoutThrashold,
   }: ClientProps<SO, TO>) {
     const [transportRegistries, transportFactory] =
       setupHandlerRegistries(transport);
@@ -46,7 +56,14 @@ export class Client<SO, TO> extends Bus<SO, TO> {
       user: userRegistries,
     };
     const eventListeners = createEventListeners();
-    super(factories as any, registries, eventListeners, responseTimeout);
+    super(
+      factories as any,
+      registries,
+      eventListeners,
+      responseTimeout,
+      exchangeTimeout,
+      exchangeTimeoutThrashold,
+    );
     this.onRequest = userRegistries.onRequest;
     this.dataEvent = userRegistries.onDataEvent;
     Object.freeze(this);

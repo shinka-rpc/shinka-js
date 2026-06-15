@@ -3,6 +3,7 @@ import { ReusablePromise } from "@shinka-rpc/util";
 import {
   defaultRequestTimeout,
   defaultExchangeTimeoutThrashold,
+  defaultExchangeTimeout,
 } from "./constants";
 
 import { Bus } from "./bus";
@@ -16,16 +17,18 @@ import type {
   ShinkaOnRequest,
   ShinkaOnDataEvent,
   InternalHandlerRegistries,
-  ExchangeTimeouts,
   HandlerRegistriesAll,
 } from "./types";
 
 import { createHandlerRegistries, type HandlerRegistries } from "./shinka";
 
-export type HubOptions = {
-  responseTimeout?: number;
-  exchangeTimeouts?: ExchangeTimeouts;
+type HubTimeoutSettings = {
+  responseTimeout: number;
+  exchangeTimeout: number;
+  exchangeTimeoutThrashold: number;
 };
+
+export type HubOptions = Partial<HubTimeoutSettings>;
 
 export type HandlerRegistriesHub<SO, TO> = {
   transport?: InternalHandlerRegistries<SO, TO, Bus<SO, TO>>;
@@ -40,8 +43,7 @@ export type HubConnectProps<SO, TO> = {
 export class Hub<SO, TO> {
   private userRegistries!: HandlerRegistries<SO, TO, Bus<SO, TO>>;
   private eventListeners!: ShinkaEventListeners<Bus<SO, TO>>;
-  private responseTimeout!: number;
-  private exchangeTimeouts!: ExchangeTimeouts;
+  private timeoutSettings!: HubTimeoutSettings;
   private clients!: Set<Bus<SO, TO>>;
   private disposing!: ReusablePromise<void>;
 
@@ -51,13 +53,14 @@ export class Hub<SO, TO> {
 
   constructor({
     responseTimeout = defaultRequestTimeout,
-    exchangeTimeouts = {
-      value: 0,
-      thrashold: defaultExchangeTimeoutThrashold,
-    },
+    exchangeTimeout = defaultExchangeTimeout,
+    exchangeTimeoutThrashold = defaultExchangeTimeoutThrashold,
   }: HubOptions) {
-    this.responseTimeout = responseTimeout;
-    this.exchangeTimeouts = exchangeTimeouts;
+    this.timeoutSettings = {
+      responseTimeout,
+      exchangeTimeout,
+      exchangeTimeoutThrashold,
+    };
     this.eventListeners = createEventListeners();
     this.userRegistries = createHandlerRegistries<SO, TO, Bus<SO, TO>>();
     this.clients = new Set<Bus<SO, TO>>();
@@ -86,8 +89,9 @@ export class Hub<SO, TO> {
       factories as any,
       handlerRegistriesAll as any,
       this.eventListeners as any,
-      this.responseTimeout,
-      this.exchangeTimeouts,
+      this.timeoutSettings.responseTimeout,
+      this.timeoutSettings.exchangeTimeout,
+      this.timeoutSettings.exchangeTimeoutThrashold,
     );
 
     Object.freeze(bus);

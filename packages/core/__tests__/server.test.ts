@@ -63,6 +63,7 @@ const setupClientServer = async (
   const client = new Client({
     transport: fakeTransportClient(pipe1to2, "client1", results),
     serializer: createSerializer("client1", results),
+    exchangeTimeout: 0,
   });
 
   client.addEventListener("connect", () =>
@@ -84,6 +85,7 @@ const setupClientServer = async (
   const server = new Server({
     transport: fakeTransportServer(pipe2to1, "server", results),
     serializer: createSerializer("server", results),
+    exchangeTimeout: 0,
   });
 
   server.addEventListener("connect", (bus) => {

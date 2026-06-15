@@ -25,10 +25,12 @@ const setupClientClient = async <TO>(
   const bus1 = new Client({
     transport: fakeTransportClient(pipe1to2, "bus1", results),
     serializer: createSerializer("bus1", results),
+    exchangeTimeout: 0,
   });
   const bus2 = new Client({
     transport: fakeTransportClient(pipe2to1, "bus2", results),
     serializer: createSerializer("bus2", results),
+    exchangeTimeout: 0,
   });
 
   bus1.addEventListener("connect", () =>

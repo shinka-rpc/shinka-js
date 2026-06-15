@@ -11,6 +11,7 @@ import {
   defaultRequestTimeout,
   defaultExchangeTimeoutThrashold,
   defaultSerializerRoot,
+  defaultExchangeTimeout,
 } from "./constants";
 
 import type { Bus } from "./bus";
@@ -125,12 +126,14 @@ export class Server<SO, TO> {
     transport: transportServerFactory,
     serializer: serializerRoot = defaultSerializerRoot,
     responseTimeout = defaultRequestTimeout,
-    exchangeTimeouts = {
-      value: 0,
-      thrashold: defaultExchangeTimeoutThrashold,
-    },
+    exchangeTimeout = defaultExchangeTimeout,
+    exchangeTimeoutThrashold = defaultExchangeTimeoutThrashold,
   }: ServerOptions<SO, TO>) {
-    this.hub = new Hub({ responseTimeout, exchangeTimeouts });
+    this.hub = new Hub({
+      responseTimeout,
+      exchangeTimeout,
+      exchangeTimeoutThrashold,
+    });
     const [listeners, callEvent] = createServerEventListenerPair();
     this.callEvent = callEvent;
     this.connectDelegate = delegate(

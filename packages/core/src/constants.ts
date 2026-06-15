@@ -109,4 +109,5 @@ export const defaultSerializerRoot: SerializerRoot<any, any, any> = () =>
   defaultSerializer;
 
 export const defaultRequestTimeout = 30_000;
-export const defaultExchangeTimeoutThrashold = 1000;
+export const defaultExchangeTimeout = 10_000;
+export const defaultExchangeTimeoutThrashold = 1_000;

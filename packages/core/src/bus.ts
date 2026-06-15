@@ -18,6 +18,7 @@ import {
   messageTypeBus,
   messageTypeUser,
   defaultRequestTimeout,
+  defaultExchangeTimeout,
   defaultExchangeTimeoutThrashold,
 } from "./constants";
 
@@ -128,10 +129,8 @@ export class Bus<SO, TO> {
     handlerRegistries: HandlerRegistriesAll<SO, TO, Bus<SO, TO>>,
     eventListeners: ShinkaEventListeners<Bus<SO, TO>>,
     responseTimeout = defaultRequestTimeout,
-    exchangeTimeouts: ExchangeTimeouts = {
-      value: 0,
-      thrashold: defaultExchangeTimeoutThrashold,
-    },
+    exchangeTimeout = defaultExchangeTimeout,
+    exchangeTimeoutThrashold = defaultExchangeTimeoutThrashold,
   ) {
     this.factories = factories;
     this.eventListeners = {
@@ -139,7 +138,10 @@ export class Bus<SO, TO> {
       parent: eventListeners,
       banned: createEventListenersBanned(),
     };
-    this.exchangeTimeouts = exchangeTimeouts;
+    this.exchangeTimeouts = {
+      value: exchangeTimeout,
+      thrashold: exchangeTimeoutThrashold,
+    };
     this.dispatchMap = new Map();
 
     this.vars = {
@@ -210,7 +212,7 @@ export class Bus<SO, TO> {
       bus: this,
       shinka: busShinka,
       vars: this.vars,
-      exchangeTimeouts: exchangeTimeouts,
+      exchangeTimeouts: this.exchangeTimeouts,
     });
 
     const serializerTA: InternalHandlerThisArg<
