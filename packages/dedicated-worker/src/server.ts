@@ -10,6 +10,7 @@ export const dedicatedWorkerServer =
     onClosed: () => void,
     opts: TransportInitOpts,
   ) => {
+    if (opts.mode === "not-serialized") throw new Error("invalid mode");
     const messageHandler = (event: MessageEvent) => onRawData(event.data);
     addEventListener("message", messageHandler);
     addEventListener("messageerror", onClosed);

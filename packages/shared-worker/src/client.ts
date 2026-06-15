@@ -9,6 +9,7 @@ export const sharedWorkerClient =
     onClosed: () => void,
     opts: TransportInitOpts,
   ) => {
+    if (opts.mode === "not-serialized") throw new Error("invalid mode");
     const instance = create();
     instance.port.onmessage = (ev) => onRawData(ev.data);
     instance.port.onmessageerror = onClosed;

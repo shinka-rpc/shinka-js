@@ -1,6 +1,5 @@
 import type {
   SerializerRoot,
-  SerializerFactory,
   FnConstructorName,
   SerializerFnSync,
   SerializerFnAsync,
@@ -74,7 +73,7 @@ export const simpleGzip = <SO, TO, TA>(parent: SerializerRoot<SO, TO, TA>) =>
   ((shinkaOn) => {
     const parentSerializerFactory = parent(shinkaOn);
 
-    return (async () => {
+    return async () => {
       const maybeSerializerInstance = parentSerializerFactory();
 
       const parentInstance =
@@ -103,5 +102,5 @@ export const simpleGzip = <SO, TO, TA>(parent: SerializerRoot<SO, TO, TA>) =>
         transportInitOpts: { mode: "binary", contentType },
         typeHints: parentInstance.typeHints,
       };
-    }) as SerializerFactory<any, any>;
+    };
   }) as SerializerRoot<any, any, any>;

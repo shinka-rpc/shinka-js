@@ -21,6 +21,7 @@ export const sharedWorkerServer = ((
         onClosed: () => void,
         opts: TransportInitOpts,
       ) => {
+        if (opts.mode === "not-serialized") throw new Error("invalid mode");
         const send = makeSendRawFn[opts.mode](port);
         port.onmessage = (ev) => onRawData(ev.data);
         port.onmessageerror = onClosed;

@@ -9,6 +9,7 @@ export const dedicatedWorkerClient =
     onClosed: () => void,
     opts: TransportInitOpts,
   ) => {
+    if (opts.mode === "not-serialized") throw new Error("invalid mode");
     const instance = create();
     instance.onmessage = (ev) => onRawData(ev.data);
     instance.onmessageerror = onClosed;

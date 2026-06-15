@@ -1,9 +1,8 @@
-import type { SerializerFactory, SerializerRoot } from "@shinka-rpc/core";
+import type { SerializerRoot } from "@shinka-rpc/core";
 
-export default (() =>
-  (() => ({
-    serialize: JSON.stringify,
-    deserialize: JSON.parse,
-    transportInitOpts: { mode: "text", contentType: "application/json" },
-    typeHints: { serialize: "Function", deserialize: "Function" },
-  })) as SerializerFactory<any, any>) as SerializerRoot<any, any, any>;
+export default ((shinkaOn) => () => ({
+  serialize: JSON.stringify,
+  deserialize: JSON.parse,
+  transportInitOpts: { mode: "text", contentType: "application/json" },
+  typeHints: { serialize: "Function", deserialize: "Function" },
+})) as SerializerRoot<any, any, any>;

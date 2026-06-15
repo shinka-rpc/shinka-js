@@ -1,4 +1,4 @@
-import type { TransportInitOptsMode } from "@shinka-rpc/core";
+import type { SerializationMode } from "@shinka-rpc/core";
 
 export interface HasPostMessage {
   postMessage(message: any, transfer: Transferable[]): void;
@@ -6,12 +6,6 @@ export interface HasPostMessage {
 }
 
 export default {
-  "not-serialized": () => {
-    throw new Error("invalid mode");
-  },
   text: (port) => (raw: string) => port.postMessage(raw),
   binary: (port) => (raw: Uint8Array) => port.postMessage(raw, [raw.buffer]),
-} as Record<
-  TransportInitOptsMode,
-  (port: HasPostMessage) => (raw: any) => void
->;
+} as Record<SerializationMode, (port: HasPostMessage) => (raw: any) => void>;
