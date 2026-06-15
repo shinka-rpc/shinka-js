@@ -176,12 +176,16 @@ export type RequestHandler<SO, TO, TA, B> = (
   dispatchError: DispatchError,
 ) => void;
 
-export type TransportInitOptsMode = "text" | "binary" | "not-serialized";
+export type SerializationMode = "text" | "binary";
+export type NotSerialized = "not-serialized";
+export type TransportInitOptsMode = SerializationMode | NotSerialized;
 
-export type TransportInitOpts = {
-  mode: TransportInitOptsMode;
-  contentType?: string;
-};
+export type TransportInitOpts =
+  | {
+      mode: SerializationMode;
+      contentType: string;
+    }
+  | { mode: NotSerialized };
 
 export type SerializerTypeHints = {
   serialize: FnConstructorName;

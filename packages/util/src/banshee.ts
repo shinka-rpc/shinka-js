@@ -71,8 +71,7 @@ const dummy = () => {};
 export const banshee = (target: any, onWail: OnBansheeWail) => {
   const { call, set, reset } = delegate(dummy);
   const onWailRef = new WeakRef(onWail);
-  const eventHandler = bansheeEventHandler.bind([onWailRef, reset]);
-  set(eventHandler);
+  set(bansheeEventHandler.bind([onWailRef, reset]));
   const token: Token = {};
   registry.unregister(target);
   registry.register(target, call, token);

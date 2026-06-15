@@ -1,11 +1,5 @@
 {
   "compilerOptions": {
-    "paths": {
-      "@shinka-rpc/core": ["./packages/core/src"],
-      "@shinka-rpc/util": ["./packages/util/src"],
-      "@shinka-rpc/libtransport-message-port-send": [
-        "./packages/libtransport-message-port-send/src"
-      ]
-    }
+    "paths": { "@shinka-rpc/*": ["./packages/*/src"] }
   }
 }

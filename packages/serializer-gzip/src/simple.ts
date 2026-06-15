@@ -1,7 +1,6 @@
 import type {
   SerializerRoot,
   SerializerFactory,
-  TransportInitOptsMode,
   FnConstructorName,
   SerializerFnSync,
   SerializerFnAsync,
@@ -9,19 +8,15 @@ import type {
   DeserializerFnSync,
   DeserializerFnAsync,
   DeserializerFn,
+  SerializationMode,
 } from "@shinka-rpc/core";
 
 import { inflate, deflate } from "pako";
-
-const invalidMode = () => {
-  throw new Error("invalid mode");
-};
 
 const textDecoder = new TextDecoder();
 const textEncoder = new TextEncoder();
 
 const makeSerializer = {
-  "not-serialized": { Function: invalidMode, AsyncFunction: invalidMode },
   text: {
     Function:
       <SO>(serialize: SerializerFnSync<any, string, SO>) =>
@@ -43,7 +38,7 @@ const makeSerializer = {
         deflate(await serialize(data)),
   },
 } as Record<
-  TransportInitOptsMode,
+  SerializationMode,
   Record<
     FnConstructorName,
     <SO>(serialize: SerializerFn<any, any, SO>) => SerializerFn<any, any, SO>
@@ -51,7 +46,6 @@ const makeSerializer = {
 >;
 
 const makeDeserializer = {
-  "not-serialized": { Function: invalidMode, AsyncFunction: invalidMode },
   text: {
     Function: (deserialize: DeserializerFnSync<any, string>) => (data: any) =>
       deserialize(textDecoder.decode(inflate(data))),
@@ -69,20 +63,12 @@ const makeDeserializer = {
         await deserialize(inflate(data)),
   },
 } as Record<
-  TransportInitOptsMode,
+  SerializationMode,
   Record<
     FnConstructorName,
     (deserialize: DeserializerFn<any, any>) => DeserializerFn<any, any>
   >
 >;
-
-const defaultContentType: Record<
-  Exclude<TransportInitOptsMode, "not-serialized">,
-  string
-> = {
-  text: "text/plain",
-  binary: "application/octet-stream",
-};
 
 export const simpleGzip = <SO, TO, TA>(parent: SerializerRoot<SO, TO, TA>) =>
   ((shinkaOn) => {
@@ -98,6 +84,8 @@ export const simpleGzip = <SO, TO, TA>(parent: SerializerRoot<SO, TO, TA>) =>
 
       const { mode } = parentInstance.transportInitOpts;
 
+      if (mode === "not-serialized") throw new Error("invalid mode");
+
       const serialize = makeSerializer[mode][
         parentInstance.typeHints.serialize
       ](parentInstance.serialize);
@@ -107,19 +95,12 @@ export const simpleGzip = <SO, TO, TA>(parent: SerializerRoot<SO, TO, TA>) =>
       ](parentInstance.deserialize);
 
       const contentType =
-        "gzip+" +
-        (parentInstance.transportInitOpts.contentType ||
-          defaultContentType[
-            mode as Exclude<TransportInitOptsMode, "not-serialized">
-          ]);
+        "gzip+" + parentInstance.transportInitOpts.contentType;
 
       return {
         serialize,
         deserialize,
-        transportInitOpts: {
-          mode,
-          contentType,
-        },
+        transportInitOpts: { mode: "binary", contentType },
         typeHints: parentInstance.typeHints,
       };
     }) as SerializerFactory<any, any>;
