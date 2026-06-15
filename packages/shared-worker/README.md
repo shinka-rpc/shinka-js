@@ -8,61 +8,26 @@ This package implements the transport implementation of
 
 # Usage
 
-## `client` case
+## `client` / `page` case
 
 ```typescript
-import { Client, TransportFactory } from "@shinka-rpc/core";
-import { SharedWorker2Transport } from "@shinka-rpc/shared-worker";
-import serializer from "@shinka-rpc/serializer-json";  // for example
+import { Client } from "@shinka-rpc/core";
+import { sharedWorkerClient } from "@shinka-rpc/shared-worker";
+import serializer from "@shinka-rpc/serializer-json";
 
-const transport: TransportFactory<Client> = async (bus) =>
-  SharedWorker2Transport(
-    new SharedWorker(new URL("./worker.ts", import.meta.url)),
-    bus,
-  );
+const transport = sharedWorkerClient(
+  () => new SharedWorker(new URL("../server", import.meta.url)),
+);
 
-export const bus = new Client({ factory, serializer });
-
-bus.start();
+export const client = new Client({ transport, serializer });
 ```
 
-### API Reference:
-
-**SharedWorker2Transport**:
-
-- **Required** instance: [SharedWorker](https://developer.mozilla.org/en-US/docs/Web/API/SharedWorker)
-
-- **Required** bus: `Client`
-
-- **Optional** `binary`: `Boolean` &mdash; enable binary-specific `transfer` optimization. **Default**: `false`
-
-- **Refurning**: `Transport`
-
-## `server` case / `worker` side
-
-First of all: please read the docs about
-[SharedWorker](https://developer.mozilla.org/en-US/docs/Web/API/SharedWorker)
-API. There is no magic.
+## `server` / `worker` case
 
 ```typescript
-// @ts-nocheck
-declare let onconnect: (event: MessageDataEvent) => void;
+import { Server } from "@shinka-rpc/core";
+import { sharedWorkerServer } from "@shinka-rpc/shared-worker";
+import serializer from "@shinka-rpc/serializer-json";
 
-import { ServerBus } from "@shinka-rpc/core";
-import { SharedWorkerServer } from "@shinka-rpc/shared-worker";
-import serializer from "@shinka-rpc/serializer-json";  // for example
-
-export const server = new ServerBus({ serializer });
-
-onconnect = SharedWorkerServer(server);
+const server = new Server({ transport: sharedWorkerServer, serializer });
 ```
-
-### API Reference:
-
-**SharedWorkerServer**:
-
-- **Reqiored** server: `ServerBus`
-
-- **Optional** `binary`: `Boolean` &mdash; enable binary-specific `transfer` optimization. **Default**: `false`
-
-- **Refurning**: `(e: MessageDataEvent) => void`
