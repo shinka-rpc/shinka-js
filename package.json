@@ -44,7 +44,9 @@
     "@typescript/native-preview": "^7.0.0-dev.20260421.2",
     "babel-jest": "^30.3.0",
     "compare-versions": "^6",
+    "mermaid": "^11.15.0",
     "ts-jest": "^29",
-    "vitepress": "next"
+    "vitepress": "next",
+    "vitepress-plugin-mermaid": "^2.0.17"
   }
 }

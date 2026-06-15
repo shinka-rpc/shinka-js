@@ -68,19 +68,18 @@ export const complteShinka = <SO, TO, TA>(
   }: HandlerRegistries<SO, TO, TA>,
 ) => {
   const [REQUEST, RESPONSE_OK, RESPONSE_ERR, EVENT] = messageTypeGroup;
-  const [setReqVars, request, onResponseOK, onResponseERR, onMessageRequest] =
-    reqrsp(
-      REQUEST,
-      [RESPONSE_ERR, RESPONSE_OK],
-      send,
-      dispatchRequest,
-      responseTimeout,
-    );
+  const [setReqVars, request, onSuccess, onError, onMessageRequest] = reqrsp(
+    REQUEST,
+    [RESPONSE_ERR, RESPONSE_OK],
+    send,
+    dispatchRequest,
+    responseTimeout,
+  );
   const dataEvent = createEventSend(EVENT, send);
 
   dispatchMap.set(REQUEST, onMessageRequest);
-  dispatchMap.set(RESPONSE_OK, onResponseOK);
-  dispatchMap.set(RESPONSE_ERR, onResponseERR);
+  dispatchMap.set(RESPONSE_OK, onSuccess);
+  dispatchMap.set(RESPONSE_ERR, onError);
   dispatchMap.set(EVENT, dispatchDataEvent);
 
   const setVars = composeSetVars(setEventVars, setReqVars);

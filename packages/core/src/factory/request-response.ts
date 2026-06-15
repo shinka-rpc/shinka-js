@@ -14,8 +14,8 @@ import type {
 } from "../types";
 import type {
   MessageTypeAllRequest,
-  MessageTypeAllResponseERR,
-  MessageTypeAllResponseOK,
+  MessageTypeAllError,
+  MessageTypeAllSuccess,
 } from "../constants";
 
 type PendingMap = Map<REQID, RejectResolve>;
@@ -48,7 +48,7 @@ const createOnResponse =
 
 export const reqrsp = <SO, TO, TA>(
   requestType: MessageTypeAllRequest,
-  responseTypes: [MessageTypeAllResponseERR, MessageTypeAllResponseOK],
+  responseTypes: [MessageTypeAllError, MessageTypeAllSuccess],
   send: SendFn<SO, TO>,
   onRequest: RequestHandler<SO, TO, TA, any>,
   timeout: number,
@@ -65,8 +65,8 @@ export const reqrsp = <SO, TO, TA>(
 
   const seq = sequence() as () => REQID;
 
-  const onResponseOK = createOnResponse(pending, timeouts, 1, vars as any);
-  const onResponseERR = createOnResponse(pending, timeouts, 0, vars as any);
+  const onSuccess = createOnResponse(pending, timeouts, 1, vars as any);
+  const onError = createOnResponse(pending, timeouts, 0, vars as any);
 
   const onTimeout = (reqID: REQID) => {
     const message: MessageResponse<any> = [
@@ -74,7 +74,7 @@ export const reqrsp = <SO, TO, TA>(
       reqID,
       { message: "Request timeout", reqID },
     ];
-    onResponseERR(message);
+    onError(message);
   };
 
   const request = <T>(
@@ -97,11 +97,11 @@ export const reqrsp = <SO, TO, TA>(
     onRequest(key, data, ctx, vars.thisArg!, vars.dispatchError!);
   };
 
-  return [setVars, request, onResponseOK, onResponseERR, onMessageRequest] as [
+  return [setVars, request, onSuccess, onError, onMessageRequest] as [
     typeof setVars,
     typeof request,
-    typeof onResponseOK,
-    typeof onResponseERR,
+    typeof onSuccess,
+    typeof onError,
     typeof onMessageRequest,
   ];
 };
