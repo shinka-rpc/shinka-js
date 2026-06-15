@@ -52,12 +52,15 @@ server.onDataEvent(
   }
 );
 
-// Here we wrap `request` method. Both `request` and `event` accept only one
+// Here we wrap `request` method. Both `request` and `dataEvent` accept only one
 // argument. To make them able to accept any number of args you have to pack
 // argsuments into `Array` or `Object` -- as you prefer.
 // Generally `Array` is more compact after serializing
 const notifyUpdated = (bus: Bus) =>
-  bus.request<string>("notify-updated", [tokenLastUpdated, bus.extra.id]);
+  bus.dataEvent("notify-updated", [tokenLastUpdated, bus.extra.id]);
+
+const getStuff = (bus: Bus) =>
+  bus.request<string>("get-stuff", null);
 ```
 :::
 
@@ -76,5 +79,16 @@ const client = new Client({ transport, serializer });
 client.addEventListener("error", console.error);
 
 client.start();
+
+// Request and event handlers may called by server
+
+client.onDataEvent(
+  "notify-updated",
+  ([tokenLastUpdated, busId]: [Date, Number]) => {
+    console.log({tokenLastUpdated, busId})
+  },
+)
+
+client.onRequest("get-stuff", () => Math.random().toString().slice(2));
 ```
 :::
