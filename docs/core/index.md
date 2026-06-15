@@ -2,38 +2,26 @@
 
 Ironically the `core` know how to do everything but it is made so abstract that
 as it unable to do anything. So to make `@shinka-rpc` be able to do things, you
-have to pass the **transport** &mdash; commonly very small function, returning 2
-functions: `send` and `close`, and subscribing the `bus` instance to `onMessage`.
-
-# How `@shinka-rpc` works
-
-There are main components of `@shinka-rpc`:
+have to pass the **transport** and (often) **serializer** &mdash; commonly very small functions.
 
 ![diagram](../img/how-shinka-rpc-works.svg "How `@shinka-rpc` works")
 
-But actually `bus` is a bit more complex:
+# Basic principles
 
-![diagram](../img/bus-shinka.svg "`Bus` structure")
+- `request` **requires** the response. Good analogy is
+  [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API)
 
-I explain this at [Shinka](./shinka) article
+- `dataEvent` **doesn't expect** the response. Good analogy is
+  [Beacon API](https://developer.mozilla.org/en-US/docs/Web/API/Beacon_API)
 
-# [Client](./client) and [Server](./server)
+- `request` and `dataEvent` registries are **separated**. If you want call any
+  remote handler and conditionally expect or ignore the answer, you may
+  register it twice
 
-The only difference between [Server](./server) and [Client](./client)
-that [Server](./server) accepts multiple connections, but the
-[Client](./client) accepts only one
+- Public instancies are **frozen** / `Object.freeze()`. If you want to store
+  bus-related metadata, you may use `bus.extra` attribute
 
-::: tip
-In some cases like
-[@shinka-rpc/dedicated-worker](https://www.npmjs.com/package/@shinka-rpc/dedicated-worker)
-both sides accepts only one connection. Who of them is [Server](./server)?
-
-No one. It's OK scenario [Client](./client) &longleftrightarrow; [Client](./client)
-:::
-
-[Server](./server) can initialize connections by itself, so reverse-server
-and hybrid scenarios are also available
-
-# Registry
-
-This is the way how to control client's connect and disconnect
+- Both `request` and `dataEvent` handlers accept 2 args:
+  - `any` payload passed by interlocutor. Need to pass more arguments?
+  ~~Buy premium version for $4.99~~ Use `Array` or `Object` to pack them
+  - `thisArg`. In `user shinka` case it's `Client` as is or `Bus` for `Server`

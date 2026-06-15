@@ -58,10 +58,10 @@ export default withMermaid({
         {
           items: [
             { text: "Core", link: "/core/" },
-            { text: "Shinka", link: "/core/shinka" },
             { text: "Usage Example", link: "/core/usage-example" },
+            { text: "Shinka", link: "/core/shinka" },
             { text: "Client", link: "/core/client" },
-            { text: "ServerBus", link: "/core/server" },
+            { text: "Server", link: "/core/server" },
           ],
         },
       ],

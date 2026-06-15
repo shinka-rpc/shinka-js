@@ -10,8 +10,10 @@ At the same time, *shinka* is also a word for a type of ham or cured meat in sev
 
 # And where is this `shinka`?
 
+Short answer: under `Bus` hood. And it's not single:
+
 ```mermaid
-flowchart TB
+graph TB
   subgraph BUS ["Bus"]
     subgraph U ["User shinka"]
       subgraph UDO ["ShinkaDo"]
@@ -69,21 +71,50 @@ flowchart TB
   classDef onDataEvent stroke:#f00
 ```
 
-There are 4 (!) independent `shinka`s under the bus hood: own for transport,
-serializer, bus and user. Your application defined `onRequest` / `onDataEvent`
-handlers and `request` / `dataEvent` methods are just `user shinka`. 
+There are ***4*** independent `shinka`s under the bus hood: own for _transport_,
+_serializer_, _bus_ and _user_. Your application defined `onRequest` /
+`onDataEvent` handlers and `request` / `dataEvent` methods are just
+`user shinka`
 
 ::: tip BUT
-All 4 `shinka`s are handled by single connection
+All 4 `shinka`s are handled by single connection. They are dispatched via
+internal leading `MessageType` field
+:::
+
+::: details Literally:
+```typescript
+export const enum MessageType {
+  // TRANSPORT
+  TRANSPORT_REQUEST = 0,
+  TRANSPORT_SUCCESS = 1,
+  TRANSPORT_ERROR = 2,
+  TRANSPORT_EVENT = 3,
+  // SERIALIZER
+  SERIALIZER_REQUEST = 4,
+  SERIALIZER_SUCCESS = 5,
+  SERIALIZER_ERROR = 6,
+  SERIALIZER_EVENT = 7,
+  // BUS
+  BUS_REQUEST = 8,
+  BUS_SUCCESS = 9,
+  BUS_ERROR = 10,
+  BUS_EVENT = 11,
+  // USER
+  USER_REQUEST = 12,
+  USER_SUCCESS = 13,
+  USER_ERROR = 14,
+  USER_EVENT = 15,
+}
+```
 :::
 
 # So, what is `Shinka`?
 
 It's independent communication channel:
-- `ShinkaOn`: own `onRequest` and `onDataEvent` handlers
+- `ShinkaOn`: own `onRequest` and `onDataEvent` handler registries
 - `ShinkaDo`: own `request` and `dataEvent` senders
 
-# What does this actually mean?
+# Why?
 
 This allow building complex and powerful transports and serializers. For
 example, serializer may ask interlocutor to change encryption key. One of them,

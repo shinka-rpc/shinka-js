@@ -25,8 +25,8 @@ hero:
 features:
   - title: Symmetricity
     icon: ☯
-    details: Every participant may register his request and event handlers,
-      initialize connestions, and send events and requests to the interlocutor
+    details: Server may send request to particular client and receive its
+      response
 
   - title: External transports
     icon: 🚂

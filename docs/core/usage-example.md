@@ -1,61 +1,80 @@
 # Usage Example
 
-- `request` handler **requires** the response. Good analogy is
-[Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API)
+Let's create a `SharedWorker`!
 
-- `event` handler **ignores** the response. Good analogy is
-[Beacon API](https://developer.mozilla.org/en-US/docs/Web/API/Beacon_API)
-
-Here is the most canonical usage example:
-
+::: details Server
 ```typescript
-import { Client, TransportFactory } from "@shinka-rpc/core";
-import { SharedWorker2Transport } from "@shinka-rpc/shared-worker/client";
-import serializer from "@shinka-rpc/serializer-json";  // for example
+import { Server, type Bus } from "@shinka-rpc/core";
+import { sharedWorkerServer } from "@shinka-rpc/shared-worker";
+import serializer from "@shinka-rpc/serializer-json";
 
+import { sequence } from "@shinka-rpc/util";
 
-const transport: TransportFactory<Client> = async (bus) =>
-  SharedWorker2Transport(
-    new SharedWorker(new URL("./worker.ts", import.meta.url)),
-    bus,
-  );
+const server = new Server({ transport: sharedWorkerServer, serializer });
 
-export const bus = new Client({ factory, serializer });
+server.addEventListener("error", console.error);
 
-bus.start();
+const seq = sequence();
 
-// Here we register request and event handlers
+server.addEventListener("connect", (bus) => {
+  bus.extra.id = seq();
+  console.log(`connected: ${bus.extra.id}`);
+});
+
+server.addEventListener("disconnect", (bus) => {
+  console.log(`disconnected: ${bus.extra.id}`);
+});
+
+server.start();  // < === By default the bus is not started!
+
+// Here we register request and dataEvent handlers
 // They can be called by interlocutor side
 // Both client and server may call API each other
 
 let token: string | null = null;
+let tokenLastUpdated = new Date();
 
-bus.onRequest("request-async", async () => {
+server.onRequest("request-async", async () => {
   const response = await fetch(/*...*/);
   return await response.json();
 });
 
-bus.onRequest("get-token", () => {
-  return token
-});
+server.onRequest("get-token", () => token);
 
 // event handlers may be both syncronous and asyncronous
-bus.onDataEvent("set-token", ([newToken]: [string]) => {
-  token = newToken;
-});
+server.onDataEvent(
+  "set-token",
+  ([newToken, sayUpdated]: [string, bool], bus) => {
+    if (token === newToken) return;
+    token = newToken;
+    tokenLastUpdated = new Date();
+    if (sayUpdated) notifyUpdated(bus);
+  }
+);
 
 // Here we wrap `request` method. Both `request` and `event` accept only one
 // argument. To make them able to accept any number of args you have to pack
 // argsuments into `Array` or `Object` -- as you prefer.
 // Generally `Array` is more compact after serializing
-export const doStuff = (
-  stuff: string,
-  when: Date,
-  opts: Record<string, unknown>,
-) =>
-  bus.request<string>("do-stuff", [
-    stuff,
-    when,
-    opts,
-  ]);
+const notifyUpdated = (bus: Bus) =>
+  bus.request<string>("notify-updated", [tokenLastUpdated, bus.extra.id]);
 ```
+:::
+
+::: details Client
+```typescript
+import { Client } from "@shinka-rpc/core";
+import { sharedWorkerClient } from "@shinka-rpc/shared-worker";
+import serializer from "@shinka-rpc/serializer-msgspec";
+
+const transport = sharedWorkerClient(
+  () => new SharedWorker(new URL("./server", import.meta.url)),
+);
+
+const client = new Client({ transport, serializer });
+
+client.addEventListener("error", console.error);
+
+client.start();
+```
+:::
