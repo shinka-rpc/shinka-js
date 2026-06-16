@@ -10,8 +10,8 @@ const docsDistDir = join(__dirname, "dist");
 
 const PROD = process.env.NODE_ENV === "production";
 
-const baseUrl = process.env.READTHEDOCS_CANONICAL_URL
-  ? new URL(process.env.READTHEDOCS_CANONICAL_URL).pathname
+const baseUrl = process.env.READTHEDOCS_VERSION_NAME
+  ? `/${process.env.READTHEDOCS_VERSION_NAME}/`
   : "/";
 
 const faviconPath = PROD ? `${baseUrl}favicon.png` : "/img/favicon.png";
