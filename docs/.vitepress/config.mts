@@ -10,8 +10,8 @@ const docsDistDir = join(__dirname, "dist");
 
 const PROD = process.env.NODE_ENV === "production";
 
-const baseUrl = process.env.READTHEDOCS_VERSION_NAME
-  ? `/${process.env.READTHEDOCS_VERSION_NAME}/`
+const baseUrl = process.env.READTHEDOCS_CANONICAL_URL
+  ? new URL(process.env.READTHEDOCS_CANONICAL_URL).pathname
   : "/";
 
 const faviconPath = PROD ? `${baseUrl}favicon.png` : "/img/favicon.png";
@@ -27,7 +27,7 @@ const config = defineConfig({
   transformPageData: (pageData, context) => {
     if (PROD && pageData.filePath === "index.md") {
       const { hero } = pageData.frontmatter;
-      hero.image.src = "/assets/logo.png";
+      hero.image.src = baseUrl + "assets/logo.png";
     }
   },
 
