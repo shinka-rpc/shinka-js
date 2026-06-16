@@ -1,3 +1,4 @@
+import { defineConfig } from "vitepress";
 import { withMermaid } from "vitepress-plugin-mermaid";
 
 import { dirname, join } from "path";
@@ -15,8 +16,7 @@ const baseUrl = process.env.READTHEDOCS_VERSION_NAME
 
 const faviconPath = PROD ? `${baseUrl}favicon.png` : "/img/favicon.png";
 
-// https://vitepress.dev/reference/site-config
-export default withMermaid({
+const config = defineConfig({
   title: "shinka-rpc",
   description: "Symmetric RPC bus",
   cleanUrls: true,
@@ -97,3 +97,6 @@ export default withMermaid({
     ],
   },
 });
+
+// https://vitepress.dev/reference/site-config
+export default withMermaid(config);
