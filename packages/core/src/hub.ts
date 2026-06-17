@@ -2,7 +2,7 @@ import { ReusablePromise } from "@shinka-rpc/util";
 
 import {
   defaultRequestTimeout,
-  defaultExchangeTimeoutThrashold,
+  defaultexchangeTimeoutThreshold,
   defaultExchangeTimeout,
 } from "./constants";
 
@@ -25,7 +25,7 @@ import { createHandlerRegistries, type HandlerRegistries } from "./shinka";
 type HubTimeoutSettings = {
   responseTimeout: number;
   exchangeTimeout: number;
-  exchangeTimeoutThrashold: number;
+  exchangeTimeoutThreshold: number;
 };
 
 export type HubOptions = Partial<HubTimeoutSettings>;
@@ -54,12 +54,12 @@ export class Hub<SO, TO> {
   constructor({
     responseTimeout = defaultRequestTimeout,
     exchangeTimeout = defaultExchangeTimeout,
-    exchangeTimeoutThrashold = defaultExchangeTimeoutThrashold,
+    exchangeTimeoutThreshold = defaultexchangeTimeoutThreshold,
   }: HubOptions) {
     this.timeoutSettings = {
       responseTimeout,
       exchangeTimeout,
-      exchangeTimeoutThrashold,
+      exchangeTimeoutThreshold,
     };
     this.eventListeners = createEventListeners();
     this.userRegistries = createHandlerRegistries<SO, TO, Bus<SO, TO>>();
@@ -91,7 +91,7 @@ export class Hub<SO, TO> {
       this.eventListeners as any,
       this.timeoutSettings.responseTimeout,
       this.timeoutSettings.exchangeTimeout,
-      this.timeoutSettings.exchangeTimeoutThrashold,
+      this.timeoutSettings.exchangeTimeoutThreshold,
     );
 
     Object.freeze(bus);

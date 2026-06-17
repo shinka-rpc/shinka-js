@@ -13,16 +13,16 @@ busHandlerRegistries.onRequest(BusRequestKeys.PING, () => 0);
 
 // === onDataEvent
 
-busHandlerRegistries.onDataEvent(BusEventKeys.I_AM_ALIVE, () => 0);
+busHandlerRegistries.onDataEvent(BusEventKeys.I_AM_ALIVE, () => {});
 busHandlerRegistries.onDataEvent(BusEventKeys.TERMINATE, (_, thisArg) =>
   thisArg.bus.stop(),
 );
 
 busHandlerRegistries.onDataEvent(
   BusEventKeys.EXCHANGE,
-  (value: number, { bus, shinka, vars, exchangeTimeouts }) => {
+  (value: number, { bus, shinka, vars }) => {
     vars.externalTimeout = value;
     if (vars.schedulerTimeoutId !== null) clearTimeout(vars.schedulerTimeoutId);
-    scheduler(bus, shinka, vars, exchangeTimeouts);
+    scheduler(bus, shinka, vars);
   },
 );

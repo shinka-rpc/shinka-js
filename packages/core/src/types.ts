@@ -9,18 +9,18 @@ import type { Bus } from "./bus";
 import type { Client } from "./client";
 import type { HandlerRegistries } from "./shinka";
 
-export type ExchangeTimeouts = {
-  value: number;
-  thrashold: number;
-};
-
 export type VarsLastDataAt = {
   lastReceivedAt: number;
   lastSendAt: number;
 };
 
 export type VarsTimeout = VarsLastDataAt & {
+  exchangeTimeout: number;
+  exchangeTimeoutThreshold: number;
   externalTimeout: number;
+};
+
+export type VarsScheduler = VarsTimeout & {
   schedulerTimeoutId: ReturnType<typeof setTimeout> | null;
 };
 
@@ -127,8 +127,7 @@ export type InternalHandlerThisArg<SO, TO, B> = {
 export type BusHandlerThisArg<SO, TO, B> = {
   bus: B;
   shinka: Shinka<SO, TO, BusHandlerThisArg<SO, TO, B>>;
-  vars: VarsTimeout;
-  exchangeTimeouts: ExchangeTimeouts;
+  vars: VarsScheduler;
 };
 
 export type ShinkaAll<SO, TO, B> = {

@@ -27,7 +27,7 @@ const config = defineConfig({
   transformPageData: (pageData, context) => {
     if (PROD && pageData.filePath === "index.md") {
       const { hero } = pageData.frontmatter;
-      hero.image.src = baseUrl + "assets/logo.png";
+      hero.image.src = "/assets/logo.png";
     }
   },
 

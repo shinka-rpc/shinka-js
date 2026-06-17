@@ -9,7 +9,7 @@ import {
 
 import {
   defaultRequestTimeout,
-  defaultExchangeTimeoutThrashold,
+  defaultexchangeTimeoutThreshold,
   defaultSerializerRoot,
   defaultExchangeTimeout,
 } from "./constants";
@@ -100,6 +100,16 @@ const connectDefault = () => {
   throw new Error("Server is not started!");
 };
 
+const enum ServerState {
+  STOPPED = 0,
+  STARTED = 1,
+  STOPPING = 2,
+}
+
+type ServerVars = {
+  state: ServerState;
+};
+
 export type ServerOptions<SO, TO> = HubOptions & {
   transport: TransportServer<SO, TO>;
   serializer?: SerializerRoot<
@@ -112,8 +122,9 @@ export type ServerOptions<SO, TO> = HubOptions & {
 export class Server<SO, TO> {
   private hub!: Hub<SO, TO>;
   private connectDelegate!: DelegateType<TransportConnectFnBus<SO, TO>>;
+  private vars!: ServerVars;
   private connectFn!: TransportConnectFnBus<SO, TO>;
-  private callEvent!: (type: ServerEventType) => void;
+  private callEvent!: (type: ServerEventType, payload?: any) => void;
 
   public onRequest!: ShinkaOnRequest<SO, TO, Bus<SO, TO>>;
   public onDataEvent!: ShinkaOnDataEvent<Bus<SO, TO>>;
@@ -127,13 +138,14 @@ export class Server<SO, TO> {
     serializer: serializerRoot = defaultSerializerRoot,
     responseTimeout = defaultRequestTimeout,
     exchangeTimeout = defaultExchangeTimeout,
-    exchangeTimeoutThrashold = defaultExchangeTimeoutThrashold,
+    exchangeTimeoutThreshold = defaultexchangeTimeoutThreshold,
   }: ServerOptions<SO, TO>) {
     this.hub = new Hub({
       responseTimeout,
       exchangeTimeout,
-      exchangeTimeoutThrashold,
+      exchangeTimeoutThreshold,
     });
+    this.vars = { state: ServerState.STOPPED };
     const [listeners, callEvent] = createServerEventListenerPair();
     this.callEvent = callEvent;
     this.connectDelegate = delegate(
@@ -171,15 +183,26 @@ export class Server<SO, TO> {
   }
 
   start = () => {
+    if (this.vars.state !== ServerState.STOPPED)
+      return console.error("Server is not in `STOPPED` state");
     this.connectDelegate.set(this.connectFn);
     this.callEvent("connect");
+    this.vars.state = ServerState.STARTED;
   };
 
   stop = async () => {
+    if (this.vars.state !== ServerState.STARTED)
+      return console.error("Server is not in `STARTED` state");
+    this.vars.state = ServerState.STOPPING;
     this.callEvent("predisconnect");
     this.connectDelegate.reset();
-    await this.hub.dispose();
+    try {
+      await this.hub.dispose();
+    } catch (e) {
+      console.trace(e);
+    }
     this.callEvent("postdisconnect");
+    this.vars.state = ServerState.STOPPED;
   };
 
   public get size() {

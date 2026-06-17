@@ -19,7 +19,7 @@ import {
   messageTypeUser,
   defaultRequestTimeout,
   defaultExchangeTimeout,
-  defaultExchangeTimeoutThrashold,
+  defaultexchangeTimeoutThreshold,
 } from "./constants";
 
 import type {
@@ -34,8 +34,7 @@ import type {
   HandlerRegistriesAll,
   InternalHandlerThisArg,
   FactoriesGeneric,
-  VarsTimeout,
-  ExchangeTimeouts,
+  VarsScheduler,
   BusHandlerThisArg,
   ShinkaDataEvent,
   ShinkaRequest,
@@ -82,7 +81,7 @@ function onTerminated(this: OnTerminateThis) {
   this[2]();
 }
 
-type BusVars = VarsTimeout &
+type BusVars = VarsScheduler &
   VarsBye & {
     state: BusState;
   };
@@ -112,7 +111,6 @@ export class Bus<SO, TO> {
   private cleanupDelegate!: DelegateType<(callOnWail?: boolean) => void>;
   private eventListeners!: ShinkaListenerLayers<typeof this>;
   private vars!: BusVars;
-  private exchangeTimeouts!: ExchangeTimeouts;
   private dispatchErrors!: DispatchErrors;
   private onTerminated!: () => void;
 
@@ -130,17 +128,13 @@ export class Bus<SO, TO> {
     eventListeners: ShinkaEventListeners<Bus<SO, TO>>,
     responseTimeout = defaultRequestTimeout,
     exchangeTimeout = defaultExchangeTimeout,
-    exchangeTimeoutThrashold = defaultExchangeTimeoutThrashold,
+    exchangeTimeoutThreshold = defaultexchangeTimeoutThreshold,
   ) {
     this.factories = factories;
     this.eventListeners = {
       own: createEventListeners(),
       parent: eventListeners,
       banned: createEventListenersBanned(),
-    };
-    this.exchangeTimeouts = {
-      value: exchangeTimeout,
-      thrashold: exchangeTimeoutThrashold,
     };
     this.dispatchMap = new Map();
 
@@ -150,6 +144,8 @@ export class Bus<SO, TO> {
       lastSendAt: 0,
       externalTimeout: 0,
       schedulerTimeoutId: null,
+      exchangeTimeout,
+      exchangeTimeoutThreshold,
       bye: 0,
     };
 
@@ -212,7 +208,6 @@ export class Bus<SO, TO> {
       bus: this,
       shinka: busShinka,
       vars: this.vars,
-      exchangeTimeouts: this.exchangeTimeouts,
     });
 
     const serializerTA: InternalHandlerThisArg<
@@ -334,20 +329,19 @@ export class Bus<SO, TO> {
           await onReadySerializerPromise;
       }
 
-      if (this.exchangeTimeouts.value)
+      if (this.vars.exchangeTimeout)
         this.vars.schedulerTimeoutId = setTimeout(
           scheduler,
-          this.exchangeTimeouts.value,
+          this.vars.exchangeTimeout - this.vars.exchangeTimeoutThreshold,
           this,
           this.shinkaAll.bus,
           this.vars,
-          this.exchangeTimeouts,
         );
 
-      if (this.exchangeTimeouts.value)
+      if (this.vars.exchangeTimeout)
         busEvents.exchange(
           this.shinkaAll.bus.dataEvent,
-          this.exchangeTimeouts.value,
+          this.vars.exchangeTimeout,
         );
       else if (instruction.hi && !this.vars.lastSendAt)
         busEvents.iAmAlive(this.shinkaAll.bus.dataEvent);
@@ -367,10 +361,11 @@ export class Bus<SO, TO> {
       this.vars.state = BusState.STARTED;
       this.callEventListeners("connect", null);
     } catch (e) {
+      this.callEventListeners("error", e);
       try {
         await this.closeDelegate.call();
-      } catch (e) {
-        this.callEventListeners("error", e);
+      } catch (e2) {
+        this.callEventListeners("error", e2);
       }
       this.cleanup();
       throw e;
@@ -440,16 +435,16 @@ export class Bus<SO, TO> {
   };
 
   private cleanup = () => {
+    if (this.vars.schedulerTimeoutId !== null) {
+      clearTimeout(this.vars.schedulerTimeoutId);
+      this.vars.schedulerTimeoutId = null;
+    }
+
     this.cleanupDelegate.call(false);
     this.sendDelegate.reset();
     this.closeDelegate.reset();
     this.cleanupDelegate.reset();
     this.vars.bye = 0;
-
-    if (this.vars.schedulerTimeoutId !== null) {
-      clearTimeout(this.vars.schedulerTimeoutId);
-      this.vars.schedulerTimeoutId = null;
-    }
 
     this.vars.state = BusState.STOPPED;
   };

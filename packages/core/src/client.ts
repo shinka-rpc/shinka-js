@@ -3,7 +3,7 @@ import {
   defaultRequestTimeout,
   defaultSerializerRoot,
   defaultExchangeTimeout,
-  defaultExchangeTimeoutThrashold,
+  defaultexchangeTimeoutThreshold,
 } from "./constants";
 import { Bus } from "./bus";
 import { createEventListeners } from "./factory/event-listeners-bus";
@@ -23,7 +23,7 @@ export type ClientProps<SO, TO> = BusProps<
   InternalHandlerThisArg<SO, TO, Client<SO, TO>>
 > & {
   exchangeTimeout?: number;
-  exchangeTimeoutThrashold?: number;
+  exchangeTimeoutThreshold?: number;
 };
 
 export class Client<SO, TO> extends Bus<SO, TO> {
@@ -35,7 +35,7 @@ export class Client<SO, TO> extends Bus<SO, TO> {
     serializer = defaultSerializerRoot,
     responseTimeout = defaultRequestTimeout,
     exchangeTimeout = defaultExchangeTimeout,
-    exchangeTimeoutThrashold = defaultExchangeTimeoutThrashold,
+    exchangeTimeoutThreshold = defaultexchangeTimeoutThreshold,
   }: ClientProps<SO, TO>) {
     const [transportRegistries, transportFactory] =
       setupHandlerRegistries(transport);
@@ -62,7 +62,7 @@ export class Client<SO, TO> extends Bus<SO, TO> {
       eventListeners,
       responseTimeout,
       exchangeTimeout,
-      exchangeTimeoutThrashold,
+      exchangeTimeoutThreshold,
     );
     this.onRequest = userRegistries.onRequest;
     this.dataEvent = userRegistries.onDataEvent;
