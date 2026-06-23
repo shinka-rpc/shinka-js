@@ -19,6 +19,9 @@ hero:
       text: Serializers
       link: /serializers
     - theme: alt
+      text: LiMons
+      link: /limons
+    - theme: alt
       text: Util
       link: /util
 
@@ -27,6 +30,23 @@ features:
     icon: ☯
     details: Server may send request to particular client and receive its
       response
+
+  - title: Multi Language
+    icon: 📢
+    details: At the least python is already implemented and waiting to be
+      published
+
+  - title: Slim Protocol
+    icon: 🤏
+    details: As compact as possible exchange protocol minifies parasitic load on
+      the network
+  
+  - title: Minimal dependency tree
+    icon: 🔗
+    details: reduces the attack vector across the supply chain. No external
+      dependencies for
+      <a href="https://www.npmjs.com/package/@shinka-rpc/core">Core</a> and
+      <a href="https://www.npmjs.com/package/@shinka-rpc/util">Util</a> packages
 
   - title: External transports
     icon: 🚂
@@ -45,21 +65,12 @@ features:
       <a href="https://www.npmjs.com/package/@shinka-rpc/serializer-msgspec">msgspec</a>
       serializers, but you are able to create your own
 
-  - title: Multi Language
-    icon: 🕬
-    details: On the other side of the communication channel there may be an
-      application written in another language. At the least python is already
-      implemented and waiting to be published
+  - title: External optional <b>LiMon</b>s
+    icon: 🍋
+    details: Liveness Monitors make decision about connection state. You can
+      choose the best one for each case
 
-  - title: Slim Protocol
-    icon: 🤏
-    details: As compact as possible exchange protocol minifies parasitic load on
-      the network
-  
-  - title: Minimal dependency tree
-    icon: 🔗
-    details: reduces the attack vector across the supply chain. No external
-      dependencies for
-      <a href="https://www.npmjs.com/package/@shinka-rpc/core">Core</a> and
-      <a href="https://www.npmjs.com/package/@shinka-rpc/util">Util</a> packages
+  - title: External schedulers
+    icon: 🔃
+    details: You can choose the logic that makes decision about connection state
 ---

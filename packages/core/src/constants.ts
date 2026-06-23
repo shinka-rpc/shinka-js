@@ -21,25 +21,33 @@ export const enum MessageType {
   USER_SUCCESS = 13,
   USER_ERROR = 14,
   USER_EVENT = 15,
+  // LIMON
+  LIMON_REQUEST = 16,
+  LIMON_SUCCESS = 17,
+  LIMON_ERROR = 18,
+  LIMON_EVENT = 19,
 }
 
 export type MessageTypeAllRequest =
   | MessageType.TRANSPORT_REQUEST
   | MessageType.SERIALIZER_REQUEST
   | MessageType.BUS_REQUEST
-  | MessageType.USER_REQUEST;
+  | MessageType.USER_REQUEST
+  | MessageType.LIMON_REQUEST;
 
 export type MessageTypeAllSuccess =
   | MessageType.TRANSPORT_SUCCESS
   | MessageType.SERIALIZER_SUCCESS
   | MessageType.BUS_SUCCESS
-  | MessageType.USER_SUCCESS;
+  | MessageType.USER_SUCCESS
+  | MessageType.LIMON_SUCCESS;
 
 export type MessageTypeAllError =
   | MessageType.TRANSPORT_ERROR
   | MessageType.SERIALIZER_ERROR
   | MessageType.BUS_ERROR
-  | MessageType.USER_ERROR;
+  | MessageType.USER_ERROR
+  | MessageType.LIMON_ERROR;
 
 export type MessageTypeAllResponse =
   | MessageTypeAllSuccess
@@ -49,7 +57,8 @@ export type MessageTypeAllEvent =
   | MessageType.TRANSPORT_EVENT
   | MessageType.SERIALIZER_EVENT
   | MessageType.BUS_EVENT
-  | MessageType.USER_EVENT;
+  | MessageType.USER_EVENT
+  | MessageType.LIMON_EVENT;
 
 export type MessageTypeGroup = [
   MessageTypeAllRequest,
@@ -86,10 +95,16 @@ export const messageTypeUser: MessageTypeGroup = [
   MessageType.USER_EVENT,
 ];
 
+export const messageTypeLimon: MessageTypeGroup = [
+  MessageType.LIMON_REQUEST,
+  MessageType.LIMON_SUCCESS,
+  MessageType.LIMON_ERROR,
+  MessageType.LIMON_EVENT,
+];
+
 export const enum BusEventKeys {
-  I_AM_ALIVE = 0,
+  HEARTBEAT = 0,
   TERMINATE = 1,
-  EXCHANGE = 2,
 }
 
 export const enum BusRequestKeys {
@@ -98,7 +113,7 @@ export const enum BusRequestKeys {
 
 const dummy = <I, O>(v: I) => v as any as O;
 
-export const defaultSerializer: SerializerFactory<any, any> = () => ({
+export const defaultSerializer: SerializerFactory<any, any, any> = () => ({
   serialize: dummy,
   deserialize: dummy,
   transportInitOpts: { mode: "not-serialized" },
@@ -109,5 +124,3 @@ export const defaultSerializerRoot: SerializerRoot<any, any, any> = () =>
   defaultSerializer;
 
 export const defaultRequestTimeout = 45_000;
-export const defaultExchangeTimeout = 15_000;
-export const defaultexchangeTimeoutThreshold = 2_500;

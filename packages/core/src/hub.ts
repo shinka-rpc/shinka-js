@@ -1,10 +1,6 @@
 import { ReusablePromise } from "@shinka-rpc/util";
 
-import {
-  defaultRequestTimeout,
-  defaultexchangeTimeoutThreshold,
-  defaultExchangeTimeout,
-} from "./constants";
+import { defaultRequestTimeout } from "./constants";
 
 import { Bus } from "./bus";
 
@@ -13,39 +9,35 @@ import { createEventListeners } from "./factory/event-listeners-bus";
 import type {
   ShinkaEventListeners,
   ManageEventListener,
-  Factories,
   ShinkaOnRequest,
   ShinkaOnDataEvent,
-  InternalHandlerRegistries,
-  HandlerRegistriesAll,
+  TransportRF,
+  SerializerRF,
+  LiMonRF,
 } from "./types";
 
 import { createHandlerRegistries, type HandlerRegistries } from "./shinka";
 
 type HubTimeoutSettings = {
   responseTimeout: number;
-  exchangeTimeout: number;
-  exchangeTimeoutThreshold: number;
 };
 
-export type HubOptions = Partial<HubTimeoutSettings>;
-
-export type HandlerRegistriesHub<SO, TO> = {
-  transport?: InternalHandlerRegistries<SO, TO, Bus<SO, TO>>;
-  serializer?: InternalHandlerRegistries<SO, TO, Bus<SO, TO>>;
+export type HubOptions<SO, TO> = Partial<HubTimeoutSettings> & {
+  limon?: LiMonRF<SO, TO, any> | null;
 };
 
 export type HubConnectProps<SO, TO> = {
-  factories: Factories<SO, TO>;
-  handlerRegistries: HandlerRegistriesHub<SO, TO>;
+  transport: TransportRF<SO, TO, any>;
+  serializer: SerializerRF<SO, TO, any>;
 };
 
 export class Hub<SO, TO> {
-  private userRegistries!: HandlerRegistries<SO, TO, Bus<SO, TO>>;
-  private eventListeners!: ShinkaEventListeners<Bus<SO, TO>>;
-  private timeoutSettings!: HubTimeoutSettings;
-  private clients!: Set<Bus<SO, TO>>;
-  private disposing!: ReusablePromise<void>;
+  #limonRF!: LiMonRF<SO, TO, any> | null;
+  #userRegistries!: HandlerRegistries<SO, TO, Bus<SO, TO>>;
+  #eventListeners!: ShinkaEventListeners<Bus<SO, TO>>;
+  #timeoutSettings!: HubTimeoutSettings;
+  #clients!: Set<Bus<SO, TO>>;
+  #disposing!: ReusablePromise<void>;
 
   public onRequest!: ShinkaOnRequest<SO, TO, Bus<SO, TO>>;
   public onDataEvent!: ShinkaOnDataEvent<Bus<SO, TO>>;
@@ -53,80 +45,73 @@ export class Hub<SO, TO> {
 
   constructor({
     responseTimeout = defaultRequestTimeout,
-    exchangeTimeout = defaultExchangeTimeout,
-    exchangeTimeoutThreshold = defaultexchangeTimeoutThreshold,
-  }: HubOptions) {
-    this.timeoutSettings = {
+    limon = null,
+  }: HubOptions<SO, TO>) {
+    this.#limonRF = limon;
+    this.#timeoutSettings = {
       responseTimeout,
-      exchangeTimeout,
-      exchangeTimeoutThreshold,
     };
-    this.eventListeners = createEventListeners();
-    this.userRegistries = createHandlerRegistries<SO, TO, Bus<SO, TO>>();
-    this.clients = new Set<Bus<SO, TO>>();
-    this.disposing = new ReusablePromise();
+    this.#eventListeners = createEventListeners();
+    this.#userRegistries = createHandlerRegistries<SO, TO, Bus<SO, TO>>();
+    this.#clients = new Set<Bus<SO, TO>>();
+    this.#disposing = new ReusablePromise();
     this.extra = {};
-    this.onRequest = this.userRegistries.onRequest;
-    this.onDataEvent = this.userRegistries.onDataEvent;
+    this.onRequest = this.#userRegistries.onRequest;
+    this.onDataEvent = this.#userRegistries.onDataEvent;
     Object.freeze(this);
-    this.disposing.resolve();
+    this.#disposing.resolve();
   }
 
-  private onClientDisconnect = (bus: Bus<SO, TO>) => this.clients.delete(bus);
+  #onClientDisconnect = (bus: Bus<SO, TO>) => this.#clients.delete(bus);
 
   public connect = async ({
-    factories,
-    handlerRegistries,
+    transport,
+    serializer,
   }: HubConnectProps<SO, TO>) => {
-    await this.disposing;
-
-    const handlerRegistriesAll: HandlerRegistriesAll<SO, TO, Bus<SO, TO>> = {
-      ...handlerRegistries,
-      user: this.userRegistries,
-    };
+    await this.#disposing;
 
     const bus = new Bus<SO, TO>(
-      factories as any,
-      handlerRegistriesAll as any,
-      this.eventListeners as any,
-      this.timeoutSettings.responseTimeout,
-      this.timeoutSettings.exchangeTimeout,
-      this.timeoutSettings.exchangeTimeoutThreshold,
+      transport,
+      serializer,
+      this.#limonRF,
+      this.#userRegistries,
+      this.#eventListeners,
+      this.#timeoutSettings.responseTimeout,
     );
 
     Object.freeze(bus);
-    bus.addEventListener("disconnect", this.onClientDisconnect);
-    this.clients.add(bus);
+    bus.addEventListener("disconnect", this.#onClientDisconnect);
+    this.#clients.add(bus);
     await bus.start();
 
     return bus;
   };
 
   public dispose = async () => {
-    this.disposing.reset();
-    const clientStopPromises = Array<Promise<void>>(this.clients.size);
+    this.#disposing.reset();
+    const clientStopPromises = Array<Promise<void>>(this.#clients.size);
     let i = 0;
-    for (const client of this.clients) clientStopPromises[i++] = client.stop();
+    for (const client of this.#clients) clientStopPromises[i++] = client.stop();
     try {
       await Promise.all(clientStopPromises);
     } finally {
-      this.disposing.resolve();
+      this.#disposing.resolve();
     }
   };
 
   public addEventListener: ManageEventListener<Bus<SO, TO>> = (type, target) =>
-    this.eventListeners[type].add(target);
+    this.#eventListeners[type].add(target);
 
   public removeEventListener: ManageEventListener<Bus<SO, TO>> = (
     type,
     target,
-  ) => this.eventListeners[type].delete(target);
+  ) => this.#eventListeners[type].delete(target);
 
   public get size() {
-    return this.clients.size;
+    return this.#clients.size;
   }
 
   public get isDisposing() {
-    return !this.disposing.isDone;
+    return !this.#disposing.isDone;
   }
 }

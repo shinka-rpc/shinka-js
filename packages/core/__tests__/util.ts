@@ -1,12 +1,11 @@
 import {
   Response,
-  TransportInitOpts,
+  // TransportInitOpts,
   type Bus,
   type Client,
-  type SerializerFactory,
   type TransportFactory,
   type TransportClient,
-  type SerializedData,
+  // type SerializedData,
   type ShinkaOn,
   SerializerRoot,
 } from "@shinka-rpc/core";
@@ -34,10 +33,11 @@ export const fakeTransportClient = <SO>(
   key: string,
   results: Record<string, any>[],
 ) => {
-  const tf: TransportFactory<any, any> = async (
-    onRawData: (data: SerializedData) => void,
-    onClosed: () => void,
-    opts: TransportInitOpts,
+  const tf: TransportFactory<any, any, any> = async (
+    thisArg,
+    onRawData,
+    onClosed,
+    opts,
   ) => {
     const [send_, dispatch] = pipe;
     const close = async () => {};
@@ -48,38 +48,36 @@ export const fakeTransportClient = <SO>(
     dispatch(onRawData);
     return { send, close, instruction: {} };
   };
-  return (() => tf) as TransportClient<SO, any>;
+  return (() => tf) as TransportClient<SO, any, any>;
 };
 
 export const createMockSerializerAsync = <TO, B>(
   key: string,
   results: Record<string, any>[],
 ) =>
-  (() =>
-    (async () => ({
-      serialize: async (data: unknown, opts: any) => {
-        results.push({ key: `${key}-serializer-async`, opts });
-        return data;
-      },
-      deserialize: async (data: unknown) => data,
-      transportInitOpts: { mode: "not-serialized" },
-      typeHints: { serialize: "AsyncFunction", deserialize: "AsyncFunction" },
-    })) as SerializerFactory<any, any>) as SerializerRoot<any, TO, B>;
+  ((shinkaOn) => async () => ({
+    serialize: async (data: unknown, opts: any) => {
+      results.push({ key: `${key}-serializer-async`, opts });
+      return data;
+    },
+    deserialize: async (data: unknown) => data,
+    transportInitOpts: { mode: "not-serialized" },
+    typeHints: { serialize: "AsyncFunction", deserialize: "AsyncFunction" },
+  })) as SerializerRoot<any, TO, any>;
 
 export const createMockSerializerSync = <TO, B>(
   key: string,
   results: Record<string, any>[],
 ) =>
-  (() =>
-    (() => ({
-      serialize: async (data: unknown, opts: any) => {
-        results.push({ key: `${key}-serializer-sync`, opts });
-        return data;
-      },
-      deserialize: async (data: unknown) => data,
-      transportInitOpts: { mode: "not-serialized" },
-      typeHints: { serialize: "AsyncFunction", deserialize: "AsyncFunction" },
-    })) as SerializerFactory<any, B>) as SerializerRoot<any, TO, B>;
+  ((shinkaOn) => () => ({
+    serialize: async (data: unknown, opts: any) => {
+      results.push({ key: `${key}-serializer-sync`, opts });
+      return data;
+    },
+    deserialize: async (data: unknown) => data,
+    transportInitOpts: { mode: "not-serialized" },
+    typeHints: { serialize: "AsyncFunction", deserialize: "AsyncFunction" },
+  })) as SerializerRoot<any, TO, any>;
 
 export const createSyncHandler = (
   key: string,

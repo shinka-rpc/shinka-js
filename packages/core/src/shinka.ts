@@ -54,7 +54,7 @@ const composeSetVars =
     for (const cb of cbs) cb(thisArg, dispatchError);
   };
 
-export const complteShinka = <SO, TO, TA>(
+export const completeShinka = <SO, TO, TA>(
   send: SendFn<SO, TO>,
   messageTypeGroup: MessageTypeGroup,
   dispatchMap: DispatchMap,
@@ -102,7 +102,7 @@ export const createOrCompleteShinka = <SO, TO, TA>(
   messageTypeGroup: MessageTypeGroup,
   maybeHandlerRegistries?: HandlerRegistries<SO, TO, TA>,
 ) =>
-  complteShinka(
+  completeShinka(
     send,
     messageTypeGroup,
     dispatchMap,
@@ -134,7 +134,7 @@ export const setupHandlerRegistries = <SO, TO, TA, R>(
   const registries = createHandlerRegistries<SO, TO, TA>();
   const { onRequest, onDataEvent } = registries;
   return [registries, fn({ onRequest, onDataEvent })] as [
-    typeof registries,
+    HandlerRegistries<SO, TO, TA>,
     ReturnType<typeof fn>,
   ];
 };

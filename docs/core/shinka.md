@@ -15,6 +15,18 @@ Short answer: under `Bus` hood. And it's not single:
 ```mermaid
 graph TB
   subgraph BUS ["Bus"]
+    subgraph L ["LiMon shinka [optional]"]
+      subgraph LDO ["ShinkaDo"]
+        direction RL
+        LREQ(["request"]):::request
+        LEVT(["dataEvent"]):::dataEvent
+      end
+      subgraph LON ["ShinkaOn"]
+        direction RL
+        LONR(["onRequest"]):::onRequest
+        LONE(["onDataEvent"]):::onDataEvent
+      end
+    end
     subgraph U ["User shinka"]
       subgraph UDO ["ShinkaDo"]
         direction RL
@@ -71,13 +83,13 @@ graph TB
   classDef onDataEvent stroke:#f00
 ```
 
-There are ***4*** independent `shinka`s under the bus hood: own for _transport_,
-_serializer_, _bus_ and _user_. Your application defined `onRequest` /
+There are ***5*** independent `shinka`s under the bus hood: own for _transport_,
+_serializer_, _bus_, _user_ and optionally _limon_. Your application defined `onRequest` /
 `onDataEvent` handlers and `request` / `dataEvent` methods are just
 `user shinka`
 
 ::: tip BUT
-All 4 `shinka`s are handled by single connection. They are dispatched via
+All 5 `shinka`s are handled by single connection. They are dispatched via
 internal leading `MessageType` field
 :::
 
@@ -104,6 +116,11 @@ export const enum MessageType {
   USER_SUCCESS = 13,
   USER_ERROR = 14,
   USER_EVENT = 15,
+  // LIMON
+  LIMON_REQUEST = 16,
+  LIMON_SUCCESS = 17,
+  LIMON_ERROR = 18,
+  LIMON_EVENT = 19,
 }
 ```
 :::

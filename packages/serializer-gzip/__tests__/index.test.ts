@@ -6,15 +6,18 @@ import serializerBin from "../../serializer-msgspec";
 
 import { simpleGzip } from "../src";
 
-import type { Serializer, SerializerRoot } from "../../core";
+import type { SerializerInstance, SerializerRoot } from "../../core";
 
 const data: any = [0, 1, "2345", true, { for: "test" }];
 
 const makeSerializer = async (parent: SerializerRoot<any, any, any>) => {
   const reg = createHandlerRegistries();
   const serializer = simpleGzip(parent);
-  const serializerFactory = serializer(reg);
-  const serializerInstance: Serializer<any, any> = await serializerFactory();
+  const serializerFactory = serializer(reg as any);
+  const serializerInstance: SerializerInstance<any> = await serializerFactory(
+    {} as any,
+    { root: "array" },
+  );
   return serializerInstance;
 };
 

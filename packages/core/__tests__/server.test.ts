@@ -5,11 +5,9 @@ import {
   Server,
   type Bus,
   type SerializerRoot,
-  type ShinkaOnBus,
-  type TransportConnectFnBus,
+  type ShinkaOn,
+  type TransportConnectFn,
   type TransportFactory,
-  type SerializedData,
-  type TransportInitOpts,
 } from "@shinka-rpc/core";
 
 import {
@@ -30,10 +28,11 @@ const fakeTransportServer = (
   key: string,
   results: Record<string, any>[],
 ) => {
-  const tf: TransportFactory<any, any> = async (
-    onRawData: (data: SerializedData) => void,
-    onClosed: () => void,
-    opts: TransportInitOpts,
+  const tf: TransportFactory<any, any, any> = async (
+    thisArg,
+    onRawData,
+    onClosed,
+    opts,
   ) => {
     const [send_, dispatch] = pipe;
     const close = async () => {};
@@ -45,8 +44,8 @@ const fakeTransportServer = (
     return { send, close, instruction: {} };
   };
   return (
-    shinkaOn: ShinkaOnBus<any, any>,
-    connect: TransportConnectFnBus<any, any>,
+    shinkaOn: ShinkaOn<any, any, any>,
+    connect: TransportConnectFn<any, any, any>,
   ) => setTimeout(connect, 0, tf);
 };
 
@@ -63,7 +62,6 @@ const setupClientServer = async (
   const client = new Client({
     transport: fakeTransportClient(pipe1to2, "client1", results),
     serializer: createSerializer("client1", results),
-    exchangeTimeout: 0,
   });
 
   client.addEventListener("connect", () =>
@@ -85,7 +83,6 @@ const setupClientServer = async (
   const server = new Server({
     transport: fakeTransportServer(pipe2to1, "server", results),
     serializer: createSerializer("server", results),
-    exchangeTimeout: 0,
   });
 
   server.addEventListener("connect", (bus) => {

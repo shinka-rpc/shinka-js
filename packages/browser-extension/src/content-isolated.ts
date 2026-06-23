@@ -1,10 +1,10 @@
-import { Client, TransportClient, ShinkaOnClient } from "@shinka-rpc/core";
+import { Client, TransportClient } from "@shinka-rpc/core";
 
 // @ts-expect-error: 2304
 if (window.chrome === undefined) window.chrome = browser;
 
-export const extensionBusTransport: TransportClient<any, any> =
-  (shinkaOn: ShinkaOnClient<any, any>) => (onRawData, onClosed, opts) => {
+export const extensionBusTransport: TransportClient<any, any, any> =
+  (shinkaOn) => (thisArg, onRawData, onClosed, opts) => {
     const port = chrome.runtime.connect(chrome.runtime.id);
     port.onMessage.addListener(onRawData);
     port.onDisconnect.addListener(onClosed);
@@ -18,7 +18,7 @@ export const extensionBusTransport: TransportClient<any, any> =
   };
 
 export type CreateIsolatedPairProps<SO, TO> = {
-  contentBusTransport: TransportClient<SO, TO>;
+  contentBusTransport: TransportClient<SO, TO, any>;
   responseTimeout: number;
 };
 

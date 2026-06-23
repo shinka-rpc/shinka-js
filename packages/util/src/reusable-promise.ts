@@ -39,18 +39,18 @@ const toResolver =
   };
 
 export class ReusablePromise<P> {
-  private state!: State<P>;
-  private renewExecutor!: PromiseExecutor<P>;
+  #state!: State<P>;
+  #renewExecutor!: PromiseExecutor<P>;
 
   public resolve!: ResolveFn<P>;
   public reject!: ResolveFn<P>;
 
   constructor() {
     const state: Partial<State<P>> = {};
-    this.renewExecutor = (renewExecutor<P>).bind(state);
-    this.state = renewState(state, this.renewExecutor);
-    this.resolve = toResolver(this.state, "resolve");
-    this.reject = toResolver(this.state, "reject");
+    this.#renewExecutor = (renewExecutor<P>).bind(state);
+    this.#state = renewState(state, this.#renewExecutor);
+    this.resolve = toResolver(this.#state, "resolve");
+    this.reject = toResolver(this.#state, "reject");
 
     Object.freeze(this);
   }
@@ -58,16 +58,16 @@ export class ReusablePromise<P> {
   public then = (
     onfulfilled?: ((value: P) => void) | null | undefined,
     onrejected?: ((reason: any) => void) | null | undefined,
-  ) => this.state.promise.then(onfulfilled, onrejected);
+  ) => this.#state.promise.then(onfulfilled, onrejected);
 
   public catch = (onrejected?: ((reason: P) => void) | null | undefined) =>
-    this.state.promise.catch(onrejected);
+    this.#state.promise.catch(onrejected);
 
   public reset = () => {
-    if (this.state.done) renewState(this.state, this.renewExecutor);
+    if (this.#state.done) renewState(this.#state, this.#renewExecutor);
   };
 
   public get isDone() {
-    return this.state.done;
+    return this.#state.done;
   }
 }

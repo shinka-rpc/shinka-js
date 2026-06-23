@@ -50,6 +50,8 @@ const config = defineConfig({
       { text: "Core", link: "/core/" },
       { text: "Transports", link: "/transports/" },
       { text: "Serializers", link: "/serializers/" },
+      { text: "<b>LiMon</b>s", link: "/limons/" },
+      { text: "Schedulers", link: "/schedulers/" },
       { text: "Util", link: "/util/" },
     ],
 
@@ -90,6 +92,11 @@ const config = defineConfig({
           ],
         },
       ],
+      "/limons/": [
+        { items: [{ text: "Opportunistic", link: "/limons/opportunistic" }] },
+      ],
+      "/schedulers/": [{ items: [] }],
+      "/util/": [{ items: [] }],
     },
 
     socialLinks: [

@@ -1,6 +1,6 @@
 import { expect, test } from "@jest/globals";
 
-import { Client, SerializerClient } from "@shinka-rpc/core";
+import { Client, SerializerRoot } from "@shinka-rpc/core";
 
 import {
   mkPipePair,
@@ -16,7 +16,7 @@ const setupClientClient = async <TO>(
   createSerializer: (
     key: string,
     results: Record<string, any>[],
-  ) => SerializerClient<any, TO>,
+  ) => SerializerRoot<any, TO, any>,
 ) => {
   const results: Record<string, any>[] = [];
 
@@ -25,12 +25,10 @@ const setupClientClient = async <TO>(
   const bus1 = new Client({
     transport: fakeTransportClient(pipe1to2, "bus1", results),
     serializer: createSerializer("bus1", results),
-    exchangeTimeout: 0,
   });
   const bus2 = new Client({
     transport: fakeTransportClient(pipe2to1, "bus2", results),
     serializer: createSerializer("bus2", results),
-    exchangeTimeout: 0,
   });
 
   bus1.addEventListener("connect", () =>

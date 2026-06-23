@@ -3,8 +3,8 @@ import { expect, test } from "@jest/globals";
 import {
   Client,
   Hub,
+  TransportFactory,
   type SerializerRoot,
-  type Factories,
 } from "@shinka-rpc/core";
 
 import { createHandlerRegistries } from "../src/shinka";
@@ -32,12 +32,9 @@ const setupClientHub = async (
   const client = new Client({
     transport: fakeTransportClient(pipe1to2, "client1", results),
     serializer: createSerializer("client1", results),
-    exchangeTimeout: 0,
   });
 
-  const hub = new Hub({
-    exchangeTimeout: 0,
-  });
+  const hub = new Hub({});
 
   client.addEventListener("connect", () =>
     results.push({ key: "client1-event", val: "connect" }),
@@ -58,22 +55,19 @@ const setupClientHub = async (
   const serializerHandlers = createHandlerRegistries<any, any, any>();
   const serializer = createSerializer("hub", results)(serializerHandlers);
 
-  const factories: Factories<any, any> = {
-    serializer,
-    transport: async (onRawData) => {
-      const [send, dispatch] = pipe2to1;
-      dispatch(onRawData);
-      const close = async () => {};
-      return { send, close, instruction: {} };
-    },
-  };
-  const handlerRegistries = {
-    serializer: serializerHandlers,
+  const tf: TransportFactory<any, any, any> = async (thisArg, onRawData) => {
+    const [send, dispatch] = pipe2to1;
+    dispatch(onRawData);
+    const close = async () => {};
+    return { send, close, instruction: {} };
   };
 
   const start = async () => {
     await client.start();
-    return await hub.connect({ factories, handlerRegistries });
+    return await hub.connect({
+      transport: [undefined, tf],
+      serializer: [serializerHandlers, serializer],
+    });
   };
 
   return { results, client, hub, start };

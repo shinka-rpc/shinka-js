@@ -9,7 +9,7 @@ import type {
   Message,
   ShinkaMeta,
   FnConstructorName,
-  VarsLastDataAt,
+  LastDataAt,
 } from "../types";
 
 const sendData = {
@@ -18,13 +18,13 @@ const sendData = {
       serialize: SerializerFnAsync<I, O, SO>,
       send: (data: O, opts?: TO) => void,
       dispatchError: (error: any) => void,
-      vars: VarsLastDataAt,
+      last: LastDataAt,
     ) =>
     async (message: I, metadata?: ShinkaMeta<SO, TO>) => {
       try {
         const serialized = await serialize(message, metadata?.serialize);
         send(serialized, metadata?.transport);
-        vars.lastSendAt = performance.now();
+        last.sent = performance.now();
       } catch (e) {
         dispatchError(e);
       }
@@ -34,13 +34,13 @@ const sendData = {
       serialize: SerializerFnSync<I, O, SO>,
       send: (data: O, opts?: TO) => void,
       dispatchError: (error: any) => void,
-      vars: VarsLastDataAt,
+      last: LastDataAt,
     ) =>
     (message: I, metadata?: ShinkaMeta<SO, TO>) => {
       try {
         const serialized = serialize(message, metadata?.serialize);
         send(serialized, metadata?.transport);
-        vars.lastSendAt = performance.now();
+        last.sent = performance.now();
       } catch (e) {
         dispatchError(e);
       }
@@ -57,9 +57,9 @@ export const createSendData = <
   serialize: SerializerFn<I, O, SO>,
   send: (data: O, opts?: TO) => void,
   dispatchError: (error: any) => void,
-  vars: VarsLastDataAt,
+  last: LastDataAt,
   // @ts-ignore
-) => sendData[hint](serialize, send, dispatchError, vars);
+) => sendData[hint](serialize, send, dispatchError, last);
 
 // ===
 const handleReceived = {
@@ -68,10 +68,10 @@ const handleReceived = {
       deserialize: DeserializerFnAsync<I, O>,
       dispatch: (data: Message<any>) => void,
       dispatchError: (error: any) => void,
-      vars: VarsLastDataAt,
+      last: LastDataAt,
     ) =>
     (serialized: O) => {
-      vars.lastReceivedAt = performance.now();
+      last.received = performance.now();
       deserialize(serialized).then(dispatch).catch(dispatchError);
     },
   Function:
@@ -79,10 +79,10 @@ const handleReceived = {
       deserialize: DeserializerFnSync<I, O>,
       dispatch: (data: Message<any>) => void,
       dispatchError: (error: any) => void,
-      vars: VarsLastDataAt,
+      last: LastDataAt,
     ) =>
     (serialized: O) => {
-      vars.lastReceivedAt = performance.now();
+      last.received = performance.now();
       try {
         dispatch(deserialize(serialized));
       } catch (e) {
@@ -99,12 +99,12 @@ export const createOnRawData = <
   deserialize: DeserializerFn<I, O>,
   dispatch: (data: Message<any>) => void,
   dispatchError: (error: any) => void,
-  vars: VarsLastDataAt,
+  last: LastDataAt,
 ) =>
   handleReceived[hint](
     // @ts-ignore: 2345
     deserialize,
     dispatch,
     dispatchError,
-    vars,
+    last,
   );

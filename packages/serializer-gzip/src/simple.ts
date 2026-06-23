@@ -69,12 +69,12 @@ const makeDeserializer = {
   >
 >;
 
-export const simpleGzip = <SO, TO, TA>(parent: SerializerRoot<SO, TO, TA>) =>
+export const simpleGzip = <SO, TO, B>(parent: SerializerRoot<SO, TO, any>) =>
   ((shinkaOn) => {
     const parentSerializerFactory = parent(shinkaOn);
 
-    return async () => {
-      const maybeSerializerInstance = parentSerializerFactory();
+    return async (thisArg, opts) => {
+      const maybeSerializerInstance = parentSerializerFactory(thisArg, opts);
 
       const parentInstance =
         maybeSerializerInstance instanceof Promise
