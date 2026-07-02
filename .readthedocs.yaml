@@ -5,7 +5,7 @@ build:
     nodejs: "latest"
   jobs:
     install:
-      - npm install vitepress
+      - npm i --include=dev
     build:
       html:
         - npm run docs:build

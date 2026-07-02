@@ -6,16 +6,18 @@ import type {
   RejectResolve,
   DataEventKey,
   MessageRequest,
-  SendFn,
+  MessageDataEvent,
   MessageResponse,
   RequestHandler,
   ShinkaMeta,
   DispatchError,
+  ShinkaVars,
 } from "../types";
 import type {
   MessageTypeAllRequest,
   MessageTypeAllError,
   MessageTypeAllSuccess,
+  MessageTypeAllEvent,
 } from "../constants";
 
 type PendingMap = Map<REQID, RejectResolve>;
@@ -46,22 +48,25 @@ const createOnResponse =
     callback(body);
   };
 
+type MaybeEventHandler<TA> =
+  | ((body: any, thisArg: TA, dispatchError: DispatchError) => void)
+  | undefined;
+
 export const reqrsp = <SO, TO, TA>(
   requestType: MessageTypeAllRequest,
+  eventType: MessageTypeAllEvent,
   responseTypes: [MessageTypeAllError, MessageTypeAllSuccess],
-  send: SendFn<SO, TO>,
   onRequest: RequestHandler<SO, TO, TA, any>,
+  getDataEvent: (key: DataEventKey) => MaybeEventHandler<TA>,
   timeout: number,
 ) => {
   const pending: PendingMap = new Map();
   const timeouts: TimeoutMap = new Map();
 
-  const vars: Partial<{ thisArg: TA; dispatchError: DispatchError }> = {};
+  const vars: Partial<ShinkaVars<SO, TO, TA>> = {};
 
-  const setVars = (thisArg: TA, dispatchError: DispatchError) => {
-    vars.thisArg = thisArg;
-    vars.dispatchError = dispatchError;
-  };
+  const setVars = (newVars: Partial<ShinkaVars<SO, TO, TA>>) =>
+    Object.assign(vars, newVars);
 
   const seq = sequence() as () => REQID;
 
@@ -84,7 +89,7 @@ export const reqrsp = <SO, TO, TA>(
   ) => {
     const reqID = seq();
     const message: MessageRequest<any> = [requestType, reqID, key, data];
-    send(message, metadata);
+    vars.send!(message, metadata);
     return new Promise<T>((resolve, reject) => {
       pending.set(reqID, [reject, resolve]);
       timeouts.set(reqID, setTimeout(onTimeout, timeout, reqID));
@@ -93,15 +98,41 @@ export const reqrsp = <SO, TO, TA>(
 
   const onMessageRequest = (message: MessageRequest<any>) => {
     const [_, reqID, key, data] = message;
-    const ctx = new Context(reqID, send, responseTypes);
+    const ctx = new Context(reqID, vars.send!, responseTypes);
     onRequest(key, data, ctx, vars.thisArg!, vars.dispatchError!);
   };
 
-  return [setVars, request, onSuccess, onError, onMessageRequest] as [
+  const dispatchEvent = (message: MessageDataEvent<any>) => {
+    const [_, body, key] = message;
+    const cb = getDataEvent(key);
+    if (!cb) return vars.dispatchError!({ type: "no event handler", key });
+    cb(body, vars.thisArg!, vars.dispatchError!);
+  };
+
+  const eventSend = (
+    key: DataEventKey,
+    data: any,
+    metadata?: ShinkaMeta<SO, TO>,
+  ) => {
+    const message: MessageDataEvent<any> = [eventType, data, key];
+    vars.send!(message, metadata);
+  };
+
+  return [
+    setVars,
+    request,
+    onSuccess,
+    onError,
+    onMessageRequest,
+    dispatchEvent,
+    eventSend,
+  ] as [
     typeof setVars,
     typeof request,
     typeof onSuccess,
     typeof onError,
     typeof onMessageRequest,
+    typeof dispatchEvent,
+    typeof eventSend,
   ];
 };

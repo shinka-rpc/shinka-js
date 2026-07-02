@@ -17,10 +17,11 @@ test("banshee-gc", async () => {
     clear = null;
   })();
 
-  // @ts-expect-error: 2722
-  global.gc();
-
-  await sleep(250);
+  for (let i = 0; i < 5; i++) {
+    // @ts-expect-error: 2722
+    global.gc();
+    await sleep(50);
+  }
 
   expect(results).toStrictEqual(["wail"]);
   expect(testHandlers.size).toStrictEqual(0);
@@ -39,6 +40,12 @@ test("banshee-shutdown", async () => {
   expect(testHandlers.size).toStrictEqual(1);
 
   for (const cb of testHandlers) cb();
+
+  for (let i = 0; i < 5; i++) {
+    // @ts-expect-error: 2722
+    global.gc();
+    await sleep(50);
+  }
 
   expect(results).toStrictEqual(["wail"]);
 });
@@ -60,10 +67,11 @@ test("banshee-clear", async () => {
 
   expect(results).toStrictEqual(["wail"]);
 
-  // @ts-expect-error: 2722
-  global.gc();
-
-  await sleep(250);
+  for (let i = 0; i < 5; i++) {
+    // @ts-expect-error: 2722
+    global.gc();
+    await sleep(50);
+  }
 
   expect(results).toStrictEqual(["wail"]);
   expect(testHandlers.size).toStrictEqual(0);
@@ -86,15 +94,16 @@ test("banshee-clear-no-on-wail", async () => {
 
   expect(results).toStrictEqual([]);
 
-  // @ts-expect-error: 2722
-  global.gc();
-
-  await sleep(250);
+  for (let i = 0; i < 5; i++) {
+    // @ts-expect-error: 2722
+    global.gc();
+    await sleep(50);
+  }
 
   expect(results).toStrictEqual([]);
   expect(testHandlers.size).toStrictEqual(0);
 });
 
-test("banshee-unconfigured", async () => {
+test("banshee-not-configured", async () => {
   banshee([], () => {});
 });

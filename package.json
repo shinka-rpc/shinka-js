@@ -48,5 +48,10 @@
     "ts-jest": "^29",
     "vitepress": "next",
     "vitepress-plugin-mermaid": "^2.0.17"
+  },
+  "overrides": {
+    "vitepress-plugin-mermaid": {
+      "vitepress": "$vitepress"
+    }
   }
 }

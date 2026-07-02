@@ -42,6 +42,12 @@ export type Message<B> =
   | MessageResponse<B>
   | MessageDataEvent<B>;
 
+export type ShinkaVars<SO, TO, TA> = {
+  thisArg: TA;
+  send: SendFn<SO, TO>;
+  dispatchError: DispatchError;
+};
+
 export type ShinkaOnRequest<SO, TO, TA> = (
   key: DataEventKey,
   cb: (data: any, thisArg: TA) => any,

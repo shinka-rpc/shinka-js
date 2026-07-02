@@ -3,7 +3,6 @@ import type {
   DataEventKey,
   ShinkaMeta,
   FnConstructorName,
-  MessageDataEvent,
   MetadataWithHint,
   DispatchError,
 } from "../types";
@@ -110,30 +109,6 @@ export const createDispatchRequest =
     if (!cb) return dispatchError({ type: "no request handler", key });
     cb(body, ctx, thisArg, dispatchError);
   };
-
-type MaybeEventHandler<TA> =
-  | ((body: any, thisArg: TA, dispatchError: DispatchError) => void)
-  | undefined;
-
-export const createDispatchDataEvent = <TA, B>(
-  getDataEvent: (key: DataEventKey) => MaybeEventHandler<TA>,
-) => {
-  let thisArgVar: TA, dispatchErrorVar: DispatchError;
-
-  const setVars = (thisArg: TA, dispatchError: DispatchError) => {
-    thisArgVar = thisArg;
-    dispatchErrorVar = dispatchError;
-  };
-
-  const dispatchEvent = (message: MessageDataEvent<B>) => {
-    const [_, body, key] = message;
-    const cb = getDataEvent(key);
-    if (!cb) return dispatchErrorVar({ type: "no event handler", key });
-    cb(body, thisArgVar, dispatchErrorVar);
-  };
-
-  return [setVars, dispatchEvent] as [typeof setVars, typeof dispatchEvent];
-};
 
 export const createReqRegistry = <SO, TO, TA, B, R>() =>
   createRegistry<

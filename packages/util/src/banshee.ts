@@ -48,19 +48,18 @@ const cleanupCallback = (eventHandler: () => void) => {
 
 const registry = new FinalizationRegistry(cleanupCallback);
 
-type Token = {};
-
-type CreateDieThis = readonly [Token, () => void, () => void];
+type CreateDieThis = readonly [WeakRef<any>, () => void, () => void];
 
 type BansheeEventHandlerThis = readonly [WeakRef<OnBansheeWail>, () => void];
 
 function bansheeEventHandler(this: BansheeEventHandlerThis) {
-  this[0].deref()!();
   this[1]();
+  const onBansheeWail = this[0].deref();
+  if (onBansheeWail) onBansheeWail();
 }
 
 function createDie(this: CreateDieThis, callOnWail = true) {
-  registry.unregister(this[0]);
+  registry.unregister(this[0].deref());
   listeners[0](this[1]);
   if (callOnWail) this[1]();
   this[2]();
@@ -72,9 +71,7 @@ export const banshee = (target: any, onWail: OnBansheeWail) => {
   const { call, set, reset } = delegate(dummy);
   const onWailRef = new WeakRef(onWail);
   set(bansheeEventHandler.bind([onWailRef, reset]));
-  const token: Token = {};
-  registry.unregister(target);
-  registry.register(target, call, token);
+  registry.register(target, call);
   listeners[1](call);
-  return createDie.bind([token, call, reset]);
+  return createDie.bind([new WeakRef(target), call, reset]);
 };

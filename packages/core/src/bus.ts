@@ -190,7 +190,6 @@ export class Bus<SO, TO> {
       this.#callEventListeners("error", error);
 
     const createOrCompleteShinka = makeCreateOrCompleteShinka<SO, TO, any>(
-      this.#sendDelegate.call,
       this.#dispatchMap,
       responseTimeout,
     );
@@ -242,10 +241,12 @@ export class Bus<SO, TO> {
       state: transportTAState,
     });
 
-    busSetVars(busTA, dispatchError);
-    serializerSetVars(serializerTA, dispatchError);
-    transportSetVars(transportTA, dispatchError);
-    userSetVars(this, dispatchError);
+    const send = this.#sendDelegate.call;
+
+    busSetVars({ thisArg: busTA, dispatchError, send });
+    serializerSetVars({ thisArg: serializerTA, dispatchError, send });
+    transportSetVars({ thisArg: transportTA, dispatchError, send });
+    userSetVars({ thisArg: this, dispatchError, send });
 
     this.#sta = {
       transport: {
@@ -280,7 +281,7 @@ export class Bus<SO, TO> {
         last: this.#lastDataAt,
         state: limonTAState,
       });
-      limonSetVars(limonTA, dispatchError);
+      limonSetVars({ thisArg: limonTA, dispatchError, send });
       this.#sta.limon = {
         shinka: limonShinka,
         TA: limonTA,
