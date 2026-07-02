@@ -19,7 +19,7 @@ const faviconPath = PROD ? `${baseUrl}favicon.png` : "/img/favicon.png";
 const config = defineConfig({
   title: "shinka-rpc",
   description: "Symmetric RPC bus",
-  cleanUrls: true,
+  // cleanUrls: true,
   base: baseUrl,
 
   head: [["link", { rel: "icon", href: faviconPath }]],
