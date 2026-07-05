@@ -95,4 +95,12 @@ test("semaphore", async () => {
 
   for (let i = 1; i < 5; i++) slots[i]!.release();
   await sleep(10);
+
+  // ===
+
+  {
+    using ctx = await s.acquire();
+    expect(s.value).toStrictEqual(1);
+  }
+  expect(s.value).toStrictEqual(2);
 });

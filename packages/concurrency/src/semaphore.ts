@@ -5,12 +5,11 @@ type SemaphoreState = {
   value: number;
 };
 
-const symbolDispose =
-  Symbol.dispose || (Symbol.for("Symbol.dispose") as typeof Symbol.dispose);
+// @ts-expect-error: 2503
+if (!Symbol.dispose) Symbol.dispose = Symbol.for("Symbol.dispose");
 
-export type SemaphoreAcquireContext = {
+export type SemaphoreAcquireContext = Disposable & {
   release: () => void;
-  [symbolDispose]: () => void;
 };
 
 type ReleaseFunctionThis = [
@@ -19,10 +18,11 @@ type ReleaseFunctionThis = [
   IQueue<(value: SemaphoreAcquireContext) => void>,
 ];
 
-const acquireContext = (release: () => void) => ({
-  release,
-  [symbolDispose]: release,
-});
+const acquireContext = (release: () => void) =>
+  Object.freeze({
+    release,
+    [Symbol.dispose]: release,
+  } as SemaphoreAcquireContext);
 
 function releaseFunction(this: ReleaseFunctionThis) {
   if (this[0]) throw new Error("already released");
