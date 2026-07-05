@@ -3,5 +3,6 @@ export interface IQueue<T> {
   pop: () => T | undefined;
   map: <M>(cb: (val: T, thisArg: IQueue<T>) => M) => M[];
   forEach: (cb: (val: T, thisArg: IQueue<T>) => void) => void;
+  [Symbol.iterator]: () => Generator<T, void, void>;
   length: number;
 }

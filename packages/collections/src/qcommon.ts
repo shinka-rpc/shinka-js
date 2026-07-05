@@ -61,3 +61,12 @@ export const popFn = <T, S extends HeadAndLength<T>>(state: S) => {
   state.head = head[1];
   return head;
 };
+
+export function* iteratorFn<T, S extends HeadAndLength<T>>(state: S) {
+  let head = state.head;
+  while (head) {
+    const [val, next] = head;
+    yield val;
+    head = next;
+  }
+}

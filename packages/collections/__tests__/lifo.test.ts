@@ -15,6 +15,10 @@ test("lifo", () => {
   q.forEach((i) => forEach.push(i));
   expect(input).toStrictEqual(forEach.reverse());
 
+  const forOf: number[] = [];
+  for (const val of q) forOf.push(val);
+  expect(input).toStrictEqual(forOf.reverse());
+
   while (q.length) output.push(q.pop()!);
   expect(input).toStrictEqual(output.reverse());
   expect(q.pop()).toStrictEqual(undefined);

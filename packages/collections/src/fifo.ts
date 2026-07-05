@@ -1,5 +1,12 @@
 import type { IQueue } from "./types";
-import { type Entry, shrink, mapFn, forEachFn, popFn } from "./qcommon";
+import {
+  type Entry,
+  shrink,
+  mapFn,
+  forEachFn,
+  iteratorFn,
+  popFn,
+} from "./qcommon";
 
 type FIFOState<T> = {
   length: number;
@@ -37,6 +44,8 @@ export class FIFO<T> implements IQueue<T> {
     if (next === undefined) this.#state.tail = undefined;
     return val;
   };
+
+  [Symbol.iterator] = () => iteratorFn<T, FIFOState<T>>(this.#state);
 
   map = <M>(cb: (val: T, thisArg: this) => M) => mapFn(this.#state, this, cb);
   forEach = (cb: (val: T, thisArg: this) => void) =>

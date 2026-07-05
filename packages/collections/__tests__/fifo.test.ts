@@ -15,6 +15,10 @@ test("fifo", () => {
   q.forEach((i) => forEach.push(i));
   expect(input).toStrictEqual(forEach);
 
+  const forOf: number[] = [];
+  for (const val of q) forOf.push(val);
+  expect(input).toStrictEqual(forOf);
+
   while (q.length) output.push(q.pop()!);
   expect(input).toStrictEqual(output);
   expect(q.pop()).toStrictEqual(undefined);
