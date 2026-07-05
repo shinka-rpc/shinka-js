@@ -3,6 +3,7 @@
   "description": "Symmetric RPC bus",
   "main": "index.js",
   "scripts": {
+    "graph": "nx graph",
     "build": "lerna run --scope \"@shinka-rpc/*\" build",
     "test": "lerna run --scope \"@shinka-rpc/*\" test",
     "packall": "D=\"$PWD\"; mkdir -p pack && rm -f pack/*; for d in dist/*; do cd \"$d\"; npm pack --pack-destination \"$D\"/pack; cd \"$D\"; done",

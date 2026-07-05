@@ -1,6 +1,7 @@
 import { expect, test } from "@jest/globals";
 
-import { ReusablePromise, sleep } from "@shinka-rpc/util";
+import { ReusablePromise } from "../src";
+import { sleep } from "../../util";
 
 test("data-signal-void", async () => {
   const reusablePromise = new ReusablePromise<void>();

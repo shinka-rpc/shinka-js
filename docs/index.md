@@ -22,8 +22,8 @@ hero:
       text: LiMons
       link: /limons
     - theme: alt
-      text: Util
-      link: /util
+      text: Other
+      link: /other
 
 features:
   - title: Symmetricity

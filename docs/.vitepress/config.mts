@@ -52,7 +52,7 @@ const config = defineConfig({
       { text: "Serializers", link: "/serializers/" },
       { text: "<b>LiMon</b>s", link: "/limons/" },
       { text: "Schedulers", link: "/schedulers/" },
-      { text: "Util", link: "/util/" },
+      { text: "Other", link: "/other/" },
     ],
 
     sidebar: {
@@ -93,10 +93,27 @@ const config = defineConfig({
         },
       ],
       "/limons/": [
-        { items: [{ text: "Opportunistic", link: "/limons/opportunistic" }] },
+        {
+          items: [
+            { text: "<b>LiMon</b>s", link: "/limons/" },
+            { text: "Opportunistic", link: "/limons/opportunistic" },
+          ],
+        },
       ],
-      "/schedulers/": [{ items: [] }],
-      "/util/": [{ items: [] }],
+      "/schedulers/": [
+        { items: [{ text: "Schedulers", link: "/schedulers/" }] },
+      ],
+      "/other/": [
+        {
+          items: [
+            { text: "Other", link: "/other/" },
+            { text: "Collections", link: "/other/collections" },
+            { text: "Concurrency", link: "/other/concurrency" },
+            { text: "Util", link: "/other/util" },
+            { text: "Lib*", link: "/other/lib" },
+          ],
+        },
+      ],
     },
 
     socialLinks: [

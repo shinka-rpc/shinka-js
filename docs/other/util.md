@@ -1,10 +1,4 @@
-# @shinka-rpc/util
-
-Symmetric RPC bus
-
-This package implements auxiliary utilities
-
-## sequence
+# sequence
 
 Simple factory function, returning database-like sequence -- the function
 returning auto-incrementing value
@@ -23,7 +17,7 @@ const fromFive = sequence(5);
 
 - **Optional** initialValue: `Number`
 
-## sleep
+# sleep
 
 Simple wrapper over `setTimeout` and `Promise`
 
@@ -37,7 +31,7 @@ await sleep(250);
 
 - **Required** time: `Number` of milliseconds, passed directly to `setTimeout`
 
-## delegate
+# delegate
 
 Implements [delegate](https://en.wikipedia.org/wiki/Delegation_pattern) pattern
 in `forwardRef` manner to make possible late binding to resolve circular
@@ -60,7 +54,7 @@ set(dependency2.someMethod.bind(dependency2));
 
 **Returns** object `Delegate`: `{ call, set, reset }`
 
-## banshee
+# banshee
 
 [Banshee in irish mythology](https://en.wikipedia.org/wiki/Banshee) doesn't
 kill, but she comes to people who will die soon. The object may die because of
