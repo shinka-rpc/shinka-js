@@ -1,6 +1,7 @@
 import type { IQueue, MapFn, ForEachFn } from "./types";
 import {
   type Entry,
+  makeResetStateFn,
   shrink,
   mapFn,
   forEachFn,
@@ -14,17 +15,14 @@ type FIFOState<T> = {
   tail: Entry<T> | null;
 };
 
-const cleanOnShrink = <T>(state: FIFOState<T>) => {
-  state.head = null;
-  state.tail = null;
-  state.length = 0;
-};
+const initialState: FIFOState<any> = { length: 0, head: null, tail: null };
+const resetStateFn = makeResetStateFn(initialState);
 
 export class FIFO<T> implements IQueue<T> {
   #state!: FIFOState<T>;
 
   constructor() {
-    this.#state = { length: 0, head: null, tail: null };
+    this.#state = Object.seal({ ...initialState });
     Object.freeze(this);
   }
 
@@ -37,7 +35,7 @@ export class FIFO<T> implements IQueue<T> {
     this.#state.length++;
   };
 
-  pop = () => popFn<T, FIFOState<T>>(this.#state, cleanOnShrink);
+  pop = () => popFn<T, FIFOState<T>>(this.#state, resetStateFn);
   [Symbol.iterator] = () => iteratorFn<T, FIFOState<T>>(this.#state);
   map = <M>(cb: MapFn<T, this, M>) => mapFn(this.#state, this, cb);
   forEach = (cb: ForEachFn<T, this>) => forEachFn(this.#state, this, cb);
@@ -47,6 +45,6 @@ export class FIFO<T> implements IQueue<T> {
   }
 
   set length(n: number) {
-    shrink(n, this.#state, cleanOnShrink);
+    shrink(n, this.#state, resetStateFn);
   }
 }

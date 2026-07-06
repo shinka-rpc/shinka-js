@@ -1,11 +1,12 @@
 import type { IQueue, MapFn, ForEachFn } from "./types";
 import {
   type Entry,
+  makeResetStateFn,
   shrink,
   mapFn,
   forEachFn,
-  popFn,
   iteratorFn,
+  popFn,
 } from "./qcommon";
 
 type LIFOState<T> = {
@@ -13,16 +14,14 @@ type LIFOState<T> = {
   head: Entry<T> | null;
 };
 
-const cleanOnShrink = <T>(state: LIFOState<T>) => {
-  state.head = null;
-  state.length = 0;
-};
+const initialState: LIFOState<any> = { length: 0, head: null };
+const resetStateFn = makeResetStateFn(initialState);
 
 export class LIFO<T> implements IQueue<T> {
   #state!: LIFOState<T>;
 
   constructor() {
-    this.#state = { length: 0, head: null };
+    this.#state = Object.seal({ ...initialState });
     Object.freeze(this);
   }
 
@@ -32,7 +31,7 @@ export class LIFO<T> implements IQueue<T> {
     this.#state.head = entry;
   };
 
-  pop = () => popFn<T, LIFOState<T>>(this.#state, cleanOnShrink);
+  pop = () => popFn<T, LIFOState<T>>(this.#state, resetStateFn);
   map = <M>(cb: MapFn<T, this, M>) => mapFn(this.#state, this, cb);
   forEach = (cb: ForEachFn<T, this>) => forEachFn(this.#state, this, cb);
   [Symbol.iterator] = () => iteratorFn<T, LIFOState<T>>(this.#state);
@@ -42,6 +41,6 @@ export class LIFO<T> implements IQueue<T> {
   }
 
   set length(n: number) {
-    shrink(n, this.#state, cleanOnShrink);
+    shrink(n, this.#state, resetStateFn);
   }
 }
