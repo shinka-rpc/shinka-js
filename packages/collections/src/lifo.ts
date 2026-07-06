@@ -10,11 +10,11 @@ import {
 
 type LIFOState<T> = {
   length: number;
-  head: Entry<T> | undefined;
+  head: Entry<T> | null;
 };
 
 const cleanOnShrink = <T>(state: LIFOState<T>) => {
-  state.head = undefined;
+  state.head = null;
   state.length = 0;
 };
 
@@ -22,7 +22,7 @@ export class LIFO<T> implements IQueue<T> {
   #state!: LIFOState<T>;
 
   constructor() {
-    this.#state = { length: 0, head: undefined };
+    this.#state = { length: 0, head: null };
     Object.freeze(this);
   }
 
@@ -32,7 +32,7 @@ export class LIFO<T> implements IQueue<T> {
     this.#state.head = entry;
   };
 
-  pop = () => popFn<T, LIFOState<T>>(this.#state)?.[0];
+  pop = () => popFn<T, LIFOState<T>>(this.#state, cleanOnShrink);
   map = <M>(cb: (val: T, thisArg: this) => M) => mapFn(this.#state, this, cb);
   forEach = (cb: (val: T, thisArg: this) => void) =>
     forEachFn(this.#state, this, cb);

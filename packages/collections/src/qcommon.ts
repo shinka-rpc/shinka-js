@@ -1,8 +1,8 @@
-export type Entry<T> = [T, Entry<T> | undefined];
+export type Entry<T> = [T, Entry<T> | null];
 
 type HeadAndLength<T> = {
   length: number;
-  head: Entry<T> | undefined;
+  head: Entry<T> | null;
 };
 
 export const shrink = <T, S extends HeadAndLength<T>>(
@@ -14,8 +14,8 @@ export const shrink = <T, S extends HeadAndLength<T>>(
   if (n >= state.length) return;
   if (n === 0) clean(state);
   const popCount = n - state.length;
-  let head = state.head!;
-  for (let i = 0; i < popCount; i++) head = head[1]!;
+  let { head } = state;
+  for (let i = 0; i < popCount; i++) head = head![1]!;
   state.head = head;
   state.length = n;
 };
@@ -27,15 +27,12 @@ export const mapFn = <T, M, TA, S extends HeadAndLength<T>>(
 ) => {
   if (state.length === 0) return [];
   const ret = new Array<M>(state.length);
-
-  let head = state.head;
-  let i = 0;
+  let { head } = state,
+    i = 0;
 
   while (head) {
-    const [val, next] = head;
-    ret[i] = cb(val, thisArg);
-    i++;
-    head = next;
+    ret[i++] = cb(head[0], thisArg);
+    head = head[1];
   }
 
   return ret;
@@ -46,27 +43,28 @@ export const forEachFn = <T, TA, S extends HeadAndLength<T>>(
   thisArg: TA,
   cb: (val: T, thisArg: TA) => void,
 ) => {
-  let head = state.head;
+  let { head } = state;
   while (head) {
-    const [val, next] = head;
-    cb(val, thisArg);
-    head = next;
+    cb(head[0], thisArg);
+    head = head[1];
   }
 };
 
-export const popFn = <T, S extends HeadAndLength<T>>(state: S) => {
+export const popFn = <T, S extends HeadAndLength<T>>(
+  state: S,
+  clean: (state: S) => void,
+) => {
   const { head } = state;
-  if (head === undefined) return;
+  if (head === null) return clean(state) as undefined;
   state.length--;
   state.head = head[1];
-  return head;
+  return head[0];
 };
 
 export function* iteratorFn<T, S extends HeadAndLength<T>>(state: S) {
-  let head = state.head;
+  let { head } = state;
   while (head) {
-    const [val, next] = head;
-    yield val;
-    head = next;
+    yield head[0];
+    head = head[1];
   }
 }

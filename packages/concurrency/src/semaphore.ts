@@ -2,6 +2,7 @@ import type { IQueue } from "@shinka-rpc/collections";
 import { createOrUse, type MaybeConstructor } from "./util";
 
 type SemaphoreState = {
+  initial: number;
   value: number;
 };
 
@@ -51,7 +52,7 @@ export class Semaphore {
   constructor({ waiters, count }: SemaphoreProps) {
     validateCount(count);
     this.#waiters = createOrUse(waiters);
-    this.#state = { value: count };
+    this.#state = { value: count, initial: count };
     Object.freeze(this);
   }
 
@@ -71,13 +72,13 @@ export class Semaphore {
   }
 
   get count() {
-    return this.#state.value + this.#waiters.length;
+    return this.#state.initial;
   }
 
   set count(value: number) {
     validateCount(value);
-    const delta = value - this.count;
-    this.#state.value += delta;
+    this.#state.value -= this.#state.initial - value;
+    this.#state.initial = value;
 
     while (this.#state.value > 0) {
       const next = this.#waiters.pop();

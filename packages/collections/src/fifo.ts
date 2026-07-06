@@ -10,13 +10,13 @@ import {
 
 type FIFOState<T> = {
   length: number;
-  head: Entry<T> | undefined;
-  tail: Entry<T> | undefined;
+  head: Entry<T> | null;
+  tail: Entry<T> | null;
 };
 
 const cleanOnShrink = <T>(state: FIFOState<T>) => {
-  state.head = undefined;
-  state.tail = undefined;
+  state.head = null;
+  state.tail = null;
   state.length = 0;
 };
 
@@ -24,27 +24,20 @@ export class FIFO<T> implements IQueue<T> {
   #state!: FIFOState<T>;
 
   constructor() {
-    this.#state = { length: 0, head: undefined, tail: undefined };
+    this.#state = { length: 0, head: null, tail: null };
     Object.freeze(this);
   }
 
   push = (value: T) => {
-    const entry: Entry<T> = [value, undefined];
+    const entry: Entry<T> = [value, null];
     const { tail } = this.#state;
-    if (tail === undefined) this.#state.head = entry;
+    if (tail === null) this.#state.head = entry;
     else tail[1] = entry;
     this.#state.tail = entry;
     this.#state.length++;
   };
 
-  pop = () => {
-    const head: Entry<T> | undefined = popFn(this.#state);
-    if (head === undefined) return;
-    const [val, next] = head;
-    if (next === undefined) this.#state.tail = undefined;
-    return val;
-  };
-
+  pop = () => popFn<T, FIFOState<T>>(this.#state, cleanOnShrink);
   [Symbol.iterator] = () => iteratorFn<T, FIFOState<T>>(this.#state);
 
   map = <M>(cb: (val: T, thisArg: this) => M) => mapFn(this.#state, this, cb);

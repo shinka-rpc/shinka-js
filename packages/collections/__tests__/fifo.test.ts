@@ -7,6 +7,7 @@ test("fifo", () => {
   const output: number[] = [];
 
   input.forEach(q.push);
+  expect(q.length).toStrictEqual(input.length);
 
   const mapped = q.map((i) => i);
   expect(input).toStrictEqual(mapped);
@@ -22,9 +23,11 @@ test("fifo", () => {
   while (q.length) output.push(q.pop()!);
   expect(input).toStrictEqual(output);
   expect(q.pop()).toStrictEqual(undefined);
+  expect(q.length).toStrictEqual(0);
 
   input.forEach(q.push);
   expect(input.length).toStrictEqual(q.length);
+  expect(q.length).toStrictEqual(input.length);
 
   q.length = 4;
 

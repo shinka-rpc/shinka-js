@@ -74,6 +74,14 @@ test("semaphore", async () => {
 
   // ===
 
+  {
+    using ctx = await s.acquire();
+    expect(s.value).toStrictEqual(1);
+  }
+  expect(s.value).toStrictEqual(2);
+
+  // ===
+
   slots.fill(null);
 
   acquireAll();
@@ -82,9 +90,12 @@ test("semaphore", async () => {
   // Check the state is not corrupted
   expect(slots.map(Boolean)).toStrictEqual([true, true, false, false, false]);
 
+  expect(s.value).toStrictEqual(0);
   s.count = 1; // try shrink
+  expect(s.value).toStrictEqual(-1);
   slots[0]!.release();
   await sleep(10);
+  expect(s.value).toStrictEqual(0);
 
   // same
   expect(slots.map(Boolean)).toStrictEqual([true, true, false, false, false]);
@@ -95,12 +106,5 @@ test("semaphore", async () => {
 
   for (let i = 1; i < 5; i++) slots[i]!.release();
   await sleep(10);
-
-  // ===
-
-  {
-    using ctx = await s.acquire();
-    expect(s.value).toStrictEqual(1);
-  }
-  expect(s.value).toStrictEqual(2);
+  expect(s.value).toStrictEqual(10);
 });
