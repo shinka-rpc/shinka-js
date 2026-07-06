@@ -1,4 +1,4 @@
-import type { IQueue } from "./types";
+import type { IQueue, MapFn, ForEachFn } from "./types";
 import {
   type Entry,
   shrink,
@@ -33,10 +33,8 @@ export class LIFO<T> implements IQueue<T> {
   };
 
   pop = () => popFn<T, LIFOState<T>>(this.#state, cleanOnShrink);
-  map = <M>(cb: (val: T, thisArg: this) => M) => mapFn(this.#state, this, cb);
-  forEach = (cb: (val: T, thisArg: this) => void) =>
-    forEachFn(this.#state, this, cb);
-
+  map = <M>(cb: MapFn<T, this, M>) => mapFn(this.#state, this, cb);
+  forEach = (cb: ForEachFn<T, this>) => forEachFn(this.#state, this, cb);
   [Symbol.iterator] = () => iteratorFn<T, LIFOState<T>>(this.#state);
 
   get length() {

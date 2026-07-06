@@ -1,3 +1,5 @@
+import type { MapFn, ForEachFn } from "./types";
+
 export type Entry<T> = [T, Entry<T> | null];
 
 type HeadAndLength<T> = {
@@ -23,7 +25,7 @@ export const shrink = <T, S extends HeadAndLength<T>>(
 export const mapFn = <T, M, TA, S extends HeadAndLength<T>>(
   state: S,
   thisArg: TA,
-  cb: (val: T, thisArg: TA) => M,
+  cb: MapFn<T, TA, M>,
 ) => {
   if (state.length === 0) return [];
   const ret = new Array<M>(state.length);
@@ -41,7 +43,7 @@ export const mapFn = <T, M, TA, S extends HeadAndLength<T>>(
 export const forEachFn = <T, TA, S extends HeadAndLength<T>>(
   state: S,
   thisArg: TA,
-  cb: (val: T, thisArg: TA) => void,
+  cb: ForEachFn<T, TA>,
 ) => {
   let { head } = state;
   while (head) {
