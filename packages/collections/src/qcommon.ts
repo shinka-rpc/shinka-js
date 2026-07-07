@@ -69,10 +69,21 @@ export const popFn = <T, S extends HeadAndLength<T>>(
   return head[0];
 };
 
-export function* iteratorFn<T, S extends HeadAndLength<T>>(state: S) {
-  let { head } = state;
-  while (head) {
-    yield head[0];
+// iterator ===
+
+const emptyIteration = Object.freeze({ done: true });
+
+const nextFn = <T>(head: Entry<T> | null) => {
+  let value: T;
+  return () => {
+    if (head === null) return emptyIteration;
+    value = head[0];
     head = head[1];
-  }
-}
+    return { value };
+  };
+};
+
+export const iteratorFn = <T, S extends HeadAndLength<T>>(state: S) => {
+  const next = nextFn(state.head);
+  return { next } as Generator<T, void, void>;
+};
