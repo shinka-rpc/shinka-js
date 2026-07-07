@@ -1,4 +1,6 @@
 import type { FIFO } from "@shinka-rpc/collections";
+import type { SemaphoreAcquireContext } from "@shinka-rpc/concurrency";
+
 import type { Context } from "./context";
 import type {
   MessageType,
@@ -117,6 +119,7 @@ export type InternalHandlerThisArg<SO, TO, STATE> = {
   shinka: Shinka<SO, TO, InternalHandlerThisArg<SO, TO, STATE>>;
   state: STATE;
   dispatchError: (error: any) => void;
+  exclusiveLock: (timeout: number) => Promise<SemaphoreAcquireContext>;
 };
 
 export type UserHandlerRegistries<SO, TO, B> = HandlerRegistries<SO, TO, B>;

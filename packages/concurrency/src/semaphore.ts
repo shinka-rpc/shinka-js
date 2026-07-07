@@ -19,7 +19,7 @@ type ReleaseFunctionThis = [
   IQueue<(value: SemaphoreAcquireContext) => void>,
 ];
 
-const acquireContext = (release: () => void) =>
+export const acquireContext = (release: () => void) =>
   Object.freeze({
     release,
     [Symbol.dispose]: release,

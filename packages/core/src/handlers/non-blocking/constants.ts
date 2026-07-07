@@ -8,7 +8,8 @@ export const enum NBRequestKeys {
 
 export const enum NBAcquire {
   BUS = 0,
-  SERIALIZER = 1,
-  TRANSPORT = 2,
-  LIMON = 3,
+  NB = 1,
+  SERIALIZER = 2,
+  TRANSPORT = 3,
+  LIMON = 4,
 }

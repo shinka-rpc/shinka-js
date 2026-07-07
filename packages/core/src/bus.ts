@@ -1,5 +1,10 @@
 import { delegate, type DelegateType, banshee } from "@shinka-rpc/util";
 import { FIFO } from "@shinka-rpc/collections";
+import {
+  Semaphore,
+  acquireContext,
+  type SemaphoreAcquireContext,
+} from "@shinka-rpc/concurrency";
 
 import { createSendData, createOnRawData } from "./factory/serializer-strategy";
 import { makeCreateOrCompleteShinka } from "./shinka";
@@ -8,6 +13,7 @@ import {
   nbEvents,
   nbRequests,
   nbHandlerRegistries,
+  NBAcquire,
   type NBThisArgState,
 } from "./handlers/non-blocking";
 
@@ -135,6 +141,39 @@ const createFIFOPush =
   (message: Message<any>, metadata?: ShinkaMeta<SO, TO>) =>
     fifo.push([message, metadata]);
 
+// ===
+
+type ExclusiveLockReleaseThis = [
+  ShinkaAndThisArgAll<any, any>["nb"]["shinka"],
+  SemaphoreAcquireContext,
+];
+
+function exclusiveLockRelease(this: ExclusiveLockReleaseThis) {
+  nbEvents.release(this[0].dataEvent);
+  this[1].release();
+}
+
+type ExclusiveLockAcquireThis = [
+  Semaphore,
+  NBAcquire,
+  ShinkaAndThisArgAll<any, any>["nb"]["shinka"],
+];
+
+async function exclusiveLockAcquire(
+  this: ExclusiveLockAcquireThis,
+  timeout: number,
+) {
+  let semaphoreCTX: SemaphoreAcquireContext | null = null;
+  try {
+    semaphoreCTX = await this[0].acquire();
+    await nbRequests.acquire(this[2].request, this[1], timeout);
+    return acquireContext(exclusiveLockRelease.bind([this[2], semaphoreCTX]));
+  } catch (e) {
+    if (semaphoreCTX) semaphoreCTX.release();
+    throw e;
+  }
+}
+
 export class Bus<SO, TO> {
   #sta!: ShinkaAndThisArgAll<SO, TO>;
   #dispatchMap!: DispatchMap;
@@ -196,6 +235,7 @@ export class Bus<SO, TO> {
     };
 
     const send = this.#sendDelegate.call;
+    const semaphore = new Semaphore({ waiters: FIFO, count: 1 });
 
     const dispatchError = (error: any) =>
       this.#callEventListeners("error", error);
@@ -237,6 +277,11 @@ export class Bus<SO, TO> {
       bus: this,
       shinka: busShinka,
       state: busTAState,
+      exclusiveLock: exclusiveLockAcquire.bind([
+        semaphore,
+        NBAcquire.BUS,
+        busShinka,
+      ]),
       dispatchError,
     });
 
@@ -247,6 +292,11 @@ export class Bus<SO, TO> {
       bus: this,
       shinka: serializerShinka,
       state: serializerTAState,
+      exclusiveLock: exclusiveLockAcquire.bind([
+        semaphore,
+        NBAcquire.SERIALIZER,
+        serializerShinka,
+      ]),
       dispatchError,
     });
 
@@ -257,6 +307,11 @@ export class Bus<SO, TO> {
       bus: this,
       shinka: transportShinka,
       state: transportTAState,
+      exclusiveLock: exclusiveLockAcquire.bind([
+        semaphore,
+        NBAcquire.TRANSPORT,
+        transportShinka,
+      ]),
       dispatchError,
     });
 
@@ -278,6 +333,11 @@ export class Bus<SO, TO> {
       bus: this,
       shinka: nbShinka,
       state: nbTAState,
+      exclusiveLock: exclusiveLockAcquire.bind([
+        semaphore,
+        NBAcquire.NB,
+        nbShinka,
+      ]),
       send,
       fifo: nbTA_FIFO,
       fifoPush: createFIFOPush(nbTA_FIFO),
@@ -324,6 +384,11 @@ export class Bus<SO, TO> {
         heartbeat: () => busEvents.heartbeat(busShinka.dataEvent),
         last: this.#lastDataAt,
         state: limonTAState,
+        exclusiveLock: exclusiveLockAcquire.bind([
+          semaphore,
+          NBAcquire.LIMON,
+          limonShinka,
+        ]),
         dispatchError,
       });
       limonSetVars({ thisArg: limonTA, dispatchError, send });

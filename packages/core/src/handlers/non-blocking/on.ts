@@ -39,6 +39,7 @@ const acquireTargets = new Map<NBAcquire, (keyof NBThisArgSetVars<any, any>)[]>(
     [NBAcquire.SERIALIZER, ["user", "bus", "transport", "limon"]],
     [NBAcquire.TRANSPORT, ["user", "bus", "serializer", "limon"]],
     [NBAcquire.LIMON, ["user", "bus", "transport", "serializer"]],
+    [NBAcquire.NB, ["user", "bus", "transport", "serializer", "limon"]],
   ],
 );
 
