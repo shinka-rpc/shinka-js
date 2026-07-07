@@ -1,6 +1,6 @@
 import { ReusablePromise } from "@shinka-rpc/concurrency";
 
-import { defaultRequestTimeout } from "./constants";
+import { defaultRequestTimeout } from "./defaults";
 
 import { Bus } from "./bus";
 

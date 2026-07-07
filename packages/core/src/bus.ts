@@ -1,10 +1,15 @@
 import { delegate, type DelegateType, banshee } from "@shinka-rpc/util";
+import { FIFO } from "@shinka-rpc/collections";
 
 import { createSendData, createOnRawData } from "./factory/serializer-strategy";
 import { makeCreateOrCompleteShinka } from "./shinka";
-import { busEvents, busRequests } from "./bus-handler/do";
-import { busHandlerRegistries } from "./bus-handler/on";
-import { microTaskHelper } from "./microtask-helper";
+import { busEvents, busRequests, busHandlerRegistries } from "./handlers/bus";
+import {
+  nbEvents,
+  nbRequests,
+  nbHandlerRegistries,
+  type NBThisArgState,
+} from "./handlers/non-blocking";
 
 import {
   createEventListeners,
@@ -17,8 +22,10 @@ import {
   messageTypeBus,
   messageTypeUser,
   messageTypeLimon,
-  defaultRequestTimeout,
-} from "./constants";
+  messageTypeNB,
+} from "./message-type";
+
+import { defaultRequestTimeout } from "./defaults";
 
 import type {
   SendFn,
@@ -28,7 +35,6 @@ import type {
   EventListenerType,
   ShinkaEventListeners,
   ShinkaListenerLayers,
-  Shinka,
   InternalHandlerThisArg,
   LastDataAt,
   ShinkaDataEvent,
@@ -39,10 +45,12 @@ import type {
   SerializerRF,
   LiMonRF,
   UserHandlerRegistries,
-  TransportFactory,
-  SerializerFactory,
-  LiMonFactory,
-  IBus,
+  ShinkaAndThisArgAll,
+  ShinkaEventListener,
+  NBThisArg,
+  NB_FIFOEntry,
+  NBThisArgSetVars,
+  ShinkaMeta,
 } from "./types";
 
 const transportNotInitialized = () => {
@@ -90,30 +98,6 @@ type BusVars = VarsBye & {
   state: BusState;
 };
 
-type ShinkaAndTA<SO, TO> = {
-  shinka: Shinka<SO, TO, InternalHandlerThisArg<SO, TO, any>>;
-  TA: InternalHandlerThisArg<SO, TO, any>;
-};
-
-type LimonShinkaAndTA<SO, TO> = {
-  shinka: Shinka<SO, TO, LiMonThisArg<SO, TO, any>>;
-  TA: LiMonThisArg<SO, TO, any>;
-};
-
-type ShinkaAndThisArgAll<SO, TO> = {
-  transport: ShinkaAndTA<SO, TO> & {
-    factory: TransportFactory<SO, TO, any>;
-  };
-  serializer: ShinkaAndTA<SO, TO> & {
-    factory: SerializerFactory<SO, TO, any>;
-  };
-  bus: ShinkaAndTA<SO, TO>;
-  limon:
-    | (LimonShinkaAndTA<SO, TO> & { factory: LiMonFactory<SO, TO, any> })
-    | null;
-  user: Shinka<SO, TO, IBus<SO, TO>>;
-};
-
 type DispatchErrors = {
   send: (error: any) => void;
   recv: (error: any) => void;
@@ -123,8 +107,33 @@ const resetState = (state: any) => () => {
   for (const k of Object.keys(state)) delete state[k];
 };
 
+export type EventListenerCallerThis<B> = readonly [
+  ShinkaEventListener<B>,
+  B,
+  any,
+];
+
+export function eventListenerCaller<B>(this: EventListenerCallerThis<B>) {
+  this[0](this[1], this[2]);
+}
+
 // TODO: make protocol also overridable
-const defaultSerializerOpts: SerializerInitOpts = { root: "array" };
+const defaultSerializerOpts: SerializerInitOpts = Object.freeze({
+  root: "array",
+});
+
+const enum ResetState {
+  BUS = 0,
+  SERIALIZER = 1,
+  TRANSPORT = 2,
+  NB = 3,
+  LIMON = 4,
+}
+
+const createFIFOPush =
+  <SO, TO>(fifo: FIFO<NB_FIFOEntry<SO, TO>>) =>
+  (message: Message<any>, metadata?: ShinkaMeta<SO, TO>) =>
+    fifo.push([message, metadata]);
 
 export class Bus<SO, TO> {
   #sta!: ShinkaAndThisArgAll<SO, TO>;
@@ -155,7 +164,7 @@ export class Bus<SO, TO> {
   ) {
     const [transportRegistries, transportFactory] = transportRF;
     const [serializerRegistries, serializerFactory] = serializerRF;
-    this.#resetStates = [];
+    this.#resetStates = Array(limonRF ? 5 : 4);
 
     this.#eventListeners = {
       own: createEventListeners(),
@@ -186,6 +195,8 @@ export class Bus<SO, TO> {
         }),
     };
 
+    const send = this.#sendDelegate.call;
+
     const dispatchError = (error: any) =>
       this.#callEventListeners("error", error);
 
@@ -197,6 +208,11 @@ export class Bus<SO, TO> {
     const [busSetVars, busShinka] = createOrCompleteShinka(
       messageTypeBus,
       busHandlerRegistries,
+    );
+
+    const [nbSetVars, nbShinka] = createOrCompleteShinka(
+      messageTypeNB,
+      nbHandlerRegistries,
     );
 
     const [serializerSetVars, serializerShinka] = createOrCompleteShinka(
@@ -215,35 +231,62 @@ export class Bus<SO, TO> {
     );
 
     const busTAState = {};
-    this.#resetStates.push(resetState(busTAState));
+    this.#resetStates[ResetState.BUS] = resetState(busTAState);
 
     const busTA: InternalHandlerThisArg<SO, TO, any> = Object.freeze({
       bus: this,
       shinka: busShinka,
       state: busTAState,
+      dispatchError,
     });
 
     const serializerTAState = {};
-    this.#resetStates.push(resetState(serializerTAState));
+    this.#resetStates[ResetState.SERIALIZER] = resetState(serializerTAState);
 
     const serializerTA: InternalHandlerThisArg<SO, TO, any> = Object.freeze({
       bus: this,
       shinka: serializerShinka,
       state: serializerTAState,
+      dispatchError,
     });
 
     const transportTAState = {};
-    this.#resetStates.push(resetState(transportTAState));
+    this.#resetStates[ResetState.TRANSPORT] = resetState(transportTAState);
 
     const transportTA: InternalHandlerThisArg<SO, TO, any> = Object.freeze({
       bus: this,
       shinka: transportShinka,
       state: transportTAState,
+      dispatchError,
     });
 
-    const send = this.#sendDelegate.call;
+    const nbTAState: NBThisArgState = {};
+    this.#resetStates[ResetState.NB] = resetState(nbTAState);
+
+    const nbTA_FIFO = new FIFO<NB_FIFOEntry<SO, TO>>();
+
+    const nbTASetVars: NBThisArgSetVars<SO, TO> = {
+      user: userSetVars,
+      bus: busSetVars,
+      nb: nbSetVars,
+      transport: transportSetVars,
+      serializer: serializerSetVars,
+      limon: null,
+    };
+
+    const nbTA: NBThisArg<SO, TO> = Object.freeze({
+      bus: this,
+      shinka: nbShinka,
+      state: nbTAState,
+      send,
+      fifo: nbTA_FIFO,
+      fifoPush: createFIFOPush(nbTA_FIFO),
+      setVars: nbTASetVars,
+      dispatchError,
+    });
 
     busSetVars({ thisArg: busTA, dispatchError, send });
+    nbSetVars({ thisArg: nbTA, dispatchError, send });
     serializerSetVars({ thisArg: serializerTA, dispatchError, send });
     transportSetVars({ thisArg: transportTA, dispatchError, send });
     userSetVars({ thisArg: this, dispatchError, send });
@@ -260,6 +303,7 @@ export class Bus<SO, TO> {
         factory: serializerFactory,
       },
       bus: { shinka: busShinka, TA: busTA },
+      nb: { shinka: nbShinka, TA: nbTA },
       limon: null,
       user: userShinka,
     };
@@ -272,7 +316,7 @@ export class Bus<SO, TO> {
       );
 
       const limonTAState = {};
-      this.#resetStates.push(resetState(limonTAState));
+      this.#resetStates[ResetState.LIMON] = resetState(limonTAState);
 
       const limonTA: LiMonThisArg<SO, TO, any> = Object.freeze({
         bus: this,
@@ -280,6 +324,7 @@ export class Bus<SO, TO> {
         heartbeat: () => busEvents.heartbeat(busShinka.dataEvent),
         last: this.#lastDataAt,
         state: limonTAState,
+        dispatchError,
       });
       limonSetVars({ thisArg: limonTA, dispatchError, send });
       this.#sta.limon = {
@@ -287,6 +332,7 @@ export class Bus<SO, TO> {
         TA: limonTA,
         factory: limonFactory,
       };
+      nbTASetVars.limon = limonSetVars;
     }
 
     this.#onTerminated = onTerminated.bind([
@@ -304,14 +350,16 @@ export class Bus<SO, TO> {
   #callEventListeners = (type: EventListenerType, target: any) => {
     const own = this.#eventListeners.own[type];
     for (const listener of own)
-      // @ts-expect-error: 2769
-      queueMicrotask(microTaskHelper.bind([listener, this, target]));
+      queueMicrotask(
+        (eventListenerCaller<this>).bind([listener, this, target]),
+      );
 
     const banned = this.#eventListeners.banned[type];
     for (const listener of this.#eventListeners.parent[type])
       if (!(banned.has(listener) || own.has(listener)))
-        // @ts-expect-error: 2769
-        queueMicrotask(microTaskHelper.bind([listener, this, target]));
+        queueMicrotask(
+          (eventListenerCaller<this>).bind([listener, this, target]),
+        );
   };
 
   public start = async () => {

@@ -1,14 +1,14 @@
-import { BusRequestKeys, BusEventKeys } from "../constants";
-import { createHandlerRegistries } from "../shinka";
+import { BusRequestKeys, BusEventKeys } from "./constants";
+import { createHandlerRegistries } from "../../shinka";
 
-import type { InternalHandlerRegistries } from "../types";
+import type { InternalHandlerRegistries } from "../../types";
 
 export const busHandlerRegistries: InternalHandlerRegistries<any, any, any> =
   createHandlerRegistries();
 
 // === onRequest
 
-busHandlerRegistries.onRequest(BusRequestKeys.PING, () => 0);
+busHandlerRegistries.onRequest(BusRequestKeys.PING, () => 1);
 
 // === onDataEvent
 

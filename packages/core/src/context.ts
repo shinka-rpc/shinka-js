@@ -1,5 +1,5 @@
 import type { Message, MessageResponse, ShinkaMeta } from "./types";
-import type { MessageTypeAllResponse } from "./constants";
+import type { MessageTypeAllResponse } from "./message-type";
 
 export class Context<SO, TO> {
   #reqID!: number;

@@ -18,7 +18,7 @@ import type {
   MessageTypeAllError,
   MessageTypeAllSuccess,
   MessageTypeAllEvent,
-} from "../constants";
+} from "../message-type";
 
 type PendingMap = Map<REQID, RejectResolve>;
 type TimeoutMap = Map<REQID, ReturnType<typeof setTimeout>>;

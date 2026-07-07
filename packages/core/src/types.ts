@@ -1,11 +1,13 @@
+import type { FIFO } from "@shinka-rpc/collections";
 import type { Context } from "./context";
 import type {
   MessageType,
   MessageTypeAllRequest,
   MessageTypeAllResponse,
   MessageTypeAllEvent,
-} from "./constants";
+} from "./message-type";
 import type { HandlerRegistries } from "./shinka";
+import type { NBThisArgState } from "./handlers/non-blocking";
 
 export type LastDataAt = {
   received: number;
@@ -47,6 +49,10 @@ export type ShinkaVars<SO, TO, TA> = {
   send: SendFn<SO, TO>;
   dispatchError: DispatchError;
 };
+
+export type ShinkaVarsSetter<SO, TO, TA> = (
+  vars: Partial<ShinkaVars<SO, TO, TA>>,
+) => void;
 
 export type ShinkaOnRequest<SO, TO, TA> = (
   key: DataEventKey,
@@ -110,6 +116,7 @@ export type InternalHandlerThisArg<SO, TO, STATE> = {
   bus: IBus<SO, TO>;
   shinka: Shinka<SO, TO, InternalHandlerThisArg<SO, TO, STATE>>;
   state: STATE;
+  dispatchError: (error: any) => void;
 };
 
 export type UserHandlerRegistries<SO, TO, B> = HandlerRegistries<SO, TO, B>;
@@ -339,6 +346,70 @@ export type LiMonRF<SO, TO, LS> = [
   HandlerRegistries<SO, TO, LiMonThisArg<SO, TO, LS>>,
   LiMonFactory<SO, TO, LS>,
 ];
+
+export type ShinkaAndTA<SO, TO> = {
+  shinka: Shinka<SO, TO, InternalHandlerThisArg<SO, TO, any>>;
+  TA: InternalHandlerThisArg<SO, TO, any>;
+};
+
+export type LimonShinkaAndTA<SO, TO> = {
+  shinka: Shinka<SO, TO, LiMonThisArg<SO, TO, any>>;
+  TA: LiMonThisArg<SO, TO, any>;
+};
+
+export type NB_FIFOEntry<SO, TO> = [Message<any>, ShinkaMeta<SO, TO>?];
+
+export type NBThisArgSetVars<SO, TO> = {
+  user: ShinkaVarsSetter<SO, TO, any>;
+  bus: ShinkaVarsSetter<SO, TO, InternalHandlerThisArg<SO, TO, any>>;
+  transport: ShinkaVarsSetter<SO, TO, InternalHandlerThisArg<SO, TO, any>>;
+  serializer: ShinkaVarsSetter<SO, TO, InternalHandlerThisArg<SO, TO, any>>;
+  limon: ShinkaVarsSetter<SO, TO, LimonShinkaAndTA<SO, TO>> | null;
+  nb: ShinkaVarsSetter<SO, TO, NBThisArg<SO, TO>>;
+};
+
+export type NBThisArg<SO, TO> = InternalHandlerThisArg<
+  SO,
+  TO,
+  NBThisArgState
+> & {
+  send: SendFn<SO, TO>;
+  fifoPush: SendFn<SO, TO>;
+  fifo: FIFO<NB_FIFOEntry<SO, TO>>;
+  setVars: NBThisArgSetVars<SO, TO>;
+};
+
+export type NBHandlerRegistries<SO, TO> = HandlerRegistries<
+  SO,
+  TO,
+  NBThisArg<SO, TO>
+>;
+
+export type NBShinkaAndTA<SO, TO> = {
+  shinka: Shinka<SO, TO, LiMonThisArg<SO, TO, any>>;
+  TA: NBThisArg<SO, TO>;
+};
+
+export type NonBlockingThisArg<SO, TO> = InternalHandlerThisArg<
+  SO,
+  TO,
+  any
+> & {};
+
+export type ShinkaAndThisArgAll<SO, TO> = {
+  user: Shinka<SO, TO, IBus<SO, TO>>;
+  transport: ShinkaAndTA<SO, TO> & {
+    factory: TransportFactory<SO, TO, any>;
+  };
+  serializer: ShinkaAndTA<SO, TO> & {
+    factory: SerializerFactory<SO, TO, any>;
+  };
+  bus: ShinkaAndTA<SO, TO>;
+  nb: NBShinkaAndTA<SO, TO>;
+  limon:
+    | (LimonShinkaAndTA<SO, TO> & { factory: LiMonFactory<SO, TO, any> })
+    | null;
+};
 
 // Synthetic
 export type BusProps<SO, TO> = {

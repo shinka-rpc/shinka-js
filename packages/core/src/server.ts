@@ -2,7 +2,7 @@ import { delegate, type DelegateType } from "@shinka-rpc/util";
 
 import { Hub, type HubOptions, type HubConnectProps } from "./hub";
 
-import { defaultRequestTimeout, defaultSerializerRoot } from "./constants";
+import { defaultRequestTimeout, defaultSerializerRoot } from "./defaults";
 
 import type { Bus } from "./bus";
 import type {
@@ -11,7 +11,7 @@ import type {
   ManageEventListener,
   SerializerRoot,
   InternalHandlerThisArg,
-  SerializerFactory,
+  // SerializerFactory,
   TransportServer,
   TransportFactory,
   TransportConnectFn,
@@ -20,7 +20,7 @@ import type {
   ManageEventListenerPair,
   TransportRF,
   SerializerRF,
-  LiMonRF,
+  // LiMonRF,
   InternalHandlerRegistries,
 } from "./types";
 
