@@ -1,7 +1,7 @@
 import { BusRequestKeys, BusEventKeys } from "./constants";
-import { createHandlerRegistries } from "../../shinka";
+import { createHandlerRegistries } from "../../../shinka";
 
-import type { InternalHandlerRegistries } from "../../types";
+import type { InternalHandlerRegistries } from "../../../types";
 
 export const busHandlerRegistries: InternalHandlerRegistries<any, any, any> =
   createHandlerRegistries();

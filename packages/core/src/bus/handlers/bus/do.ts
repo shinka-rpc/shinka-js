@@ -1,5 +1,5 @@
 import { BusRequestKeys, BusEventKeys } from "./constants";
-import type { ShinkaDataEvent, ShinkaRequest } from "../../types";
+import type { ShinkaDataEvent, ShinkaRequest } from "../../../types";
 
 export const busEvents = {
   heartbeat: (dataEvent: ShinkaDataEvent<any, any>) =>

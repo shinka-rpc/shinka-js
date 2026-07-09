@@ -1,5 +1,5 @@
 import { sequence } from "@shinka-rpc/util";
-import { Context } from "../context";
+import { Context } from "./context";
 
 import type {
   REQID,
@@ -18,7 +18,7 @@ import type {
   MessageTypeAllError,
   MessageTypeAllSuccess,
   MessageTypeAllEvent,
-} from "../message-type";
+} from "./message-type";
 
 type PendingMap = Map<REQID, RejectResolve>;
 type TimeoutMap = Map<REQID, ReturnType<typeof setTimeout>>;

@@ -3,6 +3,7 @@ import { ReusablePromise } from "@shinka-rpc/concurrency";
 import { defaultRequestTimeout } from "./defaults";
 
 import { Bus } from "./bus";
+import { createHandlerRegistries, type HandlerRegistries } from "./shinka";
 
 import { createEventListeners } from "./factory/event-listeners-bus";
 
@@ -15,8 +16,6 @@ import type {
   SerializerRF,
   LiMonRF,
 } from "./types";
-
-import { createHandlerRegistries, type HandlerRegistries } from "./shinka";
 
 type HubTimeoutSettings = {
   responseTimeout: number;

@@ -3,8 +3,9 @@ import { delegate, type DelegateType } from "@shinka-rpc/util";
 import { Hub, type HubOptions, type HubConnectProps } from "./hub";
 
 import { defaultRequestTimeout, defaultSerializerRoot } from "./defaults";
-
+import { setupHandlerRegistries } from "./shinka";
 import type { Bus } from "./bus";
+
 import type {
   ShinkaOnRequest,
   ShinkaOnDataEvent,
@@ -23,8 +24,6 @@ import type {
   // LiMonRF,
   InternalHandlerRegistries,
 } from "./types";
-
-import { setupHandlerRegistries } from "./shinka";
 
 import { baseListenerFactory } from "./factory/base-listener-factory";
 import { createEventListenerPair } from "./factory/event-listener-pair";

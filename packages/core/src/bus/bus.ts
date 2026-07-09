@@ -1,27 +1,15 @@
 import { delegate, type DelegateType, banshee } from "@shinka-rpc/util";
 import { FIFO } from "@shinka-rpc/collections";
-import {
-  Semaphore,
-  acquireContext,
-  type SemaphoreAcquireContext,
-} from "@shinka-rpc/concurrency";
+import { Semaphore, ReusablePromise } from "@shinka-rpc/concurrency";
 
-import { createSendData, createOnRawData } from "./factory/serializer-strategy";
-import { makeCreateOrCompleteShinka } from "./shinka";
-import { busEvents, busRequests, busHandlerRegistries } from "./handlers/bus";
 import {
-  nbEvents,
-  nbRequests,
-  nbHandlerRegistries,
-  NBAcquire,
-  type NBThisArgState,
-} from "./handlers/non-blocking";
-
+  createSendData,
+  createOnRawData,
+} from "../factory/serializer-strategy";
 import {
   createEventListeners,
   createEventListenersBanned,
-} from "./factory/event-listeners-bus";
-
+} from "../factory/event-listeners-bus";
 import {
   messageTypeTransport,
   messageTypeSerializer,
@@ -29,9 +17,7 @@ import {
   messageTypeUser,
   messageTypeLimon,
   messageTypeNB,
-} from "./message-type";
-
-import { defaultRequestTimeout } from "./defaults";
+} from "../factory/message-type";
 
 import type {
   SendFn,
@@ -52,12 +38,25 @@ import type {
   LiMonRF,
   UserHandlerRegistries,
   ShinkaAndThisArgAll,
-  ShinkaEventListener,
   NBThisArg,
   NB_FIFOEntry,
   NBThisArgSetVars,
-  ShinkaMeta,
-} from "./types";
+} from "../types";
+
+import { defaultRequestTimeout } from "../defaults";
+import { makeCreateOrCompleteShinka } from "../shinka";
+
+import { busEvents, busRequests, busHandlerRegistries } from "./handlers/bus";
+import {
+  nbHandlerRegistries,
+  NBAcquire,
+  type NBThisArgState,
+} from "./handlers/non-blocking";
+import { exclusiveLockAcquire } from "./exclusive-lock";
+import { eventListenerCaller } from "./event-listener-caller";
+import { gracefulShutdown } from "./graceful-shutdown";
+import { type VarsBye, byeReset, onTerminated } from "./on-terminate";
+import { clearState, createFIFOPush } from "./util";
 
 const transportNotInitialized = () => {
   throw new Error("Transport is not initialized");
@@ -72,32 +71,12 @@ const enum BusState {
   STOPPING = 3,
 }
 
-type VarsBye = {
-  bye: 0 | 1;
-};
-
-function byeReset(this: VarsBye) {
-  this.bye = 0;
-}
-
-type GracefulShutdownThis = readonly [
-  ShinkaDataEvent<any, any>,
-  () => void,
-  () => Promise<void>,
-];
-
-function gracefulShutdown(this: GracefulShutdownThis) {
-  busEvents.terminate(this[0]);
-  this[1]();
-  this[2]();
-}
-
-type OnTerminateThis = readonly [VarsBye, () => void, () => void];
-
-function onTerminated(this: OnTerminateThis) {
-  this[0].bye = 0;
-  this[1]();
-  this[2]();
+const enum ResetStateIDX {
+  BUS = 0,
+  SERIALIZER = 1,
+  TRANSPORT = 2,
+  NB = 3,
+  LIMON = 4,
 }
 
 type BusVars = VarsBye & {
@@ -109,70 +88,12 @@ type DispatchErrors = {
   recv: (error: any) => void;
 };
 
-const resetState = (state: any) => () => {
-  for (const k of Object.keys(state)) delete state[k];
-};
-
-export type EventListenerCallerThis<B> = readonly [
-  ShinkaEventListener<B>,
-  B,
-  any,
-];
-
-export function eventListenerCaller<B>(this: EventListenerCallerThis<B>) {
-  this[0](this[1], this[2]);
-}
-
 // TODO: make protocol also overridable
 const defaultSerializerOpts: SerializerInitOpts = Object.freeze({
   root: "array",
 });
 
-const enum ResetState {
-  BUS = 0,
-  SERIALIZER = 1,
-  TRANSPORT = 2,
-  NB = 3,
-  LIMON = 4,
-}
-
-const createFIFOPush =
-  <SO, TO>(fifo: FIFO<NB_FIFOEntry<SO, TO>>) =>
-  (message: Message<any>, metadata?: ShinkaMeta<SO, TO>) =>
-    fifo.push([message, metadata]);
-
 // ===
-
-type ExclusiveLockReleaseThis = [
-  ShinkaAndThisArgAll<any, any>["nb"]["shinka"],
-  SemaphoreAcquireContext,
-];
-
-function exclusiveLockRelease(this: ExclusiveLockReleaseThis) {
-  nbEvents.release(this[0].dataEvent);
-  this[1].release();
-}
-
-type ExclusiveLockAcquireThis = [
-  Semaphore,
-  NBAcquire,
-  ShinkaAndThisArgAll<any, any>["nb"]["shinka"],
-];
-
-async function exclusiveLockAcquire(
-  this: ExclusiveLockAcquireThis,
-  timeout: number,
-) {
-  let semaphoreCTX: SemaphoreAcquireContext | null = null;
-  try {
-    semaphoreCTX = await this[0].acquire();
-    await nbRequests.acquire(this[2].request, this[1], timeout);
-    return acquireContext(exclusiveLockRelease.bind([this[2], semaphoreCTX]));
-  } catch (e) {
-    if (semaphoreCTX) semaphoreCTX.release();
-    throw e;
-  }
-}
 
 export class Bus<SO, TO> {
   #sta!: ShinkaAndThisArgAll<SO, TO>;
@@ -236,6 +157,9 @@ export class Bus<SO, TO> {
 
     const send = this.#sendDelegate.call;
     const semaphore = new Semaphore({ waiters: FIFO, count: 1 });
+    const reusablePromise = new ReusablePromise<void>();
+
+    const nbTAState: NBThisArgState = {};
 
     const dispatchError = (error: any) =>
       this.#callEventListeners("error", error);
@@ -271,7 +195,7 @@ export class Bus<SO, TO> {
     );
 
     const busTAState = {};
-    this.#resetStates[ResetState.BUS] = resetState(busTAState);
+    this.#resetStates[ResetStateIDX.BUS] = clearState(busTAState);
 
     const busTA: InternalHandlerThisArg<SO, TO, any> = Object.freeze({
       bus: this,
@@ -279,14 +203,16 @@ export class Bus<SO, TO> {
       state: busTAState,
       exclusiveLock: exclusiveLockAcquire.bind([
         semaphore,
+        reusablePromise,
         NBAcquire.BUS,
         busShinka,
+        nbTAState,
       ]),
       dispatchError,
     });
 
     const serializerTAState = {};
-    this.#resetStates[ResetState.SERIALIZER] = resetState(serializerTAState);
+    this.#resetStates[ResetStateIDX.SERIALIZER] = clearState(serializerTAState);
 
     const serializerTA: InternalHandlerThisArg<SO, TO, any> = Object.freeze({
       bus: this,
@@ -294,14 +220,16 @@ export class Bus<SO, TO> {
       state: serializerTAState,
       exclusiveLock: exclusiveLockAcquire.bind([
         semaphore,
+        reusablePromise,
         NBAcquire.SERIALIZER,
         serializerShinka,
+        nbTAState,
       ]),
       dispatchError,
     });
 
     const transportTAState = {};
-    this.#resetStates[ResetState.TRANSPORT] = resetState(transportTAState);
+    this.#resetStates[ResetStateIDX.TRANSPORT] = clearState(transportTAState);
 
     const transportTA: InternalHandlerThisArg<SO, TO, any> = Object.freeze({
       bus: this,
@@ -309,14 +237,14 @@ export class Bus<SO, TO> {
       state: transportTAState,
       exclusiveLock: exclusiveLockAcquire.bind([
         semaphore,
+        reusablePromise,
         NBAcquire.TRANSPORT,
         transportShinka,
+        nbTAState,
       ]),
       dispatchError,
     });
-
-    const nbTAState: NBThisArgState = {};
-    this.#resetStates[ResetState.NB] = resetState(nbTAState);
+    this.#resetStates[ResetStateIDX.NB] = clearState(nbTAState);
 
     const nbTA_FIFO = new FIFO<NB_FIFOEntry<SO, TO>>();
 
@@ -335,8 +263,10 @@ export class Bus<SO, TO> {
       state: nbTAState,
       exclusiveLock: exclusiveLockAcquire.bind([
         semaphore,
+        reusablePromise,
         NBAcquire.NB,
         nbShinka,
+        nbTAState,
       ]),
       send,
       fifo: nbTA_FIFO,
@@ -376,7 +306,7 @@ export class Bus<SO, TO> {
       );
 
       const limonTAState = {};
-      this.#resetStates[ResetState.LIMON] = resetState(limonTAState);
+      this.#resetStates[ResetStateIDX.LIMON] = clearState(limonTAState);
 
       const limonTA: LiMonThisArg<SO, TO, any> = Object.freeze({
         bus: this,
@@ -386,8 +316,10 @@ export class Bus<SO, TO> {
         state: limonTAState,
         exclusiveLock: exclusiveLockAcquire.bind([
           semaphore,
+          reusablePromise,
           NBAcquire.LIMON,
           limonShinka,
+          nbTAState,
         ]),
         dispatchError,
       });

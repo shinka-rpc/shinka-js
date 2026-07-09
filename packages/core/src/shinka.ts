@@ -8,7 +8,7 @@ import {
 } from "./factory/registry";
 
 import type { DispatchMap, Shinka, ShinkaOn } from "./types";
-import type { MessageTypeGroup } from "./message-type";
+import type { MessageTypeGroup } from "./factory/message-type";
 
 export const createHandlerRegistries = <SO, TO, TA>() => {
   const [reqGet, reqSet] = createReqRegistry<SO, TO, TA, any, any>();

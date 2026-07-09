@@ -1,4 +1,5 @@
 import { Response } from "../response";
+import type { Context } from "./context";
 import type {
   DataEventKey,
   ShinkaMeta,
@@ -6,7 +7,6 @@ import type {
   MetadataWithHint,
   DispatchError,
 } from "../types";
-import type { Context } from "../context";
 
 const separateMetadataHint = <SO, TO>(
   metadataWithHint?: MetadataWithHint<SO, TO>,

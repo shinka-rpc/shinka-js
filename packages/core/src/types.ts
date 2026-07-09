@@ -1,15 +1,15 @@
 import type { FIFO } from "@shinka-rpc/collections";
 import type { SemaphoreAcquireContext } from "@shinka-rpc/concurrency";
 
-import type { Context } from "./context";
+import type { Context } from "./factory/context";
 import type {
   MessageType,
   MessageTypeAllRequest,
   MessageTypeAllResponse,
   MessageTypeAllEvent,
-} from "./message-type";
+} from "./factory/message-type";
 import type { HandlerRegistries } from "./shinka";
-import type { NBThisArgState } from "./handlers/non-blocking";
+import type { NBThisArgState } from "./bus/handlers/non-blocking";
 
 export type LastDataAt = {
   received: number;
@@ -388,8 +388,10 @@ export type NBHandlerRegistries<SO, TO> = HandlerRegistries<
   NBThisArg<SO, TO>
 >;
 
+export type NBShinka<SO, TO> = Shinka<SO, TO, NBThisArg<SO, TO>>;
+
 export type NBShinkaAndTA<SO, TO> = {
-  shinka: Shinka<SO, TO, LiMonThisArg<SO, TO, any>>;
+  shinka: NBShinka<SO, TO>;
   TA: NBThisArg<SO, TO>;
 };
 

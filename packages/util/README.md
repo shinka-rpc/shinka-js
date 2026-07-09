@@ -10,7 +10,7 @@ Simple factory function, returning database-like sequence -- the function
 returning auto-incrementing value
 
 ```typescript
-import { sequence } from "@shinka-rpc/util/sequence";
+import { sequence } from "@shinka-rpc/util";
 
 const fromZero = sequence();
 const fromFive = sequence(5);
@@ -28,7 +28,7 @@ const fromFive = sequence(5);
 Simple wrapper over `setTimeout` and `Promise`
 
 ```typescript
-import { sleep } from "@shinka-rpc/util/sleep";
+import { sleep } from "@shinka-rpc/util";
 
 await sleep(250);
 ```
@@ -44,7 +44,7 @@ in `forwardRef` manner to make possible late binding to resolve circular
 dependency problem
 
 ```typescript
-import { delegate } from "@shinka-rpc/util/delegate";
+import { delegate } from "@shinka-rpc/util";
 
 const defaultFn = () => console.error("Implementation is not ready!");
 const {call, set, reset} = delegate<(a1: any, a2: any /*, ...*/) => any>(defaultFn);
@@ -60,7 +60,7 @@ set(dependency2.someMethod.bind(dependency2));
 
 **Returns** object `Delegate`: `{ call, set, reset }`
 
-## banshee
+## banshee (TODO: move into own package)
 
 [Banshee in irish mythology](https://en.wikipedia.org/wiki/Banshee) doesn't
 kill, but she comes to people who will die soon. The object may die because of

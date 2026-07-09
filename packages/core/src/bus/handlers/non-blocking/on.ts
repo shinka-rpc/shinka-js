@@ -1,11 +1,18 @@
-import { NBRequestKeys, NBEventKeys, NBAcquire } from "./constants";
-import { createHandlerRegistries } from "../../shinka";
+import {
+  NBRequestKeys,
+  NBEventKeys,
+  NBAcquire,
+  NBConsensus,
+} from "./constants";
+
+import { consensus } from "../../consensus";
+import { createHandlerRegistries } from "../../../shinka";
 
 import type {
   NBHandlerRegistries,
   NBThisArgSetVars,
   NBThisArg,
-} from "../../types";
+} from "../../../types";
 
 export const nbHandlerRegistries: NBHandlerRegistries<any, any> =
   createHandlerRegistries();
@@ -45,15 +52,11 @@ const acquireTargets = new Map<NBAcquire, (keyof NBThisArgSetVars<any, any>)[]>(
 
 nbHandlerRegistries.onRequest(
   NBRequestKeys.ACQUIRE,
-  ([target, timeout]: [NBAcquire, number], thisArg) => {
-    const { state, dispatchError, fifoPush, setVars } = thisArg;
-    if (Object.hasOwn(state, "target")) {
-      dispatchError({
-        where: "exclusiveLock",
-        error: "already locked",
-        target,
-      });
-      throw "already locked";
+  ([target, timeout, nonce]: [NBAcquire, number, number], thisArg) => {
+    const { state, fifoPush, setVars } = thisArg;
+    if (Object.hasOwn(state, "nonce")) {
+      const status = consensus(state.nonce!, nonce);
+      if (status !== NBConsensus.OK) return status;
     }
     state.target = target;
     state.timeoutId = setTimeout(releaseFn, timeout, thisArg, false);
@@ -62,6 +65,7 @@ nbHandlerRegistries.onRequest(
       const cb = setVars[name];
       if (cb) cb(newVars);
     }
+    return NBConsensus.OK;
   },
 );
 

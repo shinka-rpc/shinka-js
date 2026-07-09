@@ -65,6 +65,7 @@ export class ReusablePromise<P> {
 
   public reset = () => {
     if (this.#state.done) renewState(this.#state, this.#renewExecutor);
+    return this;
   };
 
   public get isDone() {
