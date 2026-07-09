@@ -17,6 +17,8 @@ const testRange = (x: number, y: number) => {
   for (let a = x; a < y; a++) for (let b = x; b < y; b++) testPair(a, b);
 };
 
+const test100 = (x: number) => testRange(x, x + 100);
+
 test("consensus-exact", () => {
   expect(1).toStrictEqual(1);
   const a = 1;
@@ -25,6 +27,11 @@ test("consensus-exact", () => {
   expect(consensus(b, a)).toStrictEqual(Consensus.FAIL);
 });
 
-test("consensus-range-0-250", () => testRange(0, 250));
-test("consensus-range-250-500", () => testRange(250, 500));
-test("consensus-range-500-750", () => testRange(500, 750));
+test("consensus-range-0-100", () => test100(0));
+test("consensus-range-2000-2100", () => test100(2000));
+
+// chosen by fair dice roll
+test("consensus-range-7116-7216", () => test100(7116));
+test("consensus-range-12762-12862", () => test100(12762));
+test("consensus-range-27554-27654", () => test100(27554));
+test("consensus-range-32129-32229", () => test100(32129));
