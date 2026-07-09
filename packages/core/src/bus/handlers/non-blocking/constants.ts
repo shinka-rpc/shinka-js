@@ -13,9 +13,3 @@ export const enum NBAcquire {
   TRANSPORT = 3,
   LIMON = 4,
 }
-
-export const enum NBConsensus {
-  UNKNOWN = 0,
-  OK = 1,
-  FAIL = 2,
-}

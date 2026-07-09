@@ -1,4 +1,4 @@
-import type { FIFO } from "@shinka-rpc/collections";
+import type { IQueue } from "@shinka-rpc/collections";
 import type { Message, NB_FIFOEntry, ShinkaMeta } from "../types";
 
 export const clearState = (state: any) => () => {
@@ -6,6 +6,6 @@ export const clearState = (state: any) => () => {
 };
 
 export const createFIFOPush =
-  <SO, TO>(fifo: FIFO<NB_FIFOEntry<SO, TO>>) =>
+  <SO, TO>(q: IQueue<NB_FIFOEntry<SO, TO>>) =>
   (message: Message<any>, metadata?: ShinkaMeta<SO, TO>) =>
-    fifo.push([message, metadata]);
+    q.push([message, metadata]);

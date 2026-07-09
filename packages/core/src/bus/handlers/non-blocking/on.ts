@@ -1,11 +1,7 @@
-import {
-  NBRequestKeys,
-  NBEventKeys,
-  NBAcquire,
-  NBConsensus,
-} from "./constants";
+import { Consensus, consensusAll } from "@shinka-rpc/consensus";
 
-import { consensus } from "../../consensus";
+import { NBRequestKeys, NBEventKeys, NBAcquire } from "./constants";
+
 import { createHandlerRegistries } from "../../../shinka";
 
 import type {
@@ -18,7 +14,14 @@ export const nbHandlerRegistries: NBHandlerRegistries<any, any> =
   createHandlerRegistries();
 
 const releaseFn = (
-  { state, dispatchError, send, setVars, fifo }: NBThisArg<any, any>,
+  {
+    state,
+    dispatchError,
+    send,
+    setVars,
+    q,
+    raceResolvedEvent,
+  }: NBThisArg<any, any>,
   onRelease: boolean,
 ) => {
   {
@@ -34,7 +37,8 @@ const releaseFn = (
       if (cb) cb(newVars);
     }
 
-    while (fifo.length) send(...fifo.pop()!);
+    if (raceResolvedEvent.isDone) while (q.length) send(...q.pop()!);
+    else raceResolvedEvent.resolve();
   }
 };
 
@@ -52,20 +56,20 @@ const acquireTargets = new Map<NBAcquire, (keyof NBThisArgSetVars<any, any>)[]>(
 
 nbHandlerRegistries.onRequest(
   NBRequestKeys.ACQUIRE,
-  ([target, timeout, nonce]: [NBAcquire, number, number], thisArg) => {
-    const { state, fifoPush, setVars } = thisArg;
-    if (Object.hasOwn(state, "nonce")) {
-      const status = consensus(state.nonce!, nonce);
-      if (status !== NBConsensus.OK) return status;
+  ([target, timeout, ...nonces]: [NBAcquire, number, number], thisArg) => {
+    const { state, qPush, setVars } = thisArg;
+    if (Object.hasOwn(state, "nonces")) {
+      const status = consensusAll(state.nonces!, nonces);
+      if (status !== Consensus.OK) return status;
     }
     state.target = target;
     state.timeoutId = setTimeout(releaseFn, timeout, thisArg, false);
-    const newVars = { send: fifoPush };
+    const newVars = { send: qPush };
     for (const name of acquireTargets.get(target)!) {
       const cb = setVars[name];
       if (cb) cb(newVars);
     }
-    return NBConsensus.OK;
+    return Consensus.OK;
   },
 );
 

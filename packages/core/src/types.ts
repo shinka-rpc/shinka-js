@@ -1,5 +1,8 @@
-import type { FIFO } from "@shinka-rpc/collections";
-import type { SemaphoreAcquireContext } from "@shinka-rpc/concurrency";
+import type { IQueue } from "@shinka-rpc/collections";
+import type {
+  SemaphoreAcquireContext,
+  ReusablePromise,
+} from "@shinka-rpc/concurrency";
 
 import type { Context } from "./factory/context";
 import type {
@@ -377,8 +380,9 @@ export type NBThisArg<SO, TO> = InternalHandlerThisArg<
   NBThisArgState
 > & {
   send: SendFn<SO, TO>;
-  fifoPush: SendFn<SO, TO>;
-  fifo: FIFO<NB_FIFOEntry<SO, TO>>;
+  qPush: SendFn<SO, TO>;
+  q: IQueue<NB_FIFOEntry<SO, TO>>;
+  raceResolvedEvent: ReusablePromise<void>;
   setVars: NBThisArgSetVars<SO, TO>;
 };
 
@@ -394,12 +398,6 @@ export type NBShinkaAndTA<SO, TO> = {
   shinka: NBShinka<SO, TO>;
   TA: NBThisArg<SO, TO>;
 };
-
-export type NonBlockingThisArg<SO, TO> = InternalHandlerThisArg<
-  SO,
-  TO,
-  any
-> & {};
 
 export type ShinkaAndThisArgAll<SO, TO> = {
   user: Shinka<SO, TO, IBus<SO, TO>>;

@@ -1,9 +1,5 @@
-import {
-  NBRequestKeys,
-  NBEventKeys,
-  NBAcquire,
-  NBConsensus,
-} from "./constants";
+import { Consensus } from "@shinka-rpc/consensus";
+import { NBRequestKeys, NBEventKeys, NBAcquire } from "./constants";
 import type { ShinkaDataEvent, ShinkaRequest } from "../../../types";
 
 export const nbEvents = {
@@ -16,6 +12,6 @@ export const nbRequests = {
     request: ShinkaRequest<any, any>,
     target: NBAcquire,
     timeout: number,
-    nonce: number,
-  ) => request<NBConsensus>(NBRequestKeys.ACQUIRE, [target, timeout, nonce]),
+    nonces: number[],
+  ) => request<Consensus>(NBRequestKeys.ACQUIRE, [target, timeout, ...nonces]),
 };

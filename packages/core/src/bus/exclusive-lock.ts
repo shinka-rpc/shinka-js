@@ -5,32 +5,30 @@ import {
   type SemaphoreAcquireContext,
 } from "@shinka-rpc/concurrency";
 
+import type { IQueue } from "@shinka-rpc/collections";
+import { Consensus, createNonces } from "@shinka-rpc/consensus";
+
 import {
   nbEvents,
   nbRequests,
   NBAcquire,
-  NBConsensus,
   type NBThisArgState,
 } from "./handlers/non-blocking";
 
-import type { NBShinka } from "../types";
+import type { NBShinka, SendFn } from "../types";
 
 type ExclusiveLockReleaseThis = [
   NBShinka<any, any>,
   SemaphoreAcquireContext,
-  ReusablePromise<void>,
   NBThisArgState,
 ];
 
-const randInt32 = () => (Math.random() * 0x100000000) >>> 0;
-
 function exclusiveLockRelease(this: ExclusiveLockReleaseThis) {
-  const [shinka, semaphoreCTX, rPromise, state] = this;
+  const [shinka, semaphoreCTX, state] = this;
   try {
     nbEvents.release(shinka.dataEvent);
   } finally {
-    delete state.nonce;
-    if (!rPromise.isDone) rPromise.resolve();
+    delete state.nonces;
     semaphoreCTX.release();
   }
 }
@@ -48,31 +46,33 @@ export async function exclusiveLockAcquire(
   timeout: number,
 ) {
   let semaphoreCTX: SemaphoreAcquireContext | null = null,
-    consensusResult = NBConsensus.UNKNOWN;
+    consensusResult = Consensus.UNKNOWN;
   const [semaphore, rPromise, nbAcquire, shinka, state] = this;
   try {
     semaphoreCTX = await semaphore.acquire();
 
     if (Object.hasOwn(state, "nonce")) throw new Error("malformed state");
 
-    while (consensusResult === NBConsensus.UNKNOWN) {
-      const nonce = randInt32();
-      state.nonce = nonce;
+    while (consensusResult === Consensus.UNKNOWN) {
+      const nonces = createNonces();
+      state.nonces = nonces;
       consensusResult = await nbRequests.acquire(
         shinka.request,
         nbAcquire,
         timeout,
-        nonce,
+        nonces,
       );
     }
 
-    if (consensusResult === NBConsensus.FAIL) await rPromise.reset();
+    if (consensusResult === Consensus.FAIL) await rPromise.reset();
 
     return acquireContext(
-      exclusiveLockRelease.bind([shinka, semaphoreCTX, rPromise, state]),
+      exclusiveLockRelease.bind([shinka, semaphoreCTX, state]),
     );
   } catch (e) {
     if (semaphoreCTX) semaphoreCTX.release();
+    if (!rPromise.isDone) rPromise.resolve();
+    delete state.nonces;
     throw e;
   }
 }

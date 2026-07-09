@@ -157,7 +157,7 @@ export class Bus<SO, TO> {
 
     const send = this.#sendDelegate.call;
     const semaphore = new Semaphore({ waiters: FIFO, count: 1 });
-    const reusablePromise = new ReusablePromise<void>();
+    const raceResolvedEvent = new ReusablePromise<void>();
 
     const nbTAState: NBThisArgState = {};
 
@@ -203,7 +203,7 @@ export class Bus<SO, TO> {
       state: busTAState,
       exclusiveLock: exclusiveLockAcquire.bind([
         semaphore,
-        reusablePromise,
+        raceResolvedEvent,
         NBAcquire.BUS,
         busShinka,
         nbTAState,
@@ -220,7 +220,7 @@ export class Bus<SO, TO> {
       state: serializerTAState,
       exclusiveLock: exclusiveLockAcquire.bind([
         semaphore,
-        reusablePromise,
+        raceResolvedEvent,
         NBAcquire.SERIALIZER,
         serializerShinka,
         nbTAState,
@@ -237,7 +237,7 @@ export class Bus<SO, TO> {
       state: transportTAState,
       exclusiveLock: exclusiveLockAcquire.bind([
         semaphore,
-        reusablePromise,
+        raceResolvedEvent,
         NBAcquire.TRANSPORT,
         transportShinka,
         nbTAState,
@@ -263,16 +263,17 @@ export class Bus<SO, TO> {
       state: nbTAState,
       exclusiveLock: exclusiveLockAcquire.bind([
         semaphore,
-        reusablePromise,
+        raceResolvedEvent,
         NBAcquire.NB,
         nbShinka,
         nbTAState,
       ]),
       send,
-      fifo: nbTA_FIFO,
-      fifoPush: createFIFOPush(nbTA_FIFO),
+      q: nbTA_FIFO,
+      qPush: createFIFOPush(nbTA_FIFO),
       setVars: nbTASetVars,
       dispatchError,
+      raceResolvedEvent,
     });
 
     busSetVars({ thisArg: busTA, dispatchError, send });
@@ -316,7 +317,7 @@ export class Bus<SO, TO> {
         state: limonTAState,
         exclusiveLock: exclusiveLockAcquire.bind([
           semaphore,
-          reusablePromise,
+          raceResolvedEvent,
           NBAcquire.LIMON,
           limonShinka,
           nbTAState,
