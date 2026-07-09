@@ -1,15 +1,8 @@
-export type MurmurHash3fmix32Const = [number, number];
-
-// [0x85ebca6b, 0xc2b2ae35]
-
-export const murmurHash3_fmix32 = (
-  h: number,
-  [c1, c2]: MurmurHash3fmix32Const,
-) => {
+export const murmurHash3_fmix32 = (h: number) => {
   h ^= h >>> 16;
-  h = Math.imul(h, c1);
+  h = Math.imul(h, 0x85ebca6b);
   h ^= h >>> 13;
-  h = Math.imul(h, c2);
+  h = Math.imul(h, 0xc2b2ae35);
   h ^= h >>> 16;
   return h >>> 0;
 };

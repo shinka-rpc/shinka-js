@@ -1,12 +1,8 @@
-export type wangHash32Const = [number, number];
-
-// [9, 0x27d4eb2d]
-
-export const wangHash32 = (x: number, [c1, c2]: wangHash32Const) => {
+export const wangHash32 = (x: number) => {
   x = x ^ 61 ^ (x >>> 16);
-  x = Math.imul(x, c1);
+  x = Math.imul(x, 9);
   x ^= x >>> 4;
-  x = Math.imul(x, c2);
+  x = Math.imul(x, 0x27d4eb2d);
   x ^= x >>> 15;
   return x >>> 0;
 };
