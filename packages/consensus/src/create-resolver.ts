@@ -1,9 +1,13 @@
 import { Consensus } from "./constants";
-import type { Mixer, BitRotator } from "./types";
+import type { Mixer, BitRotator, Resolver } from "./types";
 
-export const createConsensus =
-  <T>(mix: Mixer<T>, rot: BitRotator, mixerSettings: T, rotate: number) =>
-  (a: number, b: number) => {
+export const createResolver = <T>(
+  mix: Mixer<T>,
+  rot: BitRotator,
+  mixerSettings: T,
+  rotate: number,
+) =>
+  ((a: number, b: number) => {
     const scoreA = mix(a ^ rot(b, rotate), mixerSettings);
     const scoreB = mix(b ^ rot(a, rotate), mixerSettings);
     return scoreA === scoreB
@@ -11,4 +15,4 @@ export const createConsensus =
       : scoreA < scoreB
         ? Consensus.FAIL
         : Consensus.OK;
-  };
+  }) as Resolver;

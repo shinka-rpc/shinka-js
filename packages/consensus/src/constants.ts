@@ -3,5 +3,3 @@ export const enum Consensus {
   OK = 1,
   FAIL = 2,
 }
-
-export const nonceLength = 5;

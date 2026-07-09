@@ -52,13 +52,19 @@ else if (status === Consensus.OK) console.log("`a` won, `b` lost");
 else /* status === Consensus.FAIL */ console.log("`a` lost, `b` won");
 ```
 
-## `consensusAll` and `createNonces`
+## Protocol
 
-The probability of no consensus decreases exponentially with the number of
+The probability of no consensus decreases **exponentially** with the number of
 independent `nonce`s
 
 ```typescript
-import { consensusAll, createNonces, Consensus } from "@shinka-rpc/consensus";
+import { createProtocol, consensus, randInt32 } from "@shinka-rpc/consensus";
+
+export const [createNonces, consensusAll] = createProtocol({
+  resolver: consensus,
+  nonceLength: 5,
+  randInt32,
+});
 
 // Arrays of 5 integers
 const a = createNonces();
@@ -70,3 +76,10 @@ if (status === Consensus.UNKNOWN) console.log("Collision happened, no winner");
 else if (status === Consensus.OK) console.log("`a` won, `b` lost");
 else /* status === Consensus.FAIL */ console.log("`a` lost, `b` won");
 ```
+
+## Custom resolver
+
+You can create your own resolver from provided building bricks. Please check
+[consensus.ts](https://github.com/shinka-rpc/shinka-js/blob/0.1.x/packages/consensus/src/consensus.ts) and
+[create-resolver.ts](https://github.com/shinka-rpc/shinka-js/blob/0.1.x/packages/consensus/src/create-resolver.ts)
+implementations. Good luck!

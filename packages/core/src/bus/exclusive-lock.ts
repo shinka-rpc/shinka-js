@@ -6,7 +6,8 @@ import {
 } from "@shinka-rpc/concurrency";
 
 import type { IQueue } from "@shinka-rpc/collections";
-import { Consensus, createNonces } from "@shinka-rpc/consensus";
+import { Consensus } from "@shinka-rpc/consensus";
+import { createNonces } from "./consensus-protocol";
 
 import {
   nbEvents,

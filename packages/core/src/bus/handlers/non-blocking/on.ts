@@ -1,6 +1,7 @@
-import { Consensus, consensusAll } from "@shinka-rpc/consensus";
+import { Consensus } from "@shinka-rpc/consensus";
 
 import { NBRequestKeys, NBEventKeys, NBAcquire } from "./constants";
+import { consensusAll } from "../../consensus-protocol";
 
 import { createHandlerRegistries } from "../../../shinka";
 
