@@ -2,7 +2,7 @@
   "extends": ["./tsconfig.common.json", "./tsconfig-mixin-paths-src.json"],
   "compilerOptions": {
     "jsx": "react-jsx",
-    "types": ["chrome"]
+    "types": ["chrome", "node"]
   },
   "include": ["./packages/*/src/**.ts"]
 }

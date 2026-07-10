@@ -6,7 +6,7 @@
   "scripts": {
     "build": "tsgo -p tsconfig.build.json",
     "postbuild": "node ../../packagePostBuild.mjs",
-    "test": "NODE_PATH=../../node_modules/ node --expose-gc ../../node_modules/.bin/jest"
+    "test": "NODE_PATH=../../node_modules/ node ../../node_modules/.bin/jest"
   },
   "keywords": [
     "rpc",
@@ -30,7 +30,5 @@
   "exports": {
     "default": "./src/index.ts"
   },
-  "devDependencies": {
-    "@types/node": "*"
-  }
+  "devDependencies": {}
 }

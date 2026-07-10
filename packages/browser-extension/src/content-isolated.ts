@@ -1,7 +1,8 @@
+import "@shinka-rpc/banshee/banshee-for-browser";
 import { TransportClient } from "@shinka-rpc/core";
 
 // @ts-expect-error: 2304
-if (window.chrome === undefined) window.chrome = browser;
+if (!window.chrome) window.chrome = browser;
 
 export const extensionBusTransport: TransportClient<any, any, any> =
   (shinkaOn) => (thisArg, onRawData, onClosed, opts) => {

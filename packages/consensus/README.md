@@ -36,16 +36,16 @@ a single winner without introducing obvious winning strategies.
 
 # API Reference
 
-## `consensus` and `randInt32`
+## `defaultResolver` and `randInt32`
 
 ```typescript
-import { consensus, randInt32, Consensus } from "@shinka-rpc/consensus";
+import { defaultResolver, randInt32, Consensus } from "@shinka-rpc/consensus";
 
 // Integers
 const a = randInt32();
 const b = randInt32();
 
-const status = consensus(a, b);
+const status = defaultResolver(a, b);
 
 if (status === Consensus.UNKNOWN) console.log("Collision happened, no winner");
 else if (status === Consensus.OK) console.log("`a` won, `b` lost");
@@ -58,10 +58,14 @@ The probability of no consensus decreases **exponentially** with the number of
 independent `nonce`s
 
 ```typescript
-import { createProtocol, consensus, randInt32 } from "@shinka-rpc/consensus";
+import {
+  createProtocol,
+  defaultResolver,
+  randInt32
+} from "@shinka-rpc/consensus";
 
 export const [createNonces, consensusAll] = createProtocol({
-  resolver: consensus,
+  resolver: defaultResolver,
   nonceLength: 5,
   randInt32,
 });
@@ -80,6 +84,6 @@ else /* status === Consensus.FAIL */ console.log("`a` lost, `b` won");
 ## Custom resolver
 
 You can create your own resolver from provided building bricks. Please check
-[consensus.ts](https://github.com/shinka-rpc/shinka-js/blob/0.1.x/packages/consensus/src/consensus.ts) and
+[default-resolver.ts](https://github.com/shinka-rpc/shinka-js/blob/0.1.x/packages/consensus/src/default-resolver.ts) and
 [create-resolver.ts](https://github.com/shinka-rpc/shinka-js/blob/0.1.x/packages/consensus/src/create-resolver.ts)
 implementations. Good luck!

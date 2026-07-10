@@ -1,4 +1,5 @@
-import { delegate, type DelegateType, banshee } from "@shinka-rpc/util";
+import { delegate, type DelegateType } from "@shinka-rpc/util";
+import { banshee } from "@shinka-rpc/banshee";
 import { FIFO } from "@shinka-rpc/collections";
 import { Semaphore, ReusablePromise } from "@shinka-rpc/concurrency";
 

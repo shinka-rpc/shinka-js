@@ -1,7 +1,11 @@
-import { createProtocol, consensus, randInt32 } from "@shinka-rpc/consensus";
+import {
+  createProtocol,
+  defaultResolver,
+  randInt32,
+} from "@shinka-rpc/consensus";
 
 export const [createNonces, consensusAll] = createProtocol({
-  resolver: consensus,
+  resolver: defaultResolver,
   nonceLength: 5,
   randInt32,
 });

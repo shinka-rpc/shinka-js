@@ -1,6 +1,6 @@
 import { expect, test } from "@jest/globals";
 
-import { consensus, Consensus } from "../src";
+import { defaultResolver, Consensus } from "../src";
 
 const pairMap = new Map<Consensus, Consensus>([
   [Consensus.OK, Consensus.FAIL],
@@ -9,12 +9,21 @@ const pairMap = new Map<Consensus, Consensus>([
 ]);
 
 const testPair = (a: number, b: number) => {
-  const consensusResult = consensus(a, b);
-  expect(consensus(b, a)).toStrictEqual(pairMap.get(consensusResult));
+  const consensusResult = defaultResolver(a, b);
+  expect(defaultResolver(b, a)).toStrictEqual(pairMap.get(consensusResult));
+  return consensusResult === Consensus.UNKNOWN;
 };
 
 const testRange = (a1: number, a2: number, b1: number, b2: number) => {
-  for (let a = a1; a < a2; a++) for (let b = b1; b < b2; b++) testPair(a, b);
+  const stat = { all: 0, collision: 0 };
+  for (let a = a1; a < a2; a++) {
+    for (let b = b1; b < b2; b++) {
+      if (a === b) continue;
+      stat.all++;
+      stat.collision += +testPair(a, b);
+    }
+  }
+  expect(stat.collision / stat.all).toBeLessThan(0.001);
 };
 
 const testN = (N: number, a: number, b: number) =>
@@ -31,8 +40,8 @@ test("consensus-exact-1-2", () => {
   expect(1).toStrictEqual(1);
   const a = 1;
   const b = 2;
-  expect(consensus(a, b)).toStrictEqual(Consensus.OK);
-  expect(consensus(b, a)).toStrictEqual(Consensus.FAIL);
+  expect(defaultResolver(a, b)).toStrictEqual(Consensus.OK);
+  expect(defaultResolver(b, a)).toStrictEqual(Consensus.FAIL);
 });
 
 (
