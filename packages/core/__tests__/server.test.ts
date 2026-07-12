@@ -1,4 +1,5 @@
 import { expect, test } from "@jest/globals";
+import outscope from "../../outscope/src/tests";
 
 import {
   Client,
@@ -60,6 +61,7 @@ const setupClientServer = async (
   const [pipe1to2, pipe2to1] = mkPipePair(0, 0);
 
   const client = new Client({
+    outscope,
     transport: fakeTransportClient(pipe1to2, "client1", results),
     serializer: createSerializer("client1", results),
   });
@@ -81,6 +83,7 @@ const setupClientServer = async (
   });
 
   const server = new Server({
+    outscope,
     transport: fakeTransportServer(pipe2to1, "server", results),
     serializer: createSerializer("server", results),
   });

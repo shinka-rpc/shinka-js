@@ -2,6 +2,6 @@
   "extends": "../../tsconfig.common.json",
   "compilerOptions": {
     "rootDir": "./src",
-    "outDir": "../../dist/banshee"
+    "outDir": "../../dist/outscope"
   }
 }

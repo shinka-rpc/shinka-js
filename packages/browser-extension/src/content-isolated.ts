@@ -1,4 +1,3 @@
-import "@shinka-rpc/banshee/banshee-for-browser";
 import { TransportClient } from "@shinka-rpc/core";
 
 // @ts-expect-error: 2304

@@ -1,4 +1,3 @@
-import "@shinka-rpc/banshee/banshee-for-browser";
 import type { TransportServer } from "@shinka-rpc/core";
 import makeSendRawFn from "@shinka-rpc/libtransport-message-port-send";
 

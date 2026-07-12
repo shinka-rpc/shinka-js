@@ -1,4 +1,5 @@
 import { ReusablePromise } from "@shinka-rpc/concurrency";
+import type { OutScope } from "@shinka-rpc/outscope";
 
 import { defaultRequestTimeout } from "./defaults";
 
@@ -22,6 +23,7 @@ type HubTimeoutSettings = {
 };
 
 export type HubOptions<SO, TO> = Partial<HubTimeoutSettings> & {
+  outscope: OutScope;
   limon?: LiMonRF<SO, TO, any> | null;
 };
 
@@ -31,6 +33,7 @@ export type HubConnectProps<SO, TO> = {
 };
 
 export class Hub<SO, TO> {
+  #outscope!: OutScope;
   #limonRF!: LiMonRF<SO, TO, any> | null;
   #userRegistries!: HandlerRegistries<SO, TO, Bus<SO, TO>>;
   #eventListeners!: ShinkaEventListeners<Bus<SO, TO>>;
@@ -43,9 +46,11 @@ export class Hub<SO, TO> {
   public extra!: Record<string | symbol, any>;
 
   constructor({
+    outscope,
     responseTimeout = defaultRequestTimeout,
     limon = null,
   }: HubOptions<SO, TO>) {
+    this.#outscope = outscope;
     this.#limonRF = limon;
     this.#timeoutSettings = {
       responseTimeout,
@@ -70,6 +75,7 @@ export class Hub<SO, TO> {
     await this.#disposing;
 
     const bus = new Bus<SO, TO>(
+      this.#outscope,
       transport,
       serializer,
       this.#limonRF,

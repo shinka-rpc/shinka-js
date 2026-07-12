@@ -1,7 +1,6 @@
 /// <reference types="@types/chrome" />
 declare const browser: typeof chrome;
 
-import "@shinka-rpc/banshee/banshee-for-browser";
 import type { TransportServer } from "@shinka-rpc/core";
 
 export const messagePortTransport: TransportServer<any, any, any> = (

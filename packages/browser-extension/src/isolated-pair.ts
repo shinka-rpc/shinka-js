@@ -1,4 +1,5 @@
 import { Client, TransportClient } from "@shinka-rpc/core";
+import outscope from "@shinka-rpc/outscope/browser-page";
 import { extensionBusTransport } from "./content-isolated";
 
 export type CreateIsolatedPairProps<SO, TO> = {
@@ -11,11 +12,13 @@ export const createIsolatedPair = ({
   responseTimeout,
 }: CreateIsolatedPairProps<any, any>) => {
   const contentBus = new Client<any, any>({
+    outscope,
     transport: contentBusTransport,
     responseTimeout,
   });
 
   const extensionBus = new Client<any, any>({
+    outscope,
     transport: extensionBusTransport,
     responseTimeout,
   });

@@ -1,4 +1,6 @@
 import type { IQueue } from "@shinka-rpc/collections";
+import type { OutScope } from "@shinka-rpc/outscope";
+
 import type {
   SemaphoreAcquireContext,
   ReusablePromise,
@@ -416,6 +418,7 @@ export type ShinkaAndThisArgAll<SO, TO> = {
 
 // Synthetic
 export type BusProps<SO, TO> = {
+  outscope: OutScope;
   transport: TransportSubscribe<SO, TO, any>;
   serializer?: SerializerRoot<SO, TO, any>;
   limon?: LiMon<SO, TO, any> | null;

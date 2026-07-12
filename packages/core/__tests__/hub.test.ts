@@ -1,4 +1,5 @@
 import { expect, test } from "@jest/globals";
+import outscope from "../../outscope/src/tests";
 
 import {
   Client,
@@ -30,11 +31,12 @@ const setupClientHub = async (
   const [pipe1to2, pipe2to1] = mkPipePair(0, 0);
 
   const client = new Client({
+    outscope,
     transport: fakeTransportClient(pipe1to2, "client1", results),
     serializer: createSerializer("client1", results),
   });
 
-  const hub = new Hub({});
+  const hub = new Hub({ outscope });
 
   client.addEventListener("connect", () =>
     results.push({ key: "client1-event", val: "connect" }),

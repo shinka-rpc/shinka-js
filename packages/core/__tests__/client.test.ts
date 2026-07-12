@@ -1,4 +1,5 @@
 import { expect, test } from "@jest/globals";
+import outscope from "../../outscope/src/tests";
 
 import { Client, SerializerRoot } from "@shinka-rpc/core";
 
@@ -23,10 +24,12 @@ const setupClientClient = async <TO>(
   const [pipe1to2, pipe2to1] = mkPipePair(0, 0);
 
   const bus1 = new Client({
+    outscope,
     transport: fakeTransportClient(pipe1to2, "bus1", results),
     serializer: createSerializer("bus1", results),
   });
   const bus2 = new Client({
+    outscope,
     transport: fakeTransportClient(pipe2to1, "bus2", results),
     serializer: createSerializer("bus2", results),
   });

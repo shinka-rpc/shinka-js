@@ -105,13 +105,12 @@ export class Server<SO, TO> {
   public extra!: Record<string | symbol, any>;
 
   constructor({
+    outscope,
     transport: transportServerFactory,
     serializer: serializerRoot = defaultSerializerRoot,
     responseTimeout = defaultRequestTimeout,
   }: ServerOptions<SO, TO>) {
-    this.#hub = new Hub({
-      responseTimeout,
-    });
+    this.#hub = new Hub({ outscope, responseTimeout });
     this.#vars = { state: ServerState.STOPPED };
     const [listeners, callEvent] = createEventListenerPair(
       createServerEventListeners,

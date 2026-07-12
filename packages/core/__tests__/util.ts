@@ -1,5 +1,3 @@
-import "../../banshee/src/banshee-for-test";
-
 import {
   Response,
   // TransportInitOpts,

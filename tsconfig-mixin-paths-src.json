@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
     "paths": {
-      "@shinka-rpc/*": ["./packages/*/src/"],
-      "@shinka-rpc/banshee/*": ["./packages/banshee/src/*"]
+      "@shinka-rpc/outscope/*": ["./packages/outscope/src/*"],
+      "@shinka-rpc/*": ["./packages/*/src/"]
     }
   }
 }

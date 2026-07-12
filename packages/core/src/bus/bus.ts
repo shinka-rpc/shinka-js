@@ -1,5 +1,4 @@
 import { delegate, type DelegateType } from "@shinka-rpc/util";
-import { banshee } from "@shinka-rpc/banshee";
 import { FIFO } from "@shinka-rpc/collections";
 import { Semaphore, ReusablePromise } from "@shinka-rpc/concurrency";
 
@@ -19,6 +18,8 @@ import {
   messageTypeLimon,
   messageTypeNB,
 } from "../factory/message-type";
+
+import type { OutScope } from "@shinka-rpc/outscope";
 
 import type {
   SendFn,
@@ -97,13 +98,14 @@ const defaultSerializerOpts: SerializerInitOpts = Object.freeze({
 // ===
 
 export class Bus<SO, TO> {
+  #outscope!: OutScope;
   #sta!: ShinkaAndThisArgAll<SO, TO>;
   #dispatchMap!: DispatchMap;
   #sendDelegate!: DelegateType<SendFn<SO, TO>>;
   #transportCloseDelegate!: DelegateType<() => Promise<void>>;
   #serializerStopDelegate!: DelegateType<() => void>;
   #limonStopDelegate!: DelegateType<() => void>;
-  #cleanupDelegate!: DelegateType<(callOnWail?: boolean) => void>;
+  #onOutScopeDelegate!: DelegateType<() => void>;
   #eventListeners!: ShinkaListenerLayers<typeof this>;
   #lastDataAt!: LastDataAt;
   #vars!: BusVars;
@@ -116,6 +118,7 @@ export class Bus<SO, TO> {
   public extra!: Record<string | symbol, any>;
 
   constructor(
+    outscope: OutScope,
     transportRF: TransportRF<SO, TO, any>,
     serializerRF: SerializerRF<SO, TO, any>,
     limonRF: LiMonRF<SO, TO, any> | null,
@@ -123,6 +126,7 @@ export class Bus<SO, TO> {
     eventListeners: ShinkaEventListeners<Bus<SO, TO>>,
     responseTimeout = defaultRequestTimeout,
   ) {
+    this.#outscope = outscope;
     const [transportRegistries, transportFactory] = transportRF;
     const [serializerRegistries, serializerFactory] = serializerRF;
     this.#resetStates = Array(limonRF ? 5 : 4);
@@ -141,7 +145,7 @@ export class Bus<SO, TO> {
     );
     this.#serializerStopDelegate = delegate(dummy);
     this.#limonStopDelegate = delegate(dummy);
-    this.#cleanupDelegate = delegate(dummy);
+    this.#onOutScopeDelegate = delegate(dummy);
 
     this.#dispatchErrors = {
       send: (error) =>
@@ -448,7 +452,7 @@ export class Bus<SO, TO> {
         busEvents.heartbeat(this.#sta.bus.shinka.dataEvent);
 
       if (instruction.bye) this.#vars.bye = 1;
-      const wail = instruction.bye
+      const onOutScope = instruction.bye
         ? gracefulShutdown.bind(
             Object.freeze([
               this.#sta.bus.shinka.dataEvent,
@@ -458,7 +462,8 @@ export class Bus<SO, TO> {
           )
         : this.stop;
 
-      this.#cleanupDelegate.set(banshee(this, wail));
+      this.#onOutScopeDelegate.set(onOutScope);
+      this.#outscope.add(this.#onOutScopeDelegate.call);
       this.#vars.state = BusState.STARTED;
       this.#callEventListeners("connect", null);
     } catch (e) {
@@ -541,12 +546,12 @@ export class Bus<SO, TO> {
   #cleanup = () => {
     for (const cb of this.#resetStates) cb();
 
-    this.#cleanupDelegate.call(false);
+    this.#onOutScopeDelegate.reset();
+    this.#outscope.remove(this.#onOutScopeDelegate.call);
     this.#sendDelegate.reset();
     this.#serializerStopDelegate.reset();
     this.#limonStopDelegate.reset();
     this.#transportCloseDelegate.reset();
-    this.#cleanupDelegate.reset();
     this.#vars.bye = 0;
 
     this.#vars.state = BusState.STOPPED;

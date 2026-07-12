@@ -9,6 +9,7 @@ export class Client<SO, TO> extends Bus<SO, TO> {
   public onDataEvent!: ShinkaOnDataEvent<this>;
 
   constructor({
+    outscope,
     transport,
     serializer = defaultSerializerRoot,
     limon = null,
@@ -20,6 +21,7 @@ export class Client<SO, TO> extends Bus<SO, TO> {
     const userRegistries = createHandlerRegistries<SO, TO, this>();
     const eventListeners = createEventListeners();
     super(
+      outscope,
       transportRF,
       serializerRF,
       limonRF,

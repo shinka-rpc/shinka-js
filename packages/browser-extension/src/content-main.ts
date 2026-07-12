@@ -1,4 +1,3 @@
-import "@shinka-rpc/banshee/banshee-for-browser";
 import type { TransportClient } from "@shinka-rpc/core";
 
 export const content2mainTransport = (
