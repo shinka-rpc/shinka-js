@@ -12,6 +12,9 @@ test("fifo", () => {
   const mapped = q.map((i) => i);
   expect(input).toStrictEqual(mapped);
 
+  const arrayFrom = Array.from(q);
+  expect(input).toStrictEqual(arrayFrom);
+
   const forEach: number[] = [];
   q.forEach((i) => forEach.push(i));
   expect(input).toStrictEqual(forEach);
@@ -29,9 +32,11 @@ test("fifo", () => {
   expect(input.length).toStrictEqual(q.length);
   expect(q.length).toStrictEqual(input.length);
 
-  q.length = 4;
+  const IDX = 5;
+
+  q.truncate(IDX);
 
   const truncated: number[] = [];
   while (q.length) truncated.push(q.pop()!);
-  expect(input.slice(0, 4)).toStrictEqual(truncated);
+  expect(input.slice(q.length - IDX)).toStrictEqual(truncated);
 });

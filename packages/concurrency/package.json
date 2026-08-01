@@ -30,10 +30,8 @@
   "exports": {
     "default": "./src/index.ts"
   },
-  "devDependencies": {
-    "@types/node": "*"
-  },
   "dependencies": {
-    "@shinka-rpc/collections": "^0.0.1-alpha.0"
+    "@shinka-rpc/collections": "^0.0.1-alpha.0",
+    "@shinka-rpc/util": "0.0.3-alpha.0"
   }
 }

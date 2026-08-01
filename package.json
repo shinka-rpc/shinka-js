@@ -38,15 +38,15 @@
     "@types/chrome": "*",
     "@types/node": "*",
     "@types/pako": "^2.0.4",
-    "lerna": "^9",
+    "lerna": "^10.0.0",
     "pako": "^2.1.0"
   },
   "devDependencies": {
-    "@jest/globals": "^30.3.0",
+    "@jest/globals": "^29",
     "@typescript/native-preview": "^7.0.0-dev.20260421.2",
-    "babel-jest": "^30.3.0",
+    "babel-jest": "^29",
     "compare-versions": "^6",
-    "mermaid": "^11.15.0",
+    "mermaid": "^11",
     "ts-jest": "^29",
     "vitepress": "next",
     "vitepress-plugin-mermaid": "^2.0.17"
@@ -55,5 +55,9 @@
     "vitepress-plugin-mermaid": {
       "vitepress": "$vitepress"
     }
+  },
+  "allowScripts": {
+    "nx@22.7.7": true,
+    "unrs-resolver@1.12.2": true
   }
 }

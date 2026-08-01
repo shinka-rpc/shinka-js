@@ -1,4 +1,8 @@
-import { defaultRequestTimeout, defaultSerializerRoot } from "./defaults";
+import {
+  defaultRequestTimeout,
+  defaultSerializerRoot,
+  defaultExclusiveLock,
+} from "./defaults";
 import { Bus } from "./bus";
 import { setupHandlerRegistries, createHandlerRegistries } from "./shinka";
 import { createEventListeners } from "./factory/event-listeners-bus";
@@ -12,6 +16,7 @@ export class Client<SO, TO> extends Bus<SO, TO> {
     outscope,
     transport,
     serializer = defaultSerializerRoot,
+    lock = defaultExclusiveLock,
     limon = null,
     responseTimeout = defaultRequestTimeout,
   }: BusProps<SO, TO>) {
@@ -27,6 +32,7 @@ export class Client<SO, TO> extends Bus<SO, TO> {
       limonRF,
       userRegistries as any,
       eventListeners,
+      lock,
       responseTimeout,
     );
     this.onRequest = userRegistries.onRequest;

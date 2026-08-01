@@ -4,5 +4,5 @@
     "jsx": "react-jsx",
     "types": ["chrome", "node"]
   },
-  "include": ["./packages/*/src/**.ts"]
+  "include": ["./packages/*/src/**.ts", "./packages/*/__tests__/**.ts"]
 }

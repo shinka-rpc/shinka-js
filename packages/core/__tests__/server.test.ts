@@ -35,7 +35,7 @@ const fakeTransportServer = (
     onClosed,
     opts,
   ) => {
-    const [send_, dispatch] = pipe;
+    const { 0: send_, 1: dispatch } = pipe;
     const close = async () => {};
     const send = (value: unknown, opts: any) => {
       results.push({ key: `${key}-transport`, opts });
@@ -58,7 +58,7 @@ const setupClientServer = async (
 ) => {
   const results: Record<string, any>[] = [];
 
-  const [pipe1to2, pipe2to1] = mkPipePair(0, 0);
+  const { 0: pipe1to2, 1: pipe2to1 } = mkPipePair(0, 0);
 
   const client = new Client({
     outscope,

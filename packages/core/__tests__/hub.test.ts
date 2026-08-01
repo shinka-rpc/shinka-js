@@ -28,7 +28,7 @@ const setupClientHub = async (
 ) => {
   const results: Record<string, any>[] = [];
 
-  const [pipe1to2, pipe2to1] = mkPipePair(0, 0);
+  const { 0: pipe1to2, 1: pipe2to1 } = mkPipePair(0, 0);
 
   const client = new Client({
     outscope,
@@ -58,7 +58,7 @@ const setupClientHub = async (
   const serializer = createSerializer("hub", results)(serializerHandlers);
 
   const tf: TransportFactory<any, any, any> = async (thisArg, onRawData) => {
-    const [send, dispatch] = pipe2to1;
+    const { 0: send, 1: dispatch } = pipe2to1;
     dispatch(onRawData);
     const close = async () => {};
     return { send, close, instruction: {} };

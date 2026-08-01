@@ -48,8 +48,8 @@ const b = randInt32();
 const status = defaultResolver(a, b);
 
 if (status === Consensus.UNKNOWN) console.log("Collision happened, no winner");
-else if (status === Consensus.OK) console.log("`a` won, `b` lost");
-else /* status === Consensus.FAIL */ console.log("`a` lost, `b` won");
+else if (status === Consensus.WON) console.log("`a` won, `b` lost");
+else /* status === Consensus.LOSE */ console.log("`a` lost, `b` won");
 ```
 
 ## Protocol
@@ -77,9 +77,21 @@ const b = createNonces();
 const status = consensusAll(a, b);
 
 if (status === Consensus.UNKNOWN) console.log("Collision happened, no winner");
-else if (status === Consensus.OK) console.log("`a` won, `b` lost");
-else /* status === Consensus.FAIL */ console.log("`a` lost, `b` won");
+else if (status === Consensus.WON) console.log("`a` won, `b` lost");
+else /* status === Consensus.LOSE */ console.log("`a` lost, `b` won");
 ```
+
+## Reflection
+
+Simple function reflecting `Consensus`:
+
+| input   | output  |
+| ------- | ------- |
+| WON     | LOSE    |
+| LOSE    | WON     |
+| UNKNOWN | UNKNOWN |
+
+Invalid input `throw`s an `Error`
 
 ## Custom resolver
 

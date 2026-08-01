@@ -1,8 +1,15 @@
 {
   "compilerOptions": {
-    "target": "es2022",
-    "module": "ES2022",
-    "lib": ["DOM", "DOM.Iterable", "ES2021", "ES2022", "ESNext.Disposable"],
+    "target": "es2025",
+    "module": "es2022",
+    "lib": [
+      "DOM",
+      "DOM.Iterable",
+      "ES2021",
+      "ES2022",
+      "ES2025",
+      "ESNext.Disposable"
+    ],
     "declaration": true,
     "skipLibCheck": true,
     "esModuleInterop": true,

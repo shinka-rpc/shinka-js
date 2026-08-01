@@ -1,7 +1,11 @@
 import { ReusablePromise } from "@shinka-rpc/concurrency";
 import type { OutScope } from "@shinka-rpc/outscope";
 
-import { defaultRequestTimeout } from "./defaults";
+import {
+  defaultRequestTimeout,
+  defaultExclusiveLock,
+  defaultSerializer,
+} from "./defaults";
 
 import { Bus } from "./bus";
 import { createHandlerRegistries, type HandlerRegistries } from "./shinka";
@@ -16,6 +20,7 @@ import type {
   TransportRF,
   SerializerRF,
   LiMonRF,
+  ExclusiveLock,
 } from "./types";
 
 type HubTimeoutSettings = {
@@ -25,6 +30,7 @@ type HubTimeoutSettings = {
 export type HubOptions<SO, TO> = Partial<HubTimeoutSettings> & {
   outscope: OutScope;
   limon?: LiMonRF<SO, TO, any> | null;
+  lock?: ExclusiveLock<SO, TO, any>;
 };
 
 export type HubConnectProps<SO, TO> = {
@@ -35,6 +41,7 @@ export type HubConnectProps<SO, TO> = {
 export class Hub<SO, TO> {
   #outscope!: OutScope;
   #limonRF!: LiMonRF<SO, TO, any> | null;
+  #lock!: ExclusiveLock<SO, TO, any>;
   #userRegistries!: HandlerRegistries<SO, TO, Bus<SO, TO>>;
   #eventListeners!: ShinkaEventListeners<Bus<SO, TO>>;
   #timeoutSettings!: HubTimeoutSettings;
@@ -49,9 +56,11 @@ export class Hub<SO, TO> {
     outscope,
     responseTimeout = defaultRequestTimeout,
     limon = null,
+    lock = defaultExclusiveLock,
   }: HubOptions<SO, TO>) {
     this.#outscope = outscope;
     this.#limonRF = limon;
+    this.#lock = lock;
     this.#timeoutSettings = {
       responseTimeout,
     };
@@ -81,6 +90,7 @@ export class Hub<SO, TO> {
       this.#limonRF,
       this.#userRegistries,
       this.#eventListeners,
+      this.#lock,
       this.#timeoutSettings.responseTimeout,
     );
 

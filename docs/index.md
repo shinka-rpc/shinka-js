@@ -44,11 +44,9 @@ features:
   - title: Minimal dependency tree
     icon: 🔗
     details: reduces the attack vector across the supply chain. No external
-      dependencies for
-      <a href="https://www.npmjs.com/package/@shinka-rpc/core">Core</a> and
-      <a href="https://www.npmjs.com/package/@shinka-rpc/util">Util</a> packages
+      dependencies outside <b>@shinka-rpc</b> namespace
 
-  - title: External transports
+  - title: Pluggable transports
     icon: 🚂
     details: We provide
       <a href="https://www.npmjs.com/package/@shinka-rpc/shared-worker">SharedWorker</a>,
@@ -57,7 +55,7 @@ features:
       <a href="https://www.npmjs.com/package/@shinka-rpc/browser-extension">BrowserExtension</a>
       transports, but you are able to define your own
 
-  - title: External serializers
+  - title: Pluggable serializers
     icon: 🖭
     details: We provide by default
       <a href="https://www.npmjs.com/package/@shinka-rpc/serializer-json">json</a>,
@@ -65,12 +63,16 @@ features:
       <a href="https://www.npmjs.com/package/@shinka-rpc/serializer-msgspec">msgspec</a>
       serializers, but you are able to create your own
 
-  - title: External optional <b>LiMon</b>s
+  - title: Pluggable <b>LiMon</b>s
     icon: 🍋
     details: Liveness Monitors make decision about connection state. You can
       choose the best one for each case
 
-  - title: External schedulers
+  - title: Pluggable `ExclusiveLock`
+    icon: 🔒
+    details: Powerful channel data channel management tool
+
+  - title: Pluggable schedulers
     icon: 🔃
     details: You can choose the logic that makes decision about connection state
 ---

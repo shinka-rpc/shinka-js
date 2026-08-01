@@ -6,6 +6,7 @@ export interface IQueue<T> {
   pop: () => T | undefined;
   map: <M>(cb: MapFn<T, IQueue<T>, M>) => M[];
   forEach: (cb: ForEachFn<T, IQueue<T>>) => void;
-  [Symbol.iterator]: () => Generator<T, void, void>;
+  truncate: (value?: number) => void;
+  [Symbol.iterator]: () => Iterator<T, void, void>;
   length: number;
 }

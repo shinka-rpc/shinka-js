@@ -7,23 +7,26 @@ type HeadAndLength<T> = {
   head: Entry<T> | null;
 };
 
-export const makeResetStateFn =
-  <T extends {}>(initialState: T) =>
-  (state: T) => {
-    Object.assign(state, initialState);
-  };
+export function restoreInitialState<T extends {}>(this: T, state: T) {
+  Object.assign(state, this);
+}
 
-export const shrink = <T, S extends HeadAndLength<T>>(
+export const truncateFn = <T, S extends HeadAndLength<T>>(
   n: number,
   state: S,
   resetState: (state: S) => void,
 ) => {
   if (!Number.isInteger(n) || n < 0) throw new Error(`invalid length: ${n}`);
   if (n >= state.length) return;
-  if (n === 0) resetState(state);
-  const popCount = n - state.length;
-  let { head } = state;
-  for (let i = 0; i < popCount; i++) head = head![1]!;
+  if (n === 0) return resetState(state);
+  const popCount = state.length - n;
+  let { head } = state,
+    nextHead;
+  for (let i = 0; i < popCount; i++) {
+    nextHead = head![1]!;
+    head!.fill(null);
+    head = nextHead;
+  }
   state.head = head;
   state.length = n;
 };
@@ -66,7 +69,9 @@ export const popFn = <T, S extends HeadAndLength<T>>(
   if (head === null) return resetState(state) as undefined;
   state.length--;
   state.head = head[1];
-  return head[0];
+  const value = head[0];
+  head.fill(null);
+  return value;
 };
 
 // iterator ===
@@ -83,7 +88,15 @@ const nextFn = <T>(head: Entry<T> | null) => {
   };
 };
 
+function returnThis<T>(this: T) {
+  return this;
+}
+
 export const iteratorFn = <T, S extends HeadAndLength<T>>(state: S) => {
   const next = nextFn(state.head);
-  return { next } as Generator<T, void, void>;
+  return { next, [Symbol.iterator]: returnThis } as IterableIterator<
+    T,
+    void,
+    void
+  >;
 };

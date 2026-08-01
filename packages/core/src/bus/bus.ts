@@ -1,6 +1,6 @@
 import { delegate, type DelegateType } from "@shinka-rpc/util";
-import { FIFO } from "@shinka-rpc/collections";
-import { Semaphore, ReusablePromise } from "@shinka-rpc/concurrency";
+import { FIFO, type IQueue } from "@shinka-rpc/collections";
+import { Semaphore } from "@shinka-rpc/concurrency";
 
 import {
   createSendData,
@@ -45,20 +45,29 @@ import type {
   NBThisArgSetVars,
 } from "../types";
 
-import { defaultRequestTimeout } from "../defaults";
+import { defaultRequestTimeout, defaultExclusiveLock } from "../defaults";
 import { makeCreateOrCompleteShinka } from "../shinka";
 
 import { busEvents, busRequests, busHandlerRegistries } from "./handlers/bus";
 import {
   nbHandlerRegistries,
-  NBAcquire,
   type NBThisArgState,
 } from "./handlers/non-blocking";
-import { exclusiveLockAcquire } from "./exclusive-lock";
-import { eventListenerCaller } from "./event-listener-caller";
-import { gracefulShutdown } from "./graceful-shutdown";
-import { type VarsBye, byeReset, onTerminated } from "./on-terminate";
-import { clearState, createFIFOPush } from "./util";
+import { NBAcquire } from "./const-enums";
+import {
+  clearState,
+  FIFOPush,
+  drain,
+  acquireMe,
+  gracefulShutdown,
+  byeReset,
+  onTerminated,
+  nbEventAcquire,
+  nbEventAccept,
+  nbEventRelease,
+  eventListenerCaller,
+  type VarsBye,
+} from "./util";
 
 const transportNotInitialized = () => {
   throw new Error("Transport is not initialized");
@@ -71,14 +80,6 @@ const enum BusState {
   STARTING = 1,
   STARTED = 2,
   STOPPING = 3,
-}
-
-const enum ResetStateIDX {
-  BUS = 0,
-  SERIALIZER = 1,
-  TRANSPORT = 2,
-  NB = 3,
-  LIMON = 4,
 }
 
 type BusVars = VarsBye & {
@@ -99,7 +100,7 @@ const defaultSerializerOpts: SerializerInitOpts = Object.freeze({
 
 export class Bus<SO, TO> {
   #outscope!: OutScope;
-  #sta!: ShinkaAndThisArgAll<SO, TO>;
+  #sta!: ShinkaAndThisArgAll<SO, TO, any>;
   #dispatchMap!: DispatchMap;
   #sendDelegate!: DelegateType<SendFn<SO, TO>>;
   #transportCloseDelegate!: DelegateType<() => Promise<void>>;
@@ -111,7 +112,7 @@ export class Bus<SO, TO> {
   #vars!: BusVars;
   #dispatchErrors!: DispatchErrors;
   #onTerminated!: () => void;
-  #resetStates!: (() => void)[];
+  #resetStatesQueue!: IQueue<() => void>;
 
   public request!: ShinkaRequest<SO, TO>;
   public dataEvent!: ShinkaDataEvent<SO, TO>;
@@ -124,12 +125,13 @@ export class Bus<SO, TO> {
     limonRF: LiMonRF<SO, TO, any> | null,
     userRegistries: UserHandlerRegistries<SO, TO, Bus<SO, TO>>,
     eventListeners: ShinkaEventListeners<Bus<SO, TO>>,
+    exclusiveLockInstance = defaultExclusiveLock,
     responseTimeout = defaultRequestTimeout,
   ) {
     this.#outscope = outscope;
-    const [transportRegistries, transportFactory] = transportRF;
-    const [serializerRegistries, serializerFactory] = serializerRF;
-    this.#resetStates = Array(limonRF ? 5 : 4);
+    const { 0: transportRegistries, 1: transportFactory } = transportRF;
+    const { 0: serializerRegistries, 1: serializerFactory } = serializerRF;
+    this.#resetStatesQueue = new FIFO();
 
     this.#eventListeners = {
       own: createEventListeners(),
@@ -161,8 +163,7 @@ export class Bus<SO, TO> {
     };
 
     const send = this.#sendDelegate.call;
-    const semaphore = new Semaphore({ waiters: FIFO, count: 1 });
-    const raceResolvedEvent = new ReusablePromise<void>();
+    const nbTA = {} as any as NBThisArg<SO, TO, any>;
 
     const nbTAState: NBThisArgState = {};
 
@@ -174,86 +175,66 @@ export class Bus<SO, TO> {
       responseTimeout,
     );
 
-    const [busSetVars, busShinka] = createOrCompleteShinka(
+    const { 0: busSetVars, 1: busShinka } = createOrCompleteShinka(
       messageTypeBus,
       busHandlerRegistries,
     );
 
-    const [nbSetVars, nbShinka] = createOrCompleteShinka(
+    const { 0: nbSetVars, 1: nbShinka } = createOrCompleteShinka(
       messageTypeNB,
       nbHandlerRegistries,
     );
 
-    const [serializerSetVars, serializerShinka] = createOrCompleteShinka(
-      messageTypeSerializer,
-      serializerRegistries,
-    );
+    const { 0: serializerSetVars, 1: serializerShinka } =
+      createOrCompleteShinka(messageTypeSerializer, serializerRegistries);
 
-    const [transportSetVars, transportShinka] = createOrCompleteShinka(
+    const { 0: transportSetVars, 1: transportShinka } = createOrCompleteShinka(
       messageTypeTransport,
       transportRegistries,
     );
 
-    const [userSetVars, userShinka] = createOrCompleteShinka(
+    const { 0: userSetVars, 1: userShinka } = createOrCompleteShinka(
       messageTypeUser,
       userRegistries,
     );
 
     const busTAState = {};
-    this.#resetStates[ResetStateIDX.BUS] = clearState(busTAState);
+    this.#resetStatesQueue.push(clearState(busTAState));
 
     const busTA: InternalHandlerThisArg<SO, TO, any> = Object.freeze({
       bus: this,
       shinka: busShinka,
       state: busTAState,
-      exclusiveLock: exclusiveLockAcquire.bind([
-        semaphore,
-        raceResolvedEvent,
-        NBAcquire.BUS,
-        busShinka,
-        nbTAState,
-      ]),
+      exclusiveLock: (acquireMe<SO, TO>).bind(0, nbTA, NBAcquire.BUS),
       dispatchError,
     });
 
     const serializerTAState = {};
-    this.#resetStates[ResetStateIDX.SERIALIZER] = clearState(serializerTAState);
+    this.#resetStatesQueue.push(clearState(serializerTAState));
 
     const serializerTA: InternalHandlerThisArg<SO, TO, any> = Object.freeze({
       bus: this,
       shinka: serializerShinka,
       state: serializerTAState,
-      exclusiveLock: exclusiveLockAcquire.bind([
-        semaphore,
-        raceResolvedEvent,
-        NBAcquire.SERIALIZER,
-        serializerShinka,
-        nbTAState,
-      ]),
+      exclusiveLock: (acquireMe<SO, TO>).bind(0, nbTA, NBAcquire.SERIALIZER),
       dispatchError,
     });
 
     const transportTAState = {};
-    this.#resetStates[ResetStateIDX.TRANSPORT] = clearState(transportTAState);
+    this.#resetStatesQueue.push(clearState(transportTAState));
 
     const transportTA: InternalHandlerThisArg<SO, TO, any> = Object.freeze({
       bus: this,
       shinka: transportShinka,
       state: transportTAState,
-      exclusiveLock: exclusiveLockAcquire.bind([
-        semaphore,
-        raceResolvedEvent,
-        NBAcquire.TRANSPORT,
-        transportShinka,
-        nbTAState,
-      ]),
+      exclusiveLock: (acquireMe<SO, TO>).bind(0, nbTA, NBAcquire.TRANSPORT),
       dispatchError,
     });
-    this.#resetStates[ResetStateIDX.NB] = clearState(nbTAState);
+    this.#resetStatesQueue.push(clearState(nbTAState));
 
     const nbTA_FIFO = new FIFO<NB_FIFOEntry<SO, TO>>();
 
-    const nbTASetVars: NBThisArgSetVars<SO, TO> = {
+    const nbTASetVars: NBThisArgSetVars<SO, TO, any> = {
       user: userSetVars,
       bus: busSetVars,
       nb: nbSetVars,
@@ -262,24 +243,45 @@ export class Bus<SO, TO> {
       limon: null,
     };
 
-    const nbTA: NBThisArg<SO, TO> = Object.freeze({
+    // const raceResolvedEvent = new ReusablePromise<void>();
+    // raceResolvedEvent.resolve();
+    // const concurrent = {
+    //   semaphore: new Semaphore({ waiters: FIFO, capacity: 1 }),
+    //   raceResolvedEvent,
+    // };
+
+    Object.assign(nbTA, {
       bus: this,
       shinka: nbShinka,
       state: nbTAState,
-      exclusiveLock: exclusiveLockAcquire.bind([
-        semaphore,
-        raceResolvedEvent,
-        NBAcquire.NB,
-        nbShinka,
-        nbTAState,
-      ]),
-      send,
-      q: nbTA_FIFO,
-      qPush: createFIFOPush(nbTA_FIFO),
-      setVars: nbTASetVars,
+      // concurrent,
+      semaphore: new Semaphore({ waiters: FIFO, capacity: 1 }),
+      exclusiveLock: (acquireMe<SO, TO>).bind(0, nbTA, NBAcquire.NB),
+      q: {
+        drain: (drain<SO, TO>).bind(0, nbTA_FIFO, send),
+        clear: nbTA_FIFO.truncate,
+      },
+      vars: {
+        set: nbTASetVars,
+        val: {
+          lock: { send: (FIFOPush<SO, TO>).bind(nbTA_FIFO) },
+          release: { send },
+        },
+      },
+      api: {
+        e: {
+          acquire: (nbEventAcquire<SO, TO>).bind(nbShinka),
+          accept: (nbEventAccept<SO, TO>).bind(nbShinka),
+          release: (nbEventRelease<SO, TO>).bind(nbShinka),
+        },
+        r: {},
+      },
       dispatchError,
-      raceResolvedEvent,
-    });
+      lock: exclusiveLockInstance,
+      responseTimeout,
+    } as NBThisArg<SO, TO, any>);
+
+    Object.freeze(nbTA);
 
     busSetVars({ thisArg: busTA, dispatchError, send });
     nbSetVars({ thisArg: nbTA, dispatchError, send });
@@ -305,14 +307,14 @@ export class Bus<SO, TO> {
     };
 
     if (limonRF !== null) {
-      const [limonRegistries, limonFactory] = limonRF;
-      const [limonSetVars, limonShinka] = createOrCompleteShinka(
+      const { 0: limonRegistries, 1: limonFactory } = limonRF;
+      const { 0: limonSetVars, 1: limonShinka } = createOrCompleteShinka(
         messageTypeLimon,
         limonRegistries,
       );
 
       const limonTAState = {};
-      this.#resetStates[ResetStateIDX.LIMON] = clearState(limonTAState);
+      this.#resetStatesQueue.push(clearState(limonTAState));
 
       const limonTA: LiMonThisArg<SO, TO, any> = Object.freeze({
         bus: this,
@@ -320,13 +322,7 @@ export class Bus<SO, TO> {
         heartbeat: () => busEvents.heartbeat(busShinka.dataEvent),
         last: this.#lastDataAt,
         state: limonTAState,
-        exclusiveLock: exclusiveLockAcquire.bind([
-          semaphore,
-          raceResolvedEvent,
-          NBAcquire.LIMON,
-          limonShinka,
-          nbTAState,
-        ]),
+        exclusiveLock: (acquireMe<SO, TO>).bind(0, nbTA, NBAcquire.LIMON),
         dispatchError,
       });
       limonSetVars({ thisArg: limonTA, dispatchError, send });
@@ -338,11 +334,12 @@ export class Bus<SO, TO> {
       nbTASetVars.limon = limonSetVars;
     }
 
-    this.#onTerminated = onTerminated.bind([
+    this.#onTerminated = onTerminated.bind(
+      0,
       this.#vars,
       this.#transportCloseDelegate.reset,
       this.stop,
-    ]);
+    );
 
     this.request = userShinka.request;
     this.dataEvent = userShinka.dataEvent;
@@ -354,14 +351,14 @@ export class Bus<SO, TO> {
     const own = this.#eventListeners.own[type];
     for (const listener of own)
       queueMicrotask(
-        (eventListenerCaller<this>).bind([listener, this, target]),
+        (eventListenerCaller<this>).bind(0, listener, this, target),
       );
 
     const banned = this.#eventListeners.banned[type];
     for (const listener of this.#eventListeners.parent[type])
       if (!(banned.has(listener) || own.has(listener)))
         queueMicrotask(
-          (eventListenerCaller<this>).bind([listener, this, target]),
+          (eventListenerCaller<this>).bind(0, listener, this, target),
         );
   };
 
@@ -447,6 +444,7 @@ export class Bus<SO, TO> {
       }
 
       if (limonStart) limonStart();
+      this.#sta.nb.TA.lock.start(this.#sta.nb.TA);
 
       if (instruction.hi && !this.#lastDataAt.sent)
         busEvents.heartbeat(this.#sta.bus.shinka.dataEvent);
@@ -454,11 +452,10 @@ export class Bus<SO, TO> {
       if (instruction.bye) this.#vars.bye = 1;
       const onOutScope = instruction.bye
         ? gracefulShutdown.bind(
-            Object.freeze([
-              this.#sta.bus.shinka.dataEvent,
-              byeReset.bind(this.#vars),
-              this.stop,
-            ]),
+            0,
+            this.#sta.bus.shinka.dataEvent,
+            byeReset.bind(this.#vars),
+            this.stop,
           )
         : this.stop;
 
@@ -498,6 +495,8 @@ export class Bus<SO, TO> {
 
     this.#serializerStopDelegate.call();
     this.#limonStopDelegate.call();
+
+    this.#sta.nb.TA.lock.stop(this.#sta.nb.TA);
 
     this.#cleanup();
 
@@ -544,7 +543,7 @@ export class Bus<SO, TO> {
   };
 
   #cleanup = () => {
-    for (const cb of this.#resetStates) cb();
+    for (const cb of this.#resetStatesQueue) cb();
 
     this.#onOutScopeDelegate.reset();
     this.#outscope.remove(this.#onOutScopeDelegate.call);

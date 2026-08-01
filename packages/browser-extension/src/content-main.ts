@@ -7,7 +7,7 @@ export const content2mainTransport = (
   ((shinkaOn) => (thisArg, onRawData, onClosed, opts) => {
     const _onmessage = (event: MessageEvent) => {
       if (event.source === window && Array.isArray(event.data)) {
-        const [tag, payload] = event.data;
+        const { 0: tag, 1: payload } = event.data;
         if (tag === TAG_ONMESSAGE) onRawData(payload);
       }
     };

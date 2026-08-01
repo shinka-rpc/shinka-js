@@ -1,17 +1,18 @@
-import { Consensus } from "@shinka-rpc/consensus";
-import { NBRequestKeys, NBEventKeys, NBAcquire } from "./constants";
-import type { ShinkaDataEvent, ShinkaRequest } from "../../../types";
+import { NBEventKeys } from "./const-enums";
+import { NBAcquire } from "../../const-enums";
+import type { NBShinka } from "../../../types";
 
-export const nbEvents = {
-  release: (dataEvent: ShinkaDataEvent<any, any>) =>
-    dataEvent(NBEventKeys.RELEASE, 0),
-};
-
-export const nbRequests = {
+export const nbEvent = {
   acquire: (
-    request: ShinkaRequest<any, any>,
+    dataEvent: NBShinka<any, any, any>["dataEvent"],
     target: NBAcquire,
     timeout: number,
     nonces: number[],
-  ) => request<Consensus>(NBRequestKeys.ACQUIRE, [target, timeout, ...nonces]),
+  ) => dataEvent(NBEventKeys.ACQUIRE, [target, timeout, ...nonces]),
+  accept: (dataEvent: NBShinka<any, any, any>["dataEvent"]) =>
+    dataEvent(NBEventKeys.ACCEPT, 0),
+  release: (dataEvent: NBShinka<any, any, any>["dataEvent"]) =>
+    dataEvent(NBEventKeys.RELEASE, 0),
 };
+
+export const nbRequest = {};

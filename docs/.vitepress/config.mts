@@ -109,6 +109,7 @@ const config = defineConfig({
             { text: "Other", link: "/other/" },
             { text: "Collections", link: "/other/collections" },
             { text: "Concurrency", link: "/other/concurrency" },
+            { text: "Exclusive Lock", link: "/other/exclusive-lock" },
             { text: "Util", link: "/other/util" },
             { text: "Lib*", link: "/other/lib" },
           ],

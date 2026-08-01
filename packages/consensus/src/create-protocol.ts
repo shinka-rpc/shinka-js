@@ -12,7 +12,7 @@ export const createProtocol = ({
   randInt32,
   resolver,
 }: CreateProtocolProps) => {
-  const emptyNonces = Object.freeze(Array(nonceLength));
+  const emptyNonces = Object.freeze(Array(nonceLength).fill(undefined));
   const createNonces = () => emptyNonces.map(randInt32);
   const consensusAll = (a: number[], b: number[]) => {
     for (let i = 0; i < nonceLength; i++) {
@@ -26,3 +26,5 @@ export const createProtocol = ({
     typeof consensusAll,
   ];
 };
+
+export type ConsensusProtocol = ReturnType<typeof createProtocol>;

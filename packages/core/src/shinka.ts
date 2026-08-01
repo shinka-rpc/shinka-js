@@ -11,8 +11,8 @@ import type { DispatchMap, Shinka, ShinkaOn } from "./types";
 import type { MessageTypeGroup } from "./factory/message-type";
 
 export const createHandlerRegistries = <SO, TO, TA>() => {
-  const [reqGet, reqSet] = createReqRegistry<SO, TO, TA, any, any>();
-  const [evGet, onDataEvent] = createEventRegistry<TA, any>();
+  const { 0: reqGet, 1: reqSet } = createReqRegistry<SO, TO, TA, any, any>();
+  const { 0: evGet, 1: onDataEvent } = createEventRegistry<TA, any>();
   const onRequest = asOnRequest(reqSet);
   const dispatchRequest = createDispatchRequest(reqGet);
   return Object.freeze({
@@ -38,17 +38,22 @@ export const completeShinka = <SO, TO, TA>(
     onRequest,
   }: HandlerRegistries<SO, TO, TA>,
 ) => {
-  const [REQUEST, RESPONSE_OK, RESPONSE_ERR, EVENT] = messageTypeGroup;
+  const {
+    0: REQUEST,
+    1: RESPONSE_OK,
+    2: RESPONSE_ERR,
+    3: EVENT,
+  } = messageTypeGroup;
 
-  const [
-    setVars,
-    request,
-    onSuccess,
-    onError,
-    onMessageRequest,
-    dispatchDataEvent,
-    dataEvent,
-  ] = reqrsp(
+  const {
+    0: setVars,
+    1: request,
+    2: onSuccess,
+    3: onError,
+    4: onMessageRequest,
+    5: dispatchDataEvent,
+    6: dataEvent,
+  } = reqrsp(
     REQUEST,
     EVENT,
     [RESPONSE_ERR, RESPONSE_OK],

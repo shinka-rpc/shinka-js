@@ -1,4 +1,5 @@
-import { Semaphore, type SemaphoreAcquireContext } from "../src";
+import { Semaphore } from "../src";
+import type { DisposeContext } from "../../util";
 import { expect, test } from "@jest/globals";
 
 import { FIFO } from "../../collections";
@@ -11,15 +12,9 @@ const mkPushAt =
     (slots[idx] = val);
 
 test("semaphore", async () => {
-  const s = new Semaphore({ waiters: FIFO, count: 2 });
+  const s = new Semaphore({ waiters: FIFO, capacity: 2 });
 
-  const slots: (SemaphoreAcquireContext | null)[] = [
-    null,
-    null,
-    null,
-    null,
-    null,
-  ];
+  const slots: (DisposeContext | null)[] = [null, null, null, null, null];
 
   const pushAt = mkPushAt(slots);
 
@@ -40,7 +35,7 @@ test("semaphore", async () => {
   await sleep(100);
   expect(slots.map(Boolean)).toStrictEqual([true, true, false, false, false]);
 
-  slots[0]!.release();
+  slots[0]!.dispose();
 
   await sleep(10);
 
@@ -50,27 +45,27 @@ test("semaphore", async () => {
 
   // slots[1] skipped
 
-  slots[2]!.release();
+  slots[2]!.dispose();
 
   await sleep(10);
 
   expect(slots.map(Boolean)).toStrictEqual([true, true, true, true, false]);
 
-  slots[3]!.release();
+  slots[3]!.dispose();
 
   await sleep(10);
 
   expect(slots.map(Boolean)).toStrictEqual([true, true, true, true, true]);
 
-  slots[4]!.release();
+  slots[4]!.dispose();
 
   expect(s.value).toStrictEqual(1);
 
-  slots[1]!.release();
+  slots[1]!.dispose();
   await sleep(10);
   expect(s.value).toStrictEqual(2);
 
-  expect(slots[0]!.release).toThrow();
+  expect(slots[0]!.dispose).toThrow();
 
   // ===
 
@@ -91,20 +86,20 @@ test("semaphore", async () => {
   expect(slots.map(Boolean)).toStrictEqual([true, true, false, false, false]);
 
   expect(s.value).toStrictEqual(0);
-  s.count = 1; // try shrink
+  s.capacity = 1; // try shrink
   expect(s.value).toStrictEqual(-1);
-  slots[0]!.release();
+  slots[0]!.dispose();
   await sleep(10);
   expect(s.value).toStrictEqual(0);
 
   // same
   expect(slots.map(Boolean)).toStrictEqual([true, true, false, false, false]);
 
-  s.count = 10; // try grow
+  s.capacity = 10; // try grow
   await sleep(10);
   expect(slots.map(Boolean)).toStrictEqual([true, true, true, true, true]);
 
-  for (let i = 1; i < 5; i++) slots[i]!.release();
+  for (let i = 1; i < 5; i++) slots[i]!.dispose();
   await sleep(10);
   expect(s.value).toStrictEqual(10);
 });

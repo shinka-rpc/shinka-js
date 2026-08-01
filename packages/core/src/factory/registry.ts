@@ -149,6 +149,6 @@ export const asOnRequest =
     cb: (body: any, thisArg: TA) => any,
     metadataWithHint?: MetadataWithHint<SO, TO>,
   ) => {
-    const [metadata, hint] = separateMetadataHint(metadataWithHint);
+    const { 0: metadata, 1: hint } = separateMetadataHint(metadataWithHint);
     reqSet(key, { cb, metadata, hint });
   };

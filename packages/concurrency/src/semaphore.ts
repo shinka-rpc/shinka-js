@@ -1,94 +1,88 @@
-import type { IQueue } from "@shinka-rpc/collections";
+import { disposeContext, type DisposeContext } from "@shinka-rpc/util";
 import { createOrUse, type MaybeConstructor } from "./util";
 
+export interface ISemaphoreQueue<T> {
+  push(value: T): void;
+  pop(): T | undefined;
+  readonly length: number;
+}
+
 type SemaphoreState = {
-  initial: number;
+  capacity: number;
   value: number;
 };
 
-// @ts-expect-error: 2503
-if (!Symbol.dispose) Symbol.dispose = Symbol.for("Symbol.dispose");
+type ResolveReject<T> = [(value: T) => void, (reason: any) => void];
 
-export type SemaphoreAcquireContext = Disposable & {
-  release: () => void;
+type ReleasedFlagContainer = [0 | 1];
+
+const releaseFunction = (
+  rc: ReleasedFlagContainer,
+  state: SemaphoreState,
+  queue: ISemaphoreQueue<ResolveReject<DisposeContext>>,
+) => {
+  if (rc[0]) throw new Error("already released");
+  rc[0] = 1;
+  if (++state.value < 1) return; // shrinking is supported
+  const next = queue.pop();
+  if (next) {
+    state.value--;
+    next[0](disposeContext(releaseFunction.bind(0, [0], state, queue)));
+  }
 };
 
-type ReleaseFunctionThis = [
-  boolean,
-  SemaphoreState,
-  IQueue<(value: SemaphoreAcquireContext) => void>,
-];
-
-export const acquireContext = (release: () => void) =>
-  Object.freeze({
-    release,
-    [Symbol.dispose]: release,
-  } as SemaphoreAcquireContext);
-
-function releaseFunction(this: ReleaseFunctionThis) {
-  if (this[0]) throw new Error("already released");
-  this[0] = true;
-  if (++this[1].value < 1) return; // shrinking is supported
-  const next = this[2].pop();
-  if (next) {
-    this[1].value--;
-    next(acquireContext(releaseFunction.bind([false, this[1], this[2]])));
-  }
-}
-
-const validateCount = (n: number) => {
-  if (!Number.isInteger(n) || n < 1) throw new Error(`invalid count: ${n}`);
+const validateCapacity = (n: number) => {
+  if (!Number.isInteger(n) || n < 1) throw new Error(`invalid capacity: ${n}`);
 };
 
 export type SemaphoreProps = {
-  waiters: MaybeConstructor<IQueue<(value: SemaphoreAcquireContext) => void>>;
-  count: number;
+  waiters: MaybeConstructor<ISemaphoreQueue<ResolveReject<DisposeContext>>>;
+  capacity: number;
 };
 
 export class Semaphore {
-  #waiters!: IQueue<(value: SemaphoreAcquireContext) => void>;
+  #waiters!: ISemaphoreQueue<ResolveReject<DisposeContext>>;
   #state!: SemaphoreState;
 
-  constructor({ waiters, count }: SemaphoreProps) {
-    validateCount(count);
+  constructor({ waiters, capacity }: SemaphoreProps) {
+    validateCapacity(capacity);
     this.#waiters = createOrUse(waiters);
-    this.#state = { value: count, initial: count };
+    this.#state = { value: capacity, capacity };
     Object.freeze(this);
   }
 
+  #disposeContext = () =>
+    disposeContext(releaseFunction.bind(0, [0], this.#state, this.#waiters));
+
   acquire = () =>
-    new Promise<SemaphoreAcquireContext>((resolve, reject) => {
-      if (this.#state.value < 1) return this.#waiters.push(resolve);
+    new Promise<DisposeContext>((resolve, reject) => {
+      if (this.#state.value < 1) return this.#waiters.push([resolve, reject]);
       this.#state.value--;
-      resolve(
-        acquireContext(
-          releaseFunction.bind([false, this.#state, this.#waiters]),
-        ),
-      );
+      resolve(this.#disposeContext());
     });
+
+  rejectPending = (reason?: any) => {
+    while (this.#waiters.length) this.#waiters.pop()![1](reason);
+  };
 
   get value() {
     return this.#state.value;
   }
 
-  get count() {
-    return this.#state.initial;
+  get capacity() {
+    return this.#state.capacity;
   }
 
-  set count(value: number) {
-    validateCount(value);
-    this.#state.value -= this.#state.initial - value;
-    this.#state.initial = value;
+  set capacity(value: number) {
+    validateCapacity(value);
+    this.#state.value -= this.#state.capacity - value;
+    this.#state.capacity = value;
 
     while (this.#state.value > 0) {
       const next = this.#waiters.pop();
       if (!next) break;
       this.#state.value--;
-      next(
-        acquireContext(
-          releaseFunction.bind([false, this.#state, this.#waiters]),
-        ),
-      );
+      next[0](this.#disposeContext());
     }
   }
 }

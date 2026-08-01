@@ -31,7 +31,7 @@ const createOnResponse =
     vars: { thisArg: TA; dispatchError: DispatchError },
   ) =>
   (message: MessageResponse<any>) => {
-    const [_, reqID, body] = message;
+    const { 1: reqID, 2: body } = message;
     const callbacks = pending.get(reqID);
 
     if (callbacks === undefined)
@@ -97,13 +97,13 @@ export const reqrsp = <SO, TO, TA>(
   };
 
   const onMessageRequest = (message: MessageRequest<any>) => {
-    const [_, reqID, key, data] = message;
+    const { 1: reqID, 2: key, 3: data } = message;
     const ctx = new Context(reqID, vars.send!, responseTypes);
     onRequest(key, data, ctx, vars.thisArg!, vars.dispatchError!);
   };
 
   const dispatchEvent = (message: MessageDataEvent<any>) => {
-    const [_, body, key] = message;
+    const { 1: body, 2: key } = message;
     const cb = getDataEvent(key);
     if (!cb) return vars.dispatchError!({ type: "no event handler", key });
     cb(body, vars.thisArg!, vars.dispatchError!);

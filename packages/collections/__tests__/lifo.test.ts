@@ -12,6 +12,9 @@ test("lifo", () => {
   const mapped = q.map((i) => i);
   expect(input).toStrictEqual(mapped.reverse());
 
+  const arrayFrom = Array.from(q);
+  expect(input).toStrictEqual(arrayFrom.reverse());
+
   const forEach: number[] = [];
   q.forEach((i) => forEach.push(i));
   expect(input).toStrictEqual(forEach.reverse());
@@ -29,9 +32,11 @@ test("lifo", () => {
   expect(input.length).toStrictEqual(q.length);
   expect(q.length).toStrictEqual(input.length);
 
-  q.length = 4;
+  const IDX = 5;
+
+  q.truncate(IDX);
 
   const truncated: number[] = [];
   while (q.length) truncated.push(q.pop()!);
-  expect(input.slice(4).reverse()).toStrictEqual(truncated);
+  expect(input.slice(0, IDX).reverse()).toStrictEqual(truncated);
 });

@@ -2,7 +2,11 @@ import { delegate, type DelegateType } from "@shinka-rpc/util";
 
 import { Hub, type HubOptions, type HubConnectProps } from "./hub";
 
-import { defaultRequestTimeout, defaultSerializerRoot } from "./defaults";
+import {
+  defaultRequestTimeout,
+  defaultSerializerRoot,
+  defaultExclusiveLock,
+} from "./defaults";
 import { setupHandlerRegistries } from "./shinka";
 import type { Bus } from "./bus";
 
@@ -28,12 +32,6 @@ import type {
 import { baseListenerFactory } from "./factory/base-listener-factory";
 import { createEventListenerPair } from "./factory/event-listener-pair";
 
-type ConnectFnThis<SO, TO> = readonly [
-  (props: HubConnectProps<SO, TO>) => Promise<Bus<SO, TO>>,
-  InternalHandlerRegistries<SO, TO, any>,
-  SerializerRF<SO, TO, any>,
-];
-
 const serverEventTypes: ServerEventType[] = [
   "connect",
   "predisconnect",
@@ -45,31 +43,26 @@ const createServerEventListeners = baseListenerFactory(
   Set<() => void>,
 );
 
-function connectFn<SO, TO>(
-  this: ConnectFnThis<SO, TO>,
+const connectFn = <SO, TO>(
+  connect: (props: HubConnectProps<SO, TO>) => Promise<Bus<SO, TO>>,
+  transportHandlers: InternalHandlerRegistries<SO, TO, any>,
+  serializer: SerializerRF<SO, TO, any>,
   transportFactory: TransportFactory<SO, TO, any>,
-) {
-  const [connect, transportHandlers, serializer] = this;
+) => {
   const transport: TransportRF<SO, TO, any> = [
     transportHandlers,
     transportFactory,
   ];
   const props: HubConnectProps<SO, TO> = { transport, serializer };
   connect(props);
-}
+};
 
-type TransportHelperThis<SO, TO> = readonly [
-  TransportServer<SO, TO, any>,
-  TransportConnectFn<SO, TO, any>,
-  ManageEventListenerPair<ServerEventType>,
-];
-
-function transportHelper<SO, TO>(
-  this: TransportHelperThis<SO, TO>,
+const transportHelper = <SO, TO>(
+  transportServer: TransportServer<SO, TO, any>,
+  connect: TransportConnectFn<SO, TO, any>,
+  listeners: ManageEventListenerPair<ServerEventType>,
   shinkaOn: ShinkaOn<SO, TO, InternalHandlerThisArg<SO, TO, any>>,
-) {
-  return this[0](shinkaOn, this[1], this[2]);
-}
+) => transportServer(shinkaOn, connect, listeners);
 
 const connectDefault = () => {
   throw new Error("Server is not started!");
@@ -109,31 +102,34 @@ export class Server<SO, TO> {
     transport: transportServerFactory,
     serializer: serializerRoot = defaultSerializerRoot,
     responseTimeout = defaultRequestTimeout,
+    lock = defaultExclusiveLock,
   }: ServerOptions<SO, TO>) {
-    this.#hub = new Hub({ outscope, responseTimeout });
+    this.#hub = new Hub({ outscope, responseTimeout, lock });
     this.#vars = { state: ServerState.STOPPED };
-    const [listeners, callEvent] = createEventListenerPair(
+    const { 0: listeners, 1: callEvent } = createEventListenerPair(
       createServerEventListeners,
     );
     this.#callEvent = callEvent;
     this.#connectDelegate = delegate(
       connectDefault as TransportConnectFn<SO, TO, any>,
     );
-    const [transportRegistries] = setupHandlerRegistries(
-      (transportHelper<SO, TO>).bind([
+    const { 0: transportRegistries } = setupHandlerRegistries(
+      (transportHelper<SO, TO>).bind(
+        0,
         transportServerFactory,
         this.#connectDelegate.call,
         listeners,
-      ]),
+      ),
     );
 
     const serializerRF = setupHandlerRegistries(serializerRoot);
 
-    this.#connectFn = (connectFn<SO, TO>).bind([
+    this.#connectFn = (connectFn<SO, TO>).bind(
+      0,
       this.#hub.connect,
       transportRegistries,
       serializerRF,
-    ]);
+    );
 
     this.onDataEvent = this.#hub.onDataEvent;
     this.onRequest = this.#hub.onRequest;

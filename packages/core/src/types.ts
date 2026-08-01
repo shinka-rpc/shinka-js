@@ -1,10 +1,6 @@
-import type { IQueue } from "@shinka-rpc/collections";
+import type { DisposeContext, AsyncDisposeContext } from "@shinka-rpc/util";
 import type { OutScope } from "@shinka-rpc/outscope";
-
-import type {
-  SemaphoreAcquireContext,
-  ReusablePromise,
-} from "@shinka-rpc/concurrency";
+import type { ReusablePromise, Semaphore } from "@shinka-rpc/concurrency";
 
 import type { Context } from "./factory/context";
 import type {
@@ -14,7 +10,8 @@ import type {
   MessageTypeAllEvent,
 } from "./factory/message-type";
 import type { HandlerRegistries } from "./shinka";
-import type { NBThisArgState } from "./bus/handlers/non-blocking";
+import type { NBAcquire } from "./bus/const-enums";
+// import { Consensus } from "@shinka-rpc/consensus";
 
 export type LastDataAt = {
   received: number;
@@ -124,7 +121,7 @@ export type InternalHandlerThisArg<SO, TO, STATE> = {
   shinka: Shinka<SO, TO, InternalHandlerThisArg<SO, TO, STATE>>;
   state: STATE;
   dispatchError: (error: any) => void;
-  exclusiveLock: (timeout: number) => Promise<SemaphoreAcquireContext>;
+  exclusiveLock: (timeout: number) => Promise<AsyncDisposeContext>;
 };
 
 export type UserHandlerRegistries<SO, TO, B> = HandlerRegistries<SO, TO, B>;
@@ -367,41 +364,113 @@ export type LimonShinkaAndTA<SO, TO> = {
 
 export type NB_FIFOEntry<SO, TO> = [Message<any>, ShinkaMeta<SO, TO>?];
 
-export type NBThisArgSetVars<SO, TO> = {
+export type NBThisArgSetVars<SO, TO, NBS> = {
   user: ShinkaVarsSetter<SO, TO, any>;
   bus: ShinkaVarsSetter<SO, TO, InternalHandlerThisArg<SO, TO, any>>;
   transport: ShinkaVarsSetter<SO, TO, InternalHandlerThisArg<SO, TO, any>>;
   serializer: ShinkaVarsSetter<SO, TO, InternalHandlerThisArg<SO, TO, any>>;
   limon: ShinkaVarsSetter<SO, TO, LimonShinkaAndTA<SO, TO>> | null;
-  nb: ShinkaVarsSetter<SO, TO, NBThisArg<SO, TO>>;
+  nb: ShinkaVarsSetter<SO, TO, NBThisArg<SO, TO, NBS>>;
 };
 
-export type NBThisArg<SO, TO> = InternalHandlerThisArg<
-  SO,
-  TO,
-  NBThisArgState
-> & {
-  send: SendFn<SO, TO>;
-  qPush: SendFn<SO, TO>;
-  q: IQueue<NB_FIFOEntry<SO, TO>>;
-  raceResolvedEvent: ReusablePromise<void>;
-  setVars: NBThisArgSetVars<SO, TO>;
+export type NBSetSendFn<SO, TO> = { send: SendFn<SO, TO> };
+export type NBVarsValues<SO, TO> = {
+  lock: NBSetSendFn<SO, TO>;
+  release: NBSetSendFn<SO, TO>;
 };
 
-export type NBHandlerRegistries<SO, TO> = HandlerRegistries<
+// export type NBConcurrent = {
+//   raceResolvedEvent: ReusablePromise<void>;
+//   semaphore: Semaphore;
+// };
+
+export type NBVars<SO, TO, NBS> = {
+  set: NBThisArgSetVars<SO, TO, NBS>;
+  val: NBVarsValues<SO, TO>;
+};
+
+export type nbAPIRequest = {};
+
+export type nbAPIEvent = {
+  acquire: (target: NBAcquire, timeout: number, nonces: number[]) => void;
+  accept: () => void;
+  release: () => void;
+};
+
+// due exclusive-lock is external it's better to provide him API via thisArg
+export type nbAPI = {
+  r: nbAPIRequest;
+  e: nbAPIEvent;
+};
+
+export type nbQ = {
+  drain: () => void;
+  clear: () => void;
+};
+
+export type NBThisArg<SO, TO, NBS> = InternalHandlerThisArg<SO, TO, NBS> & {
+  q: nbQ;
+  // concurrent: NBConcurrent;
+  semaphore: Semaphore;
+  vars: NBVars<SO, TO, NBS>;
+  lock: ExclusiveLock<SO, TO, NBS>;
+  api: nbAPI;
+  responseTimeout: number;
+};
+
+export type NBHandlerRegistries<SO, TO, STATE> = HandlerRegistries<
   SO,
   TO,
-  NBThisArg<SO, TO>
+  NBThisArg<SO, TO, STATE>
 >;
 
-export type NBShinka<SO, TO> = Shinka<SO, TO, NBThisArg<SO, TO>>;
+export type NBShinka<SO, TO, STATE> = Shinka<SO, TO, NBThisArg<SO, TO, STATE>>;
 
-export type NBShinkaAndTA<SO, TO> = {
-  shinka: NBShinka<SO, TO>;
-  TA: NBThisArg<SO, TO>;
+export type NBShinkaAndTA<SO, TO, STATE> = {
+  shinka: NBShinka<SO, TO, STATE>;
+  TA: NBThisArg<SO, TO, STATE>;
 };
 
-export type ShinkaAndThisArgAll<SO, TO> = {
+export type ExclusiveLockAcquire<SO, TO, STATE> = (
+  thisArg: NBThisArg<SO, TO, STATE>,
+  nbAcquire: NBAcquire,
+  timeout: number,
+) => Promise<Readonly<AsyncDisposeContext>>;
+
+export type ExclusiveLockOnAcquire<SO, TO, STATE> = (
+  thisArg: NBThisArg<SO, TO, STATE>,
+  target: NBAcquire,
+  timeout: number,
+  nonces: number[],
+) => void;
+
+export type ExclusiveLockOnAccept<SO, TO, STATE> = (
+  thisArg: NBThisArg<SO, TO, STATE>,
+) => void;
+
+export type ExclusiveLockReleaseMe<SO, TO, STATE> = (
+  thisArg: NBThisArg<SO, TO, STATE>,
+  semaphoreCTX: DisposeContext,
+) => void;
+
+export type ExclusiveLockOnRelease<SO, TO, STATE> = (
+  thisArg: NBThisArg<SO, TO, STATE>,
+) => void;
+
+export type ExclusiveLockOn<SO, TO, STATE> = {
+  acquire: ExclusiveLockOnAcquire<SO, TO, STATE>;
+  accept: ExclusiveLockOnAccept<SO, TO, STATE>;
+  release: ExclusiveLockOnRelease<SO, TO, STATE>;
+};
+
+export type ExclusiveLock<SO, TO, STATE> = {
+  on: ExclusiveLockOn<SO, TO, STATE>;
+  acquire: ExclusiveLockAcquire<SO, TO, STATE>;
+  start: (thisArg: NBThisArg<SO, TO, STATE>) => void;
+  stop: (thisArg: NBThisArg<SO, TO, STATE>) => void;
+};
+
+export type ShinkaAndThisArgAll<SO, TO, NBS> = {
   user: Shinka<SO, TO, IBus<SO, TO>>;
   transport: ShinkaAndTA<SO, TO> & {
     factory: TransportFactory<SO, TO, any>;
@@ -410,7 +479,7 @@ export type ShinkaAndThisArgAll<SO, TO> = {
     factory: SerializerFactory<SO, TO, any>;
   };
   bus: ShinkaAndTA<SO, TO>;
-  nb: NBShinkaAndTA<SO, TO>;
+  nb: NBShinkaAndTA<SO, TO, NBS>;
   limon:
     | (LimonShinkaAndTA<SO, TO> & { factory: LiMonFactory<SO, TO, any> })
     | null;
@@ -420,6 +489,7 @@ export type ShinkaAndThisArgAll<SO, TO> = {
 export type BusProps<SO, TO> = {
   outscope: OutScope;
   transport: TransportSubscribe<SO, TO, any>;
+  lock?: ExclusiveLock<SO, TO, any>;
   serializer?: SerializerRoot<SO, TO, any>;
   limon?: LiMon<SO, TO, any> | null;
   responseTimeout?: number;

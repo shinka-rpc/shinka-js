@@ -1,8 +1,8 @@
 import type { IQueue, MapFn, ForEachFn } from "./types";
 import {
   type Entry,
-  makeResetStateFn,
-  shrink,
+  restoreInitialState,
+  truncateFn,
   mapFn,
   forEachFn,
   iteratorFn,
@@ -15,8 +15,14 @@ type FIFOState<T> = {
   tail: Entry<T> | null;
 };
 
-const initialState: FIFOState<any> = { length: 0, head: null, tail: null };
-const resetStateFn = makeResetStateFn(initialState);
+const initialState: FIFOState<any> = Object.freeze({
+  length: 0,
+  head: null,
+  tail: null,
+});
+const restoreInitialFIFOState = (restoreInitialState<FIFOState<any>>).bind(
+  initialState,
+);
 
 export class FIFO<T> implements IQueue<T> {
   #state!: FIFOState<T>;
@@ -35,16 +41,14 @@ export class FIFO<T> implements IQueue<T> {
     this.#state.length++;
   };
 
-  pop = () => popFn<T, FIFOState<T>>(this.#state, resetStateFn);
-  [Symbol.iterator] = () => iteratorFn<T, FIFOState<T>>(this.#state);
+  pop = () => popFn<T, FIFOState<T>>(this.#state, restoreInitialFIFOState);
   map = <M>(cb: MapFn<T, this, M>) => mapFn(this.#state, this, cb);
   forEach = (cb: ForEachFn<T, this>) => forEachFn(this.#state, this, cb);
+  truncate = (value = 0) =>
+    truncateFn(value, this.#state, restoreInitialFIFOState);
+  [Symbol.iterator] = () => iteratorFn<T, FIFOState<T>>(this.#state);
 
   get length() {
     return this.#state.length;
-  }
-
-  set length(n: number) {
-    shrink(n, this.#state, resetStateFn);
   }
 }

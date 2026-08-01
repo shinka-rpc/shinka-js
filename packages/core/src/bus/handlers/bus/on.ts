@@ -1,4 +1,4 @@
-import { BusRequestKeys, BusEventKeys } from "./constants";
+import { BusRequestKeys, BusEventKeys } from "./const-enums";
 import { createHandlerRegistries } from "../../../shinka";
 
 import type { InternalHandlerRegistries } from "../../../types";

@@ -29,8 +29,5 @@
   "homepage": "https://github.com/shinka-rpc/shinka-js",
   "exports": {
     "default": "./src/index.ts"
-  },
-  "devDependencies": {
-    "@types/node": "*"
   }
 }

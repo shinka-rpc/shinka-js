@@ -32,6 +32,8 @@ export class Asynq<T> {
       this.#waiters.push([resolve, reject]);
     });
 
+  truncate = (n = 0) => this.#items.truncate(n);
+
   #cbAdapter =
     <M>(cb: (val: T, thisArg: this) => M) =>
     (val: T) =>
@@ -45,9 +47,5 @@ export class Asynq<T> {
 
   get length() {
     return this.#items.length;
-  }
-
-  set length(n: number) {
-    this.#items.length = n;
   }
 }
