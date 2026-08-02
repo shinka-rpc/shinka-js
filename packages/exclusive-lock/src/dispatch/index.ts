@@ -1,11 +1,11 @@
 import type { AnyNBThisArg, FSMEvent, GenericFSMEventHandler } from "../types";
-import { rootMap } from "./handlers";
+import { FSM } from "./fsm";
 
 export const dispatch = (
   thisArg: AnyNBThisArg,
   { 0: eventType, 1: data }: FSMEvent,
 ) => {
-  const cb = rootMap.get(thisArg.state.state)?.get(eventType) as
+  const cb = FSM.get(thisArg.state.state)?.get(eventType) as
     | GenericFSMEventHandler<any>
     | undefined;
   if (!cb)

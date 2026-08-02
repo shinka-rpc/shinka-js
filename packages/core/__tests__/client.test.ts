@@ -62,6 +62,10 @@ const setupClientClient = async <TO>(
     responseTimeout: 1000,
     lock,
   });
+
+  bus1.extra.bus = 1;
+  bus2.extra.bus = 2;
+
   bus1.addEventListener("error", console.error);
   bus2.addEventListener("error", console.error);
 
@@ -383,8 +387,6 @@ test("exclusive-lock-ok", async () => {
     undefined,
     defaultExclusiveLock,
   );
-  bus1.extra.bus = 1;
-  bus2.extra.bus = 2;
   const bus1Sync = createMockBusService("bus1-sync", bus2);
   createSyncHandler("bus1-sync", bus1, results);
   await start();

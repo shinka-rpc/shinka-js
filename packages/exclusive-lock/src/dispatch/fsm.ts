@@ -1,5 +1,7 @@
 import { Consensus } from "@shinka-rpc/consensus";
 import { StateType, FSMEventType } from "../const-enums";
+import { onTimeout, idleState } from "../lifecycle";
+import { apply, transition } from "../targets";
 import type {
   AnyNBThisArg,
   LocalAcquireEventData,
@@ -16,26 +18,16 @@ import type {
   TimeoutEventData,
   LockedRemoteState,
   RemoteReleaseEventData,
-  // RaceUnknownState,
   ResolveReject,
   SemaphoreCTXMixin,
   RaceStateWon1,
   RaceStateWon2,
-  // LocalPendingMixin,
   StateKey,
-  // StopEvent,
   StopEventData,
   WithTimeout,
   RaceStateLose1,
   RaceStateLose2,
 } from "../types";
-import { onTimeout, idleState } from "../lifecycle";
-import { apply, transition } from "../targets";
-// import { NBAcquire } from "@shinka-rpc/core";
-
-type FSMEventHandlerMap = Map<FSMEventType, FSMEventHandler>;
-
-export const rootMap = new Map<StateType | undefined, FSMEventHandlerMap>();
 
 const idle = new Map<FSMEventType, FSMEventHandler>();
 const requested = new Map<FSMEventType, FSMEventHandler>();
@@ -46,16 +38,16 @@ const raceWon2 = new Map<FSMEventType, FSMEventHandler>();
 const raceLose1 = new Map<FSMEventType, FSMEventHandler>();
 const raceLose2 = new Map<FSMEventType, FSMEventHandler>();
 
-rootMap.set(StateType.IDLE, idle);
-rootMap.set(StateType.REQUESTED, requested);
-rootMap.set(StateType.LOCKED_LOCAL, lockedLocal);
-rootMap.set(StateType.LOCKED_REMOTE, lockedRemote);
-rootMap.set(StateType.RACE_WON_1, raceWon1);
-rootMap.set(StateType.RACE_WON_2, raceWon2);
-rootMap.set(StateType.RACE_LOSE_1, raceLose1);
-rootMap.set(StateType.RACE_LOSE_2, raceLose2);
-
-const dummy = () => 0;
+export const FSM = new Map<StateType, Map<FSMEventType, FSMEventHandler>>([
+  [StateType.IDLE, idle],
+  [StateType.REQUESTED, requested],
+  [StateType.LOCKED_LOCAL, lockedLocal],
+  [StateType.LOCKED_REMOTE, lockedRemote],
+  [StateType.RACE_WON_1, raceWon1],
+  [StateType.RACE_WON_2, raceWon2],
+  [StateType.RACE_LOSE_1, raceLose1],
+  [StateType.RACE_LOSE_2, raceLose2],
+]);
 
 const acquireEvent = (thisArg: AnyNBThisArg) => {
   const {
@@ -87,15 +79,30 @@ const clearTimeoutFor = (thisArg: AnyNBThisArg, key: StateKey) => {
 
 const doStop = (thisArg: AnyNBThisArg) => {
   Object.assign(thisArg.state, idleState);
+  thisArg.q.clear();
   thisArg.bus.stop();
 };
 
 const warnOnTimeout = (
   thisArg: AnyNBThisArg,
   { timeout, key }: TimeoutEventData,
-) => {
-  thisArg.dispatchError(`Timeout ${key} happened in ${timeout}ms`);
+) => thisArg.dispatchError(`Timeout ${key} happened in ${timeout}ms`);
+
+const timeoutHandler = (thisArg: AnyNBThisArg, data: TimeoutEventData) => {
+  // console.log("TIMEOUT", thisArg.bus.extra);
+  warnOnTimeout(thisArg, data);
+  doStop(thisArg);
 };
+
+const makeStopHandler =
+  (key: StateKey) => (thisArg: AnyNBThisArg, data: StopEventData) => {
+    // console.log("STOP", thisArg.bus.extra);
+    clearTimeoutFor(thisArg, key);
+    doStop(thisArg);
+  };
+
+const stopLocal = makeStopHandler("local");
+const stopRemote = makeStopHandler("remote");
 
 // IDLE --> ...
 
@@ -135,13 +142,12 @@ idle.set(
       remote,
     };
     apply(thisArg, target, "lock");
-    // thisArg.concurrent.raceResolvedEvent.reset();
     Object.assign(thisArg.state, nextState);
     thisArg.api.e.accept();
   },
 );
 
-idle.set(FSMEventType.STOP, dummy);
+idle.set(FSMEventType.STOP, () => 0);
 
 // REQUESTED --> ...
 
@@ -234,23 +240,8 @@ requested.set(
   },
 );
 
-requested.set(
-  FSMEventType.TIMEOUT,
-  (thisArg: AnyNBThisArg, data: TimeoutEventData) => {
-    // console.log("TIMEOUT: REQUESTED", thisArg.bus.extra);
-    warnOnTimeout(thisArg, data);
-    doStop(thisArg);
-  },
-);
-
-requested.set(
-  FSMEventType.STOP,
-  (thisArg: AnyNBThisArg, data: StopEventData) => {
-    // console.log("TIMEOUT: REQUESTED -> IDLE", thisArg.bus.extra);
-    clearTimeoutFor(thisArg, "local");
-    doStop(thisArg);
-  },
-);
+requested.set(FSMEventType.TIMEOUT, timeoutHandler);
+requested.set(FSMEventType.STOP, stopLocal);
 
 // LOCKED_LOCAL --> ...
 
@@ -269,21 +260,8 @@ lockedLocal.set(
   },
 );
 
-lockedLocal.set(
-  FSMEventType.TIMEOUT,
-  (thisArg: AnyNBThisArg, data: TimeoutEventData) => {
-    // console.log("TIMEOUT: LOCKED_LOCAL", thisArg.bus.extra);
-    thisArg.q.clear();
-    warnOnTimeout(thisArg, data);
-    doStop(thisArg);
-  },
-);
-
-lockedLocal.set(FSMEventType.STOP, (thisArg: AnyNBThisArg) => {
-  clearTimeoutFor(thisArg, "local");
-  thisArg.q.clear();
-  doStop(thisArg);
-});
+lockedLocal.set(FSMEventType.TIMEOUT, timeoutHandler);
+lockedLocal.set(FSMEventType.STOP, stopLocal);
 
 // LOCKED_REMOTE --> ...
 
@@ -294,25 +272,13 @@ lockedRemote.set(
     const { timeoutId, target } = thisArg.state.remote as Locked;
     clearTimeout(timeoutId);
     apply(thisArg, target, "release");
-    // thisArg.concurrent.raceResolvedEvent.resolve();
     Object.assign(thisArg.state, idleState);
     thisArg.q.drain();
   },
 );
 
-lockedRemote.set(
-  FSMEventType.TIMEOUT,
-  (thisArg: AnyNBThisArg, data: TimeoutEventData) => {
-    // console.log("TIMEOUT: LOCKED_REMOTE", thisArg.bus.extra);
-    warnOnTimeout(thisArg, data);
-    doStop(thisArg);
-  },
-);
-
-lockedRemote.set(FSMEventType.STOP, (thisArg: AnyNBThisArg) => {
-  clearTimeoutFor(thisArg, "remote");
-  doStop(thisArg);
-});
+lockedRemote.set(FSMEventType.TIMEOUT, timeoutHandler);
+lockedRemote.set(FSMEventType.STOP, stopRemote);
 
 // RACE_WON_1 --> ...
 
@@ -347,14 +313,8 @@ raceWon1.set(
   },
 );
 
-raceWon1.set(
-  FSMEventType.TIMEOUT,
-  (thisArg: AnyNBThisArg, data: TimeoutEventData) => {
-    // console.log("TIMEOUT: RACE_WON_1", thisArg.bus.extra);
-    warnOnTimeout(thisArg, data);
-    doStop(thisArg);
-  },
-);
+raceWon1.set(FSMEventType.TIMEOUT, timeoutHandler);
+raceWon1.set(FSMEventType.STOP, stopRemote);
 
 // RACE_WON_2 --> ...
 
@@ -369,17 +329,12 @@ raceWon2.set(
     Object.assign(thisArg.state, idleState);
     resolve();
     semaphoreCtx.dispose();
+    thisArg.q.drain();
   },
 );
 
-raceWon2.set(
-  FSMEventType.TIMEOUT,
-  (thisArg: AnyNBThisArg, data: TimeoutEventData) => {
-    // console.log("TIMEOUT: RACE_WON_2", thisArg.bus.extra);
-    warnOnTimeout(thisArg, data);
-    doStop(thisArg);
-  },
-);
+raceWon2.set(FSMEventType.TIMEOUT, timeoutHandler);
+raceWon1.set(FSMEventType.STOP, stopRemote);
 
 // RACE_LOSE_1 --> ...
 
@@ -403,18 +358,11 @@ raceLose1.set(
     transition(thisArg, remote.target, local.target);
     Object.assign(thisArg.state, nextState);
     resolve();
-    // thisArg.concurrent.raceResolvedEvent.resolve();
   },
 );
 
-raceLose1.set(
-  FSMEventType.TIMEOUT,
-  (thisArg: AnyNBThisArg, data: TimeoutEventData) => {
-    // console.log("TIMEOUT: RACE_LOSE_1", thisArg.bus.extra);
-    warnOnTimeout(thisArg, data);
-    doStop(thisArg);
-  },
-);
+raceLose1.set(FSMEventType.TIMEOUT, timeoutHandler);
+raceWon1.set(FSMEventType.STOP, stopLocal);
 
 // RACE_LOSE_2 --> ...
 
@@ -428,14 +376,9 @@ raceLose2.set(
     Object.assign(thisArg.state, idleState);
     resolve();
     semaphoreCtx.dispose();
+    thisArg.q.drain();
   },
 );
 
-raceLose2.set(
-  FSMEventType.TIMEOUT,
-  (thisArg: AnyNBThisArg, data: TimeoutEventData) => {
-    // console.log("TIMEOUT: RACE_LOSE_2", thisArg.bus.extra);
-    warnOnTimeout(thisArg, data);
-    doStop(thisArg);
-  },
-);
+raceLose2.set(FSMEventType.TIMEOUT, timeoutHandler);
+raceWon1.set(FSMEventType.STOP, stopRemote);
