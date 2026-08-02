@@ -17,8 +17,6 @@ export function onStart(this: NBThisArgBaseOnStart, thisArg: AnyNBThisArg) {
   Object.assign(thisArg.state, { base: this }, idleState);
 }
 
-// const keys: StateKey[] = ["local", "remote"];
-
 export const onStop = (thisArg: AnyNBThisArg) =>
   dispatch(thisArg, [FSMEventType.STOP, null]);
 

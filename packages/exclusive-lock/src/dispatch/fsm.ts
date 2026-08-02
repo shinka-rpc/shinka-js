@@ -38,7 +38,7 @@ const raceWon2 = new Map<FSMEventType, FSMEventHandler>();
 const raceLose1 = new Map<FSMEventType, FSMEventHandler>();
 const raceLose2 = new Map<FSMEventType, FSMEventHandler>();
 
-export const FSM = new Map<StateType, Map<FSMEventType, FSMEventHandler>>([
+export default new Map<StateType, Map<FSMEventType, FSMEventHandler>>([
   [StateType.IDLE, idle],
   [StateType.REQUESTED, requested],
   [StateType.LOCKED_LOCAL, lockedLocal],
@@ -48,6 +48,9 @@ export const FSM = new Map<StateType, Map<FSMEventType, FSMEventHandler>>([
   [StateType.RACE_LOSE_1, raceLose1],
   [StateType.RACE_LOSE_2, raceLose2],
 ]);
+
+// Minifier would rename it to 1-character name
+const { assign: objectAssign } = Object;
 
 const acquireEvent = (thisArg: AnyNBThisArg) => {
   const {
@@ -68,7 +71,7 @@ const acquireEvent = (thisArg: AnyNBThisArg) => {
     "local",
   );
   const { target, timeout } = local;
-  Object.assign(local, { nonces, timeoutId });
+  objectAssign(local, { nonces, timeoutId });
   acquire(target, timeout, nonces);
 };
 
@@ -78,7 +81,7 @@ const clearTimeoutFor = (thisArg: AnyNBThisArg, key: StateKey) => {
 };
 
 const doStop = (thisArg: AnyNBThisArg) => {
-  Object.assign(thisArg.state, idleState);
+  objectAssign(thisArg.state, idleState);
   thisArg.q.clear();
   thisArg.bus.stop();
 };
@@ -115,7 +118,7 @@ idle.set(
       state: StateType.REQUESTED,
       local,
     };
-    Object.assign(thisArg.state, nextState);
+    objectAssign(thisArg.state, nextState);
     acquireEvent(thisArg);
   },
 );
@@ -142,7 +145,7 @@ idle.set(
       remote,
     };
     apply(thisArg, target, "lock");
-    Object.assign(thisArg.state, nextState);
+    objectAssign(thisArg.state, nextState);
     thisArg.api.e.accept();
   },
 );
@@ -165,7 +168,7 @@ requested.set(
       remote: null,
     };
     apply(thisArg, target, "lock");
-    Object.assign(state, nextState);
+    objectAssign(state, nextState);
     resolve();
   },
 );
@@ -202,7 +205,7 @@ requested.set(
           state: StateType.RACE_WON_1,
           remote: nextRemote,
         };
-        Object.assign(thisArg.state, nextState);
+        objectAssign(thisArg.state, nextState);
         return resolve();
       }
       case Consensus.LOSE: {
@@ -227,7 +230,7 @@ requested.set(
           local: nextLocal,
           remote: data,
         };
-        return Object.assign(thisArg.state, nextState);
+        return objectAssign(thisArg.state, nextState);
       }
       case Consensus.UNKNOWN: {
         // console.log("REQUESTED -> REQUESTED", thisArg.bus.extra);
@@ -253,7 +256,7 @@ lockedLocal.set(
     queueMicrotask(thisArg.api.e.release);
     clearTimeout(timeoutId);
     apply(thisArg, target, "release");
-    Object.assign(thisArg.state, idleState);
+    objectAssign(thisArg.state, idleState);
     semaphoreCtx.dispose();
     resolve();
     thisArg.q.drain();
@@ -272,7 +275,7 @@ lockedRemote.set(
     const { timeoutId, target } = thisArg.state.remote as Locked;
     clearTimeout(timeoutId);
     apply(thisArg, target, "release");
-    Object.assign(thisArg.state, idleState);
+    objectAssign(thisArg.state, idleState);
     thisArg.q.drain();
   },
 );
@@ -308,7 +311,7 @@ raceWon1.set(
     };
 
     transition(thisArg, local.target, remote.target);
-    Object.assign(thisArg.state, nextState);
+    objectAssign(thisArg.state, nextState);
     thisArg.api.e.release();
   },
 );
@@ -326,7 +329,7 @@ raceWon2.set(
     const { semaphoreCtx, resolve } = local;
     clearTimeout(remote.timeoutId);
     apply(thisArg, remote.target, "release");
-    Object.assign(thisArg.state, idleState);
+    objectAssign(thisArg.state, idleState);
     resolve();
     semaphoreCtx.dispose();
     thisArg.q.drain();
@@ -334,7 +337,7 @@ raceWon2.set(
 );
 
 raceWon2.set(FSMEventType.TIMEOUT, timeoutHandler);
-raceWon1.set(FSMEventType.STOP, stopRemote);
+raceWon2.set(FSMEventType.STOP, stopRemote);
 
 // RACE_LOSE_1 --> ...
 
@@ -356,13 +359,13 @@ raceLose1.set(
       remote: nextRemote,
     };
     transition(thisArg, remote.target, local.target);
-    Object.assign(thisArg.state, nextState);
+    objectAssign(thisArg.state, nextState);
     resolve();
   },
 );
 
 raceLose1.set(FSMEventType.TIMEOUT, timeoutHandler);
-raceWon1.set(FSMEventType.STOP, stopLocal);
+raceLose1.set(FSMEventType.STOP, stopLocal);
 
 // RACE_LOSE_2 --> ...
 
@@ -373,7 +376,7 @@ raceLose2.set(
     const { remote } = thisArg.state as RaceStateLose2;
     clearTimeout(remote.timeoutId);
     apply(thisArg, remote.target, "release");
-    Object.assign(thisArg.state, idleState);
+    objectAssign(thisArg.state, idleState);
     resolve();
     semaphoreCtx.dispose();
     thisArg.q.drain();
@@ -381,4 +384,4 @@ raceLose2.set(
 );
 
 raceLose2.set(FSMEventType.TIMEOUT, timeoutHandler);
-raceWon1.set(FSMEventType.STOP, stopRemote);
+raceLose2.set(FSMEventType.STOP, stopRemote);

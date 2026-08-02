@@ -1,5 +1,5 @@
 import type { AnyNBThisArg, FSMEvent, GenericFSMEventHandler } from "../types";
-import { FSM } from "./fsm";
+import FSM from "./fsm";
 
 export const dispatch = (
   thisArg: AnyNBThisArg,
