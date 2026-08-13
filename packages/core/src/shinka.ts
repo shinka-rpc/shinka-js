@@ -10,12 +10,14 @@ import {
 import type { DispatchMap, Shinka, ShinkaOn } from "./types";
 import type { MessageTypeGroup } from "./factory/message-type";
 
+const { freeze: objectFreeze } = Object;
+
 export const createHandlerRegistries = <SO, TO, TA>() => {
   const { 0: reqGet, 1: reqSet } = createReqRegistry<SO, TO, TA, any, any>();
   const { 0: evGet, 1: onDataEvent } = createEventRegistry<TA, any>();
   const onRequest = asOnRequest(reqSet);
   const dispatchRequest = createDispatchRequest(reqGet);
-  return Object.freeze({
+  return objectFreeze({
     evGet,
     dispatchRequest,
     onRequest,
@@ -70,7 +72,7 @@ export const completeShinka = <SO, TO, TA>(
 
   return [
     setVars,
-    Object.freeze({
+    objectFreeze({
       onRequest,
       request,
       onDataEvent,

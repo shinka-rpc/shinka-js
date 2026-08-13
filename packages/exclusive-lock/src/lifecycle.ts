@@ -7,14 +7,16 @@ import type {
 import { StateType, FSMEventType } from "./const-enums";
 import { dispatch } from "./dispatch";
 
-export const idleState: IdleState = Object.freeze({
+const { freeze: objectFreeze, assign: objectAssign } = Object;
+
+export const idleState: IdleState = objectFreeze({
   state: StateType.IDLE,
   local: null,
   remote: null,
 });
 
 export function onStart(this: NBThisArgBaseOnStart, thisArg: AnyNBThisArg) {
-  Object.assign(thisArg.state, { base: this }, idleState);
+  objectAssign(thisArg.state, { base: this }, idleState);
 }
 
 export const onStop = (thisArg: AnyNBThisArg) =>

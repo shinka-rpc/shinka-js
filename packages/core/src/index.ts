@@ -5,4 +5,5 @@ export * from "./client";
 export * from "./pass-through";
 export * from "./response";
 export * from "./server";
+export * from "./bus-proxy";
 export * from "./pool";

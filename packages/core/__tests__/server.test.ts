@@ -9,7 +9,7 @@ import {
   type ShinkaOn,
   type TransportConnectFn,
   type TransportFactory,
-} from "@shinka-rpc/core";
+} from "../src";
 
 import {
   type mkPipe,
@@ -110,19 +110,19 @@ test("server", async () => {
     createMockSerializerSync,
   );
   createSyncHandler("server-sync", server, results);
-  const clientSync = createMockBusService("server-sync", client);
+  const clientSync = createMockBusService("server-sync");
 
   createSyncHandler("client-sync", client, results);
-  const busSync = createMockBusService("client-sync", bus);
+  const busSync = createMockBusService("client-sync");
 
   results.push({
     key: "client-sync-response-got",
-    out: await clientSync("client-sync", true, true, true),
+    out: await clientSync(client, "client-sync", true, true, true),
   });
 
   results.push({
     key: "bus-sync-response-got",
-    out: await busSync("bus-sync", true, true, true),
+    out: await busSync(bus, "bus-sync", true, true, true),
   });
 
   await client.stop();

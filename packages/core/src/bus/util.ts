@@ -11,8 +11,7 @@ import type {
 } from "../types";
 import { NBAcquire } from "./const-enums";
 import { busEvents } from "./handlers/bus";
-import { nbEvent, nbRequest } from "./handlers/non-blocking";
-import { Consensus } from "@shinka-rpc/consensus";
+import { nbEvent } from "./handlers/non-blocking";
 
 export const clearState = (state: any) => () => {
   for (const k of Object.keys(state)) delete state[k];

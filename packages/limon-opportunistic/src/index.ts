@@ -1,5 +1,7 @@
 import type { LiMon, LiMonThisArg } from "@shinka-rpc/core";
 
+const { freeze: objectFreeze, assign: objectAssign } = Object;
+
 export type LiMonOpportunisticProps = {
   timeout?: number;
   threshold?: number | null;
@@ -88,7 +90,7 @@ export default ({
       },
     );
 
-    const initialState = Object.freeze({
+    const initialState = objectFreeze({
       timeoutId: null,
       ownTimeout: timeout,
       threshold: threshold || Math.pow(timeout, 0.33),
@@ -96,7 +98,7 @@ export default ({
     });
 
     return (thisArg) => {
-      Object.assign(thisArg.state, initialState);
+      objectAssign(thisArg.state, initialState);
 
       const start = () => {
         if (thisArg.state.timeoutId === null) return;

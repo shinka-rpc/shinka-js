@@ -1,6 +1,5 @@
 import { expect, test } from "@jest/globals";
 import outscope from "../../outscope/src/tests";
-import { sleep } from "../../util";
 import { defaultExclusiveLock } from "../../exclusive-lock/src";
 
 import {
@@ -104,13 +103,13 @@ test("sync-simple-ok", async () => {
   const { results, bus1, bus2, start, stop } = await setupClientClient(
     createMockSerializerSync,
   );
-  const bus1Sync = createMockBusService("bus1-sync", bus2);
+  const bus1Sync = createMockBusService("bus1-sync");
   createSyncHandler("bus1-sync", bus1, results);
   await start();
 
   results.push({
     key: "bus1-sync-response-got",
-    out: await bus1Sync("bus1-sync-simple-ok", true, true, true),
+    out: await bus1Sync(bus2, "bus1-sync-simple-ok", true, true, true),
   });
 
   await stop();
@@ -133,13 +132,13 @@ test("sync-simple-ok-serializer-async", async () => {
   const { results, bus1, bus2, start, stop } = await setupClientClient(
     createMockSerializerAsync,
   );
-  const bus1Sync = createMockBusService("bus1-sync", bus2);
+  const bus1Sync = createMockBusService("bus1-sync");
   createSyncHandler("bus1-sync", bus1, results);
   await start();
 
   results.push({
     key: "bus1-sync-response-got",
-    out: await bus1Sync("bus1-sync-simple-ok", true, true, true),
+    out: await bus1Sync(bus2, "bus1-sync-simple-ok", true, true, true),
   });
 
   await stop();
@@ -162,13 +161,13 @@ test("sync-nested-ok", async () => {
   const { results, bus1, bus2, start, stop } = await setupClientClient(
     createMockSerializerSync,
   );
-  const bus1Sync = createMockBusService("bus1-sync", bus2);
+  const bus1Sync = createMockBusService("bus1-sync");
   createSyncHandler("bus1-sync", bus1, results);
   await start();
 
   results.push({
     key: "bus1-sync-response-got",
-    out: await bus1Sync("bus1-sync-nested-ok", false, true, false),
+    out: await bus1Sync(bus2, "bus1-sync-nested-ok", false, true, false),
   });
 
   await stop();
@@ -191,12 +190,12 @@ test("sync-simple-err", async () => {
   const { results, bus1, bus2, start, stop } = await setupClientClient(
     createMockSerializerSync,
   );
-  const bus1Sync = createMockBusService("bus1-sync", bus2);
+  const bus1Sync = createMockBusService("bus1-sync");
   createSyncHandler("bus1-sync", bus1, results);
   await start();
 
   try {
-    await bus1Sync("bus1-sync-simple-err", true, false, false);
+    await bus1Sync(bus2, "bus1-sync-simple-err", true, false, false);
   } catch (e) {
     results.push({
       key: "bus1-sync-response-got",
@@ -224,12 +223,12 @@ test("sync-nested-err", async () => {
   const { results, bus1, bus2, start, stop } = await setupClientClient(
     createMockSerializerSync,
   );
-  const bus1Sync = createMockBusService("bus1-sync", bus2);
+  const bus1Sync = createMockBusService("bus1-sync");
   createSyncHandler("bus1-sync", bus1, results);
   await start();
 
   try {
-    await bus1Sync("bus1-sync-nested-err", false, false, false);
+    await bus1Sync(bus2, "bus1-sync-nested-err", false, false, false);
   } catch (e) {
     results.push({
       key: "bus1-sync-response-got",
@@ -259,13 +258,13 @@ test("async-simple-ok", async () => {
   const { results, bus1, bus2, start, stop } = await setupClientClient(
     createMockSerializerSync,
   );
-  const bus1Sync = createMockBusService("bus1-async", bus2);
+  const bus1Sync = createMockBusService("bus1-async");
   createAsyncHandler("bus1-async", bus1, results);
   await start();
 
   results.push({
     key: "bus1-async-response-got",
-    out: await bus1Sync("bus1-async-simple-ok", true, true, false),
+    out: await bus1Sync(bus2, "bus1-async-simple-ok", true, true, false),
   });
 
   await stop();
@@ -288,13 +287,13 @@ test("async-nested-ok", async () => {
   const { results, bus1, bus2, start, stop } = await setupClientClient(
     createMockSerializerSync,
   );
-  const bus1Sync = createMockBusService("bus1-async", bus2);
+  const bus1Sync = createMockBusService("bus1-async");
   createAsyncHandler("bus1-async", bus1, results);
   await start();
 
   results.push({
     key: "bus1-async-response-got",
-    out: await bus1Sync("bus1-async-nested-ok", false, true, false),
+    out: await bus1Sync(bus2, "bus1-async-nested-ok", false, true, false),
   });
 
   await stop();
@@ -317,12 +316,12 @@ test("async-simple-err", async () => {
   const { results, bus1, bus2, start, stop } = await setupClientClient(
     createMockSerializerSync,
   );
-  const bus1Sync = createMockBusService("bus1-async", bus2);
+  const bus1Sync = createMockBusService("bus1-async");
   createAsyncHandler("bus1-async", bus1, results);
   await start();
 
   try {
-    await bus1Sync("bus1-async-simple-err", true, false, false);
+    await bus1Sync(bus2, "bus1-async-simple-err", true, false, false);
   } catch (e) {
     results.push({
       key: "bus1-async-response-got",
@@ -350,12 +349,12 @@ test("async-nested-err", async () => {
   const { results, bus1, bus2, start, stop } = await setupClientClient(
     createMockSerializerSync,
   );
-  const bus1Sync = createMockBusService("bus1-async", bus2);
+  const bus1Sync = createMockBusService("bus1-async");
   createAsyncHandler("bus1-async", bus1, results);
   await start();
 
   try {
-    await bus1Sync("bus1-async-nested-err", false, false, false);
+    await bus1Sync(bus2, "bus1-async-nested-err", false, false, false);
   } catch (e) {
     results.push({
       key: "bus1-async-response-got",
@@ -387,7 +386,7 @@ test("exclusive-lock-ok", async () => {
     undefined,
     defaultExclusiveLock,
   );
-  const bus1Sync = createMockBusService("bus1-sync", bus2);
+  const bus1Sync = createMockBusService("bus1-sync");
   createSyncHandler("bus1-sync", bus1, results);
   await start();
 
@@ -395,9 +394,13 @@ test("exclusive-lock-ok", async () => {
 
   {
     await using s1AcquireCTX = await TA.s1.exclusiveLock(100);
-    handlerPromise = bus1Sync("bus1-sync-simple-ok", true, true, true).then(
-      (out) => results.push({ key: "bus1-sync-response-got", out }),
-    );
+    handlerPromise = bus1Sync(
+      bus2,
+      "bus1-sync-simple-ok",
+      true,
+      true,
+      true,
+    ).then((out) => results.push({ key: "bus1-sync-response-got", out }));
     results.push({ key: "bus1-lock-got" });
   }
 

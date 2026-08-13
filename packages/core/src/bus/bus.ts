@@ -1,4 +1,8 @@
-import { delegate, type DelegateType } from "@shinka-rpc/util";
+import {
+  delegate,
+  type DelegateType,
+  type AsyncDisposeContext,
+} from "@shinka-rpc/util";
 import { FIFO, type IQueue } from "@shinka-rpc/collections";
 import { Semaphore } from "@shinka-rpc/concurrency";
 
@@ -22,6 +26,7 @@ import {
 import type { OutScope } from "@shinka-rpc/outscope";
 
 import type {
+  IBus,
   SendFn,
   DispatchMap,
   Message,
@@ -43,6 +48,7 @@ import type {
   NBThisArg,
   NB_FIFOEntry,
   NBThisArgSetVars,
+  BusHandlerThisArg,
 } from "../types";
 
 import { defaultRequestTimeout, defaultExclusiveLock } from "../defaults";
@@ -69,6 +75,8 @@ import {
   type VarsBye,
 } from "./util";
 
+const { freeze: objectFreeze, seal: objectSeal, assign: objectAssign } = Object;
+
 const transportNotInitialized = () => {
   throw new Error("Transport is not initialized");
 };
@@ -92,13 +100,13 @@ type DispatchErrors = {
 };
 
 // TODO: make protocol also overridable
-const defaultSerializerOpts: SerializerInitOpts = Object.freeze({
+const defaultSerializerOpts: SerializerInitOpts = objectFreeze({
   root: "array",
 });
 
 // ===
 
-export class Bus<SO, TO> {
+export class Bus<SO, TO> implements IBus<SO, TO> {
   #outscope!: OutScope;
   #sta!: ShinkaAndThisArgAll<SO, TO, any>;
   #dispatchMap!: DispatchMap;
@@ -113,10 +121,12 @@ export class Bus<SO, TO> {
   #dispatchErrors!: DispatchErrors;
   #onTerminated!: () => void;
   #resetStatesQueue!: IQueue<() => void>;
+  #resetBye!: () => void;
 
   public request!: ShinkaRequest<SO, TO>;
   public dataEvent!: ShinkaDataEvent<SO, TO>;
   public extra!: Record<string | symbol, any>;
+  public exclusiveLock!: (timeout: number) => Promise<AsyncDisposeContext>;
 
   constructor(
     outscope: OutScope,
@@ -139,8 +149,9 @@ export class Bus<SO, TO> {
       banned: createEventListenersBanned(),
     };
     this.#dispatchMap = new Map();
-    this.#lastDataAt = Object.seal({ sent: 0, received: 0 });
-    this.#vars = Object.seal({ state: BusState.STOPPED, bye: 0 });
+    this.#lastDataAt = objectSeal({ sent: 0, received: 0 });
+    this.#vars = objectSeal({ state: BusState.STOPPED, bye: 0 });
+    this.#resetBye = byeReset.bind(this.#vars);
     this.#sendDelegate = delegate(transportNotInitialized as SendFn<any, any>);
     this.#transportCloseDelegate = delegate(
       transportNotInitialized as () => Promise<void>,
@@ -198,21 +209,24 @@ export class Bus<SO, TO> {
       userRegistries,
     );
 
+    this.exclusiveLock = (acquireMe<SO, TO>).bind(0, nbTA, NBAcquire.USER);
+
     const busTAState = {};
     this.#resetStatesQueue.push(clearState(busTAState));
 
-    const busTA: InternalHandlerThisArg<SO, TO, any> = Object.freeze({
+    const busTA: BusHandlerThisArg<SO, TO, any> = objectFreeze({
       bus: this,
       shinka: busShinka,
       state: busTAState,
       exclusiveLock: (acquireMe<SO, TO>).bind(0, nbTA, NBAcquire.BUS),
       dispatchError,
+      byeReset: this.#resetBye,
     });
 
     const serializerTAState = {};
     this.#resetStatesQueue.push(clearState(serializerTAState));
 
-    const serializerTA: InternalHandlerThisArg<SO, TO, any> = Object.freeze({
+    const serializerTA: InternalHandlerThisArg<SO, TO, any> = objectFreeze({
       bus: this,
       shinka: serializerShinka,
       state: serializerTAState,
@@ -223,7 +237,7 @@ export class Bus<SO, TO> {
     const transportTAState = {};
     this.#resetStatesQueue.push(clearState(transportTAState));
 
-    const transportTA: InternalHandlerThisArg<SO, TO, any> = Object.freeze({
+    const transportTA: InternalHandlerThisArg<SO, TO, any> = objectFreeze({
       bus: this,
       shinka: transportShinka,
       state: transportTAState,
@@ -243,18 +257,10 @@ export class Bus<SO, TO> {
       limon: null,
     };
 
-    // const raceResolvedEvent = new ReusablePromise<void>();
-    // raceResolvedEvent.resolve();
-    // const concurrent = {
-    //   semaphore: new Semaphore({ waiters: FIFO, capacity: 1 }),
-    //   raceResolvedEvent,
-    // };
-
-    Object.assign(nbTA, {
+    objectAssign(nbTA, {
       bus: this,
       shinka: nbShinka,
       state: nbTAState,
-      // concurrent,
       semaphore: new Semaphore({ waiters: FIFO, capacity: 1 }),
       exclusiveLock: (acquireMe<SO, TO>).bind(0, nbTA, NBAcquire.NB),
       q: {
@@ -281,7 +287,7 @@ export class Bus<SO, TO> {
       responseTimeout,
     } as NBThisArg<SO, TO, any>);
 
-    Object.freeze(nbTA);
+    objectFreeze(nbTA);
 
     busSetVars({ thisArg: busTA, dispatchError, send });
     nbSetVars({ thisArg: nbTA, dispatchError, send });
@@ -316,7 +322,7 @@ export class Bus<SO, TO> {
       const limonTAState = {};
       this.#resetStatesQueue.push(clearState(limonTAState));
 
-      const limonTA: LiMonThisArg<SO, TO, any> = Object.freeze({
+      const limonTA: LiMonThisArg<SO, TO, any> = objectFreeze({
         bus: this,
         shinka: limonShinka,
         heartbeat: () => busEvents.heartbeat(busShinka.dataEvent),
@@ -454,7 +460,7 @@ export class Bus<SO, TO> {
         ? gracefulShutdown.bind(
             0,
             this.#sta.bus.shinka.dataEvent,
-            byeReset.bind(this.#vars),
+            this.#resetBye,
             this.stop,
           )
         : this.stop;

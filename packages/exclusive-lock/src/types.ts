@@ -1,7 +1,7 @@
 import type { NBAcquire, NBThisArg } from "@shinka-rpc/core";
 import type { ConsensusProtocol, Consensus } from "@shinka-rpc/consensus";
 import type { StateType, FSMEventType } from "./const-enums";
-import { DisposeContext } from "@shinka-rpc/util";
+import type { DisposeContext } from "@shinka-rpc/util";
 
 export type Nonces = ReturnType<ConsensusProtocol[0]>;
 export type SetTimeout = ReturnType<typeof setTimeout>;

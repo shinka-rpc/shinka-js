@@ -7,8 +7,10 @@ type HeadAndLength<T> = {
   head: Entry<T> | null;
 };
 
+const { assign: objectAssign, freeze: objectFreeze } = Object;
+
 export function restoreInitialState<T extends {}>(this: T, state: T) {
-  Object.assign(state, this);
+  objectAssign(state, this);
 }
 
 export const truncateFn = <T, S extends HeadAndLength<T>>(
@@ -76,7 +78,7 @@ export const popFn = <T, S extends HeadAndLength<T>>(
 
 // iterator ===
 
-const emptyIteration = Object.freeze({ done: true });
+const emptyIteration = objectFreeze({ done: true });
 
 const nextFn = <T>(head: Entry<T> | null) => {
   let value: T;

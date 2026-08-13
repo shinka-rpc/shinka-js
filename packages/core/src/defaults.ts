@@ -5,6 +5,8 @@ import type {
   ExclusiveLockOn,
 } from "./types";
 
+const { freeze: objectFreeze } = Object;
+
 const dummy = <I, O>(v: I) => v as any as O;
 
 export const defaultSerializer: SerializerFactory<any, any, any> = () => ({
@@ -25,8 +27,7 @@ const ELNA = (...args: any) => {
 };
 
 const ELOn: ExclusiveLockOn<any, any, any> & ExclusiveLockOn<any, any, any> =
-  Object.freeze({ acquire: ELNA, accept: ELNA, release: ELNA });
+  objectFreeze({ acquire: ELNA, accept: ELNA, release: ELNA });
 
-export const defaultExclusiveLock: ExclusiveLock<any, any, any> = Object.freeze(
-  { on: ELOn, acquire: ELNA, start: dummy, stop: dummy },
-);
+export const defaultExclusiveLock: ExclusiveLock<any, any, any> = //
+  objectFreeze({ on: ELOn, acquire: ELNA, start: dummy, stop: dummy });

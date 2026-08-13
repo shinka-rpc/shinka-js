@@ -1,15 +1,15 @@
 import type { AnyNBThisArg } from "../src";
 import { FIFO, type IQueue } from "../../collections";
-import {
-  type NBSetSendFn,
-  type NBThisArgSetVars,
-  type NBVars,
-  type SendFn,
-  type IBus,
-  type nbAPI,
+import type {
+  NBSetSendFn,
+  NBThisArgSetVars,
+  NBVars,
+  SendFn,
+  IBus,
+  nbAPI,
   ExclusiveLock,
 } from "../../core/src";
-import { Semaphore, ReusablePromise } from "../../concurrency";
+import { Semaphore } from "../../concurrency";
 
 export type Log = { action: string; args?: any };
 
@@ -28,6 +28,7 @@ const mockBus = (q: IQueue<Log>) =>
     extra: {},
     request: noNoNo,
     dataEvent: noNoNo,
+    exclusiveLock: noNoNo,
   }) as IBus<any, any>;
 
 export const createMockNBThisArg = (lock: ExclusiveLock<any, any, any>) => {

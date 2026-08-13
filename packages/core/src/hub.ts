@@ -1,11 +1,7 @@
 import { ReusablePromise } from "@shinka-rpc/concurrency";
 import type { OutScope } from "@shinka-rpc/outscope";
 
-import {
-  defaultRequestTimeout,
-  defaultExclusiveLock,
-  defaultSerializer,
-} from "./defaults";
+import { defaultRequestTimeout, defaultExclusiveLock } from "./defaults";
 
 import { Bus } from "./bus";
 import { createHandlerRegistries, type HandlerRegistries } from "./shinka";
@@ -22,6 +18,8 @@ import type {
   LiMonRF,
   ExclusiveLock,
 } from "./types";
+
+const { freeze: objectFreeze } = Object;
 
 type HubTimeoutSettings = {
   responseTimeout: number;
@@ -71,7 +69,7 @@ export class Hub<SO, TO> {
     this.extra = {};
     this.onRequest = this.#userRegistries.onRequest;
     this.onDataEvent = this.#userRegistries.onDataEvent;
-    Object.freeze(this);
+    objectFreeze(this);
     this.#disposing.resolve();
   }
 
@@ -94,7 +92,7 @@ export class Hub<SO, TO> {
       this.#timeoutSettings.responseTimeout,
     );
 
-    Object.freeze(bus);
+    objectFreeze(bus);
     bus.addEventListener("disconnect", this.#onClientDisconnect);
     this.#clients.add(bus);
     await bus.start();

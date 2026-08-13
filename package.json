@@ -43,11 +43,11 @@
   },
   "devDependencies": {
     "@jest/globals": "^29",
+    "@swc/jest": "^0.2.39",
     "@typescript/native-preview": "^7.0.0-dev.20260421.2",
-    "babel-jest": "^29",
     "compare-versions": "^6",
+    "jest": "^30.4.2",
     "mermaid": "^11",
-    "ts-jest": "^29",
     "vitepress": "next",
     "vitepress-plugin-mermaid": "^2.0.17"
   },

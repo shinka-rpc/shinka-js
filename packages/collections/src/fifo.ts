@@ -15,7 +15,9 @@ type FIFOState<T> = {
   tail: Entry<T> | null;
 };
 
-const initialState: FIFOState<any> = Object.freeze({
+const { freeze: objectFreeze, seal: objectSeal } = Object;
+
+const initialState: FIFOState<any> = objectFreeze({
   length: 0,
   head: null,
   tail: null,
@@ -28,8 +30,8 @@ export class FIFO<T> implements IQueue<T> {
   #state!: FIFOState<T>;
 
   constructor() {
-    this.#state = Object.seal({ ...initialState });
-    Object.freeze(this);
+    this.#state = objectSeal({ ...initialState });
+    objectFreeze(this);
   }
 
   push = (value: T) => {

@@ -99,6 +99,7 @@ export type IBus<SO, TO> = ShinkaDo<SO, TO> & {
   addEventListener: ManageEventListener<IBus<SO, TO>>;
   removeEventListener: ManageEventListener<IBus<SO, TO>>;
   extra: Record<string | symbol, any>;
+  exclusiveLock: (timeout: number) => Promise<AsyncDisposeContext>;
 };
 
 export type Shinka<SO, TO, TA> = ShinkaOn<SO, TO, TA> & ShinkaDo<SO, TO>;
@@ -124,12 +125,27 @@ export type InternalHandlerThisArg<SO, TO, STATE> = {
   exclusiveLock: (timeout: number) => Promise<AsyncDisposeContext>;
 };
 
+export type BusHandlerThisArg<SO, TO, STATE> = {
+  bus: IBus<SO, TO>;
+  shinka: Shinka<SO, TO, BusHandlerThisArg<SO, TO, STATE>>;
+  state: STATE;
+  dispatchError: (error: any) => void;
+  exclusiveLock: (timeout: number) => Promise<AsyncDisposeContext>;
+  byeReset: () => void;
+};
+
 export type UserHandlerRegistries<SO, TO, B> = HandlerRegistries<SO, TO, B>;
 
 export type InternalHandlerRegistries<SO, TO, STATE> = HandlerRegistries<
   SO,
   TO,
   InternalHandlerThisArg<SO, TO, STATE>
+>;
+
+export type BusHandlerRegistries<SO, TO, STATE> = HandlerRegistries<
+  SO,
+  TO,
+  BusHandlerThisArg<SO, TO, STATE>
 >;
 
 // In some cases serialization is not required
@@ -352,15 +368,28 @@ export type LiMonRF<SO, TO, LS> = [
   LiMonFactory<SO, TO, LS>,
 ];
 
-export type ShinkaAndTA<SO, TO> = {
-  shinka: Shinka<SO, TO, InternalHandlerThisArg<SO, TO, any>>;
-  TA: InternalHandlerThisArg<SO, TO, any>;
+export type ShinkaAndTA<SO, TO, TA> = {
+  shinka: Shinka<SO, TO, TA>;
+  TA: TA;
 };
 
-export type LimonShinkaAndTA<SO, TO> = {
-  shinka: Shinka<SO, TO, LiMonThisArg<SO, TO, any>>;
-  TA: LiMonThisArg<SO, TO, any>;
-};
+export type InternalShinkaAndTA<SO, TO> = ShinkaAndTA<
+  SO,
+  TO,
+  InternalHandlerThisArg<SO, TO, any>
+>;
+
+export type BusShinkaAndTA<SO, TO> = ShinkaAndTA<
+  SO,
+  TO,
+  BusHandlerThisArg<SO, TO, any>
+>;
+
+export type LimonShinkaAndTA<SO, TO> = ShinkaAndTA<
+  SO,
+  TO,
+  LiMonThisArg<SO, TO, any>
+>;
 
 export type NB_FIFOEntry<SO, TO> = [Message<any>, ShinkaMeta<SO, TO>?];
 
@@ -472,13 +501,13 @@ export type ExclusiveLock<SO, TO, STATE> = {
 
 export type ShinkaAndThisArgAll<SO, TO, NBS> = {
   user: Shinka<SO, TO, IBus<SO, TO>>;
-  transport: ShinkaAndTA<SO, TO> & {
+  transport: InternalShinkaAndTA<SO, TO> & {
     factory: TransportFactory<SO, TO, any>;
   };
-  serializer: ShinkaAndTA<SO, TO> & {
+  serializer: InternalShinkaAndTA<SO, TO> & {
     factory: SerializerFactory<SO, TO, any>;
   };
-  bus: ShinkaAndTA<SO, TO>;
+  bus: BusShinkaAndTA<SO, TO>;
   nb: NBShinkaAndTA<SO, TO, NBS>;
   limon:
     | (LimonShinkaAndTA<SO, TO> & { factory: LiMonFactory<SO, TO, any> })

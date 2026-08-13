@@ -1,13 +1,7 @@
 import { expect, test } from "@jest/globals";
 import outscope from "../../outscope/src/tests";
 
-import {
-  Client,
-  Hub,
-  TransportFactory,
-  type SerializerRoot,
-} from "@shinka-rpc/core";
-
+import { Client, Hub, TransportFactory, type SerializerRoot } from "../src";
 import { createHandlerRegistries } from "../src/shinka";
 
 import {
@@ -80,12 +74,18 @@ test("hub-classic", async () => {
     createMockSerializerSync,
   );
   createSyncHandler("bus1-sync", hub, results);
-  const clientService = createMockBusService("bus1-sync", client);
+  const clientService = createMockBusService("bus1-sync");
   const common = await start();
 
   results.push({
     key: "bus1-sync-response-got",
-    out: await clientService("client-sync-classic-ok", true, true, true),
+    out: await clientService(
+      client,
+      "client-sync-classic-ok",
+      true,
+      true,
+      true,
+    ),
   });
 
   await client.stop();
@@ -110,11 +110,17 @@ test("hub-reverse", async () => {
   );
   createSyncHandler("bus1-sync", client, results);
   const common = await start();
-  const commonService = createMockBusService("bus1-sync", common);
+  const commonService = createMockBusService("bus1-sync");
 
   results.push({
     key: "bus1-sync-response-got",
-    out: await commonService("client-sync-reverse-ok", true, true, true),
+    out: await commonService(
+      common,
+      "client-sync-reverse-ok",
+      true,
+      true,
+      true,
+    ),
   });
 
   await client.stop();

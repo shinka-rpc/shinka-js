@@ -4,4 +4,5 @@ export const enum NBAcquire {
   SERIALIZER = 2,
   TRANSPORT = 3,
   LIMON = 4,
+  USER = 5,
 }

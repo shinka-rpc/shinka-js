@@ -76,7 +76,7 @@ const acquireEvent = (thisArg: AnyNBThisArg) => {
 };
 
 const clearTimeoutFor = (thisArg: AnyNBThisArg, key: StateKey) => {
-  const { timeoutId } = thisArg.state[key]! as WithTimeout;
+  const { timeoutId } = thisArg.state[key] as WithTimeout;
   clearTimeout(timeoutId);
 };
 
@@ -252,7 +252,7 @@ lockedLocal.set(
   FSMEventType.LOCAL_RELEASE,
   (thisArg: AnyNBThisArg, { semaphoreCtx, resolve }: LocalReleaseEventData) => {
     // console.log("LOCKED_LOCAL -> IDLE", thisArg.bus.extra);
-    const { timeoutId, target } = thisArg.state.local! as Locked;
+    const { timeoutId, target } = thisArg.state.local as Locked;
     queueMicrotask(thisArg.api.e.release);
     clearTimeout(timeoutId);
     apply(thisArg, target, "release");
@@ -302,7 +302,7 @@ raceWon1.set(
     };
     const nextRemote: Locked = {
       timeoutId: setTimeout(onTimeout, timeout, thisArg, timeout, "remote"),
-      target: remote!.target,
+      target: remote.target,
     };
     const nextState: RaceStateWon2 = {
       state: StateType.RACE_WON_2,
@@ -351,7 +351,7 @@ raceLose1.set(
     const { resolve } = local;
     const nextRemote: Locked = {
       timeoutId: setTimeout(onTimeout, timeout, thisArg, timeout, "remote"),
-      target: remote!.target,
+      target: remote.target,
     };
     const nextState: RaceStateLose2 = {
       state: StateType.RACE_LOSE_2,

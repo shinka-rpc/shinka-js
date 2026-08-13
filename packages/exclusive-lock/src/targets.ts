@@ -20,6 +20,7 @@ const acquireTargetMap = new Map<
   [NBAcquire.TRANSPORT, "transport"],
   [NBAcquire.LIMON, "limon"],
   [NBAcquire.NB, "nb"],
+  [NBAcquire.USER, "user"],
 ]);
 
 const acquireKeysFor = (key: keyof NBThisArgSetVars<any, any, any>) => {

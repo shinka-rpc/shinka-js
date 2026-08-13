@@ -14,7 +14,9 @@ type LIFOState<T> = {
   head: Entry<T> | null;
 };
 
-const initialState: LIFOState<any> = Object.freeze({ length: 0, head: null });
+const { freeze: objectFreeze, seal: objectSeal } = Object;
+
+const initialState: LIFOState<any> = objectFreeze({ length: 0, head: null });
 const restoreInitialLIFOState = (restoreInitialState<LIFOState<any>>).bind(
   initialState,
 );
@@ -23,8 +25,8 @@ export class LIFO<T> implements IQueue<T> {
   #state!: LIFOState<T>;
 
   constructor() {
-    this.#state = Object.seal({ ...initialState });
-    Object.freeze(this);
+    this.#state = objectSeal({ ...initialState });
+    objectFreeze(this);
   }
 
   push = (value: T) => {

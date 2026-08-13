@@ -1,15 +1,12 @@
 import {
   Response,
-  // TransportInitOpts,
-  type Bus,
-  type Client,
   type TransportFactory,
   type TransportClient,
-  // type SerializedData,
   type ShinkaOn,
-  SerializerRoot,
-} from "@shinka-rpc/core";
-import { InternalHandlerThisArg } from "../src/types";
+  type ShinkaDo,
+  type SerializerRoot,
+  type InternalHandlerThisArg,
+} from "../src";
 
 export const mkPipe = (delay = 0) => {
   let onTimeout = (value: any) => {};
@@ -139,8 +136,14 @@ export const createAsyncHandler = (
   );
 
 export const createMockBusService =
-  (KEY: string, bus: Client<any, any> | Bus<any, any>) =>
-  (arg: any, simple: Boolean, ok: Boolean, withOpts: Boolean) =>
+  (KEY: string) =>
+  (
+    bus: ShinkaDo<any, any>,
+    arg: any,
+    simple: Boolean,
+    ok: Boolean,
+    withOpts: Boolean,
+  ) =>
     bus.request(
       KEY,
       [arg, simple, ok],
