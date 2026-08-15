@@ -108,9 +108,6 @@ test("pool", async () => {
   });
 
   server.addEventListener("connect", (bus) => serverBus.push(bus));
-  // server.addEventListener("disconnect", (bus) =>
-  //   results.push({ key: "server-disconnect", opts: bus.extra.key }),
-  // );
 
   createSyncHandler("server-sync", server, results);
 
@@ -127,10 +124,14 @@ test("pool", async () => {
   const poolSyncService = createMockBusService("pool-sync");
 
   server.start();
+
+  // use-case: grow the pool
   await pool.setSize(5);
-  await sleep(0);
+
+  await sleep(0); // wait for server initialization
 
   {
+    // use-case: pool -> server
     using bus = await pool.acquire();
     results.push({
       key: "pool-response",
@@ -138,12 +139,15 @@ test("pool", async () => {
     });
   }
 
+  // use-case: server -> pool
   results.push({
     key: "server-response",
     opts: await poolSyncService(serverBus[0], "server-bus", true, true, true),
   });
 
+  // use-case: shrink the pool
   await pool.setSize(0);
+
   await sleep(0);
 
   // console.dir(results, { depth: 5 });
