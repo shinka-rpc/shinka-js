@@ -22,3 +22,7 @@ img[alt="diagram"] {
 .VPHomeFeatures article.box > .icon {
   font-size: 36px;
 }
+
+.VPHomeFeatures article.box > h2 > a {
+  color: var(--vp-home-hero-name-color);
+}

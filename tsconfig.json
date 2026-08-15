@@ -4,5 +4,9 @@
     "jsx": "react-jsx",
     "types": ["chrome", "node"]
   },
-  "include": ["./packages/*/src/**.ts", "./packages/*/__tests__/**.ts"]
+  "include": [
+    "./packages/*/src/**.ts",
+    "./packages/*/__tests__/**.ts",
+    "./docs/.vitepress/**"
+  ]
 }

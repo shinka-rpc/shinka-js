@@ -1,5 +1,5 @@
 {
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Symmetric RPC bus",
   "main": "index.js",
   "scripts": {
@@ -37,27 +37,23 @@
     "@msgpack/msgpack": "^3",
     "@types/chrome": "*",
     "@types/node": "*",
-    "@types/pako": "^2.0.4",
-    "lerna": "^10.0.0",
-    "pako": "^2.1.0"
+    "@types/pako": "*",
+    "lerna": "^10",
+    "pako": "^2"
   },
   "devDependencies": {
     "@jest/globals": "^29",
     "@swc/jest": "^0.2.39",
-    "@typescript/native-preview": "^7.0.0-dev.20260421.2",
+    "typescript": "^7",
     "compare-versions": "^6",
-    "jest": "^30.4.2",
+    "jest": "^30",
     "mermaid": "^11",
     "vitepress": "next",
-    "vitepress-plugin-mermaid": "^2.0.17"
+    "vitepress-plugin-mermaid": "^2"
   },
   "overrides": {
     "vitepress-plugin-mermaid": {
       "vitepress": "$vitepress"
     }
-  },
-  "allowScripts": {
-    "nx@22.7.7": true,
-    "unrs-resolver@1.12.2": true
   }
 }

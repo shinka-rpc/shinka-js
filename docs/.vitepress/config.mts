@@ -63,6 +63,7 @@ const config = defineConfig({
             { text: "Usage Example", link: "/core/usage-example" },
             { text: "Shinka", link: "/core/shinka" },
             { text: "Client", link: "/core/client" },
+            { text: "Pool", link: "/core/pool" },
             { text: "Server", link: "/core/server" },
           ],
         },

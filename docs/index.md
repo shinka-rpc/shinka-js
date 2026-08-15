@@ -59,20 +59,21 @@ features:
     icon: 🖭
     details: We provide by default
       <a href="https://www.npmjs.com/package/@shinka-rpc/serializer-json">json</a>,
-      <a href="https://www.npmjs.com/package/@shinka-rpc/serializer-bson">bson</a> and
-      <a href="https://www.npmjs.com/package/@shinka-rpc/serializer-msgspec">msgspec</a>
+      <a href="https://www.npmjs.com/package/@shinka-rpc/serializer-bson">bson</a>,
+      <a href="https://www.npmjs.com/package/@shinka-rpc/serializer-msgspec">msgspec</a> and
+      <a href="https://www.npmjs.com/package/@shinka-rpc/serializer-gzip">gzip</a>
       serializers, but you are able to create your own
 
-  - title: Pluggable <b>LiMon</b>s
+  - title: Pluggable <a href="./limons">LiMon</a>s
     icon: 🍋
     details: Liveness Monitors make decision about connection state. You can
       choose the best one for each case
 
-  - title: Pluggable `ExclusiveLock`
+  - title: Pluggable <a href="./other/exclusive-lock.html">ExclusiveLock</a>
     icon: 🔒
-    details: Powerful channel data channel management tool
+    details: Powerful data channel management tool
 
-  - title: Pluggable schedulers
+  - title: Pluggable <a href="./core/pool.html">pool</a> schedulers
     icon: 🔃
-    details: You can choose the logic that makes decision about connection state
+    details: You can choose pool connection rotation logic
 ---
