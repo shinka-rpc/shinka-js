@@ -1,6 +1,6 @@
 import type { DisposeContext, AsyncDisposeContext } from "@shinka-rpc/util";
 import type { OutScope } from "@shinka-rpc/outscope";
-import type { ReusablePromise, Semaphore } from "@shinka-rpc/concurrency";
+import type { Semaphore } from "@shinka-rpc/concurrency";
 
 import type { Context } from "./factory/context";
 import type {
@@ -11,7 +11,6 @@ import type {
 } from "./factory/message-type";
 import type { HandlerRegistries } from "./shinka";
 import type { NBAcquire } from "./bus/const-enums";
-// import { Consensus } from "@shinka-rpc/consensus";
 
 export type LastDataAt = {
   received: number;
@@ -407,11 +406,6 @@ export type NBVarsValues<SO, TO> = {
   lock: NBSetSendFn<SO, TO>;
   release: NBSetSendFn<SO, TO>;
 };
-
-// export type NBConcurrent = {
-//   raceResolvedEvent: ReusablePromise<void>;
-//   semaphore: Semaphore;
-// };
 
 export type NBVars<SO, TO, NBS> = {
   set: NBThisArgSetVars<SO, TO, NBS>;

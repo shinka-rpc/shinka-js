@@ -16,7 +16,6 @@ import type {
   ManageEventListener,
   SerializerRoot,
   InternalHandlerThisArg,
-  // SerializerFactory,
   TransportServer,
   TransportFactory,
   TransportConnectFn,
@@ -25,7 +24,6 @@ import type {
   ManageEventListenerPair,
   TransportRF,
   SerializerRF,
-  // LiMonRF,
   InternalHandlerRegistries,
 } from "./types";
 
@@ -101,10 +99,11 @@ export class Server<SO, TO> {
     outscope,
     transport: transportServerFactory,
     serializer: serializerRoot = defaultSerializerRoot,
+    limon = null,
     responseTimeout = defaultRequestTimeout,
     lock = defaultExclusiveLock,
   }: ServerOptions<SO, TO>) {
-    this.#hub = new Hub({ outscope, responseTimeout, lock });
+    this.#hub = new Hub({ outscope, responseTimeout, limon, lock });
     this.#vars = { state: ServerState.STOPPED };
     const { 0: listeners, 1: callEvent } = createEventListenerPair(
       createServerEventListeners,
