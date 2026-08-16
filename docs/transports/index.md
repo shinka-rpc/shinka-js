@@ -100,7 +100,6 @@ The factory receives callbacks for events originating from the underlying transp
 The factory therefore acts as the boundary between the external communication mechanism and `@shinka-rpc/core`:
 
 ```mermaid
-
 flowchart LR
     id1([Underlying transport])
     id2(["onRawData()"])

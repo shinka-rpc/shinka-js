@@ -2,7 +2,10 @@
 
 `Bus` represents a single communication connection.
 
-It is the connection-level primitive of `@shinka-rpc/core`. Higher-level abstractions such as [`Client`](), [`Server`](), [`Pool`]() and [`Hub`]() use `Bus` to represent and manage their individual connections.
+It is the connection-level primitive of `@shinka-rpc/core`. Higher-level
+abstractions such as [`Client`](./client.md), [`Server`](./server.md),
+[`Pool`](./pool.md) and [`Hub`](./hub.md) use `Bus` to represent and manage
+their individual connections.
 
 A `Bus` does not define the role of either endpoint. It only represents the communication channel between two peers.
 
@@ -12,24 +15,27 @@ For example, both sides of a `DedicatedWorker` connection can be represented by 
 
 A `Bus` always represents exactly **one connection**:
 
-```text
-┌──────────────┐                  ┌──────────────┐
-│    Bus A     │◄────────────────►│    Bus B     │
-└──────────────┘                  └──────────────┘
+```mermaid
+flowchart LR
+    A([Bus A])
+    B([Bus B])
+
+    A <--> B
 ```
 
 The objects on both sides are peers. `Bus` does not distinguish between a "client" and a "server".
 
 Higher-level abstractions determine how connections are organized:
 
-```text
-Client                     one-to-one
-Server                     one-to-many
-Hub                        one-to-many connection manager
-Pool                       reusable collection of connections
-```
+| Type     | Relationship                       |
+| -------- | ---------------------------------- |
+| `Client` | one-to-one                         |
+| `Server` | one-to-many                        |
+| `Hub`    | one-to-many connection manager     |
+| `Pool`   | reusable collection of connections |
 
-See the respective documentation for [`Client`](), [`Server`](), [`Hub`]() and [`Pool`]().
+
+See the respective documentation for [`Client`](./client.md), [`Server`](./server.md), [`Hub`](./hub.md) and [`Pool`](./pool.md).
 
 ## Creating a `Bus`
 
@@ -38,11 +44,7 @@ Most applications do not need to construct `Bus` directly.
 A `Client` creates its own `Bus` internally:
 
 ```ts
-const client = new Client({
-  outscope,
-  transport,
-  serializer,
-});
+const client = new Client({ outscope, transport, serializer });
 ```
 
 A `Server` and `Hub` create a `Bus` for every accepted connection.
@@ -173,7 +175,7 @@ await bus.start();
 
 Starts the connection.
 
-The exact meaning of establishing a connection is determined by the configured transport. See the [transport documentation]().
+The exact meaning of establishing a connection is determined by the configured transport. See the [transport documentation](../transports/).
 
 Once the bus is started, its request and event APIs can be used.
 
@@ -290,12 +292,9 @@ Errors are reported through the event system rather than being silently ignored.
 `Bus` provides `exclusiveLock()` for operations that require exclusive access to the communication channel.
 
 ```ts
-const lock = await bus.exclusiveLock(1000);
-
-try {
+{
+  await using lock = await bus.exclusiveLock(1000);
   // exclusive operation
-} finally {
-  lock[Symbol.dispose]();
 }
 ```
 
@@ -303,7 +302,7 @@ The lock guarantees the required channel-level exclusivity between cooperating c
 
 This mechanism is primarily intended for internal components and advanced integrations, for example when changing communication-related state that must not race with other messages.
 
-See the [exclusive lock documentation]().
+See the [exclusive lock documentation](../other/exclusive-lock.md).
 
 ## `extra`
 
@@ -326,29 +325,17 @@ When a `Bus` is obtained from a `Server` or `Hub`, this object belongs to that p
 
 A typical `Bus` lifecycle is:
 
-```text
-STOPPED
-   │
-   │ start()
-   ▼
-STARTED
-   │
-   │ stop()
-   ▼
-STOPPED
+
+```mermaid
+flowchart LR
+    STOPPED -- "start()" --> STARTED -- "stop()" --> STOPPED
 ```
 
 `restart()` performs the complete transition:
 
-```text
-STARTED
-   │
-   │ restart()
-   ▼
-STOPPED
-   │
-   ▼
-STARTED
+```mermaid
+flowchart LR
+    STARTED -- "restart()" --- STOPPED --> STARTED
 ```
 
 The bus cannot be started while it is already starting or stopping, and invalid lifecycle operations are reported through the `error` event.

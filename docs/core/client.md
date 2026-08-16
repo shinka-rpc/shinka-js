@@ -6,9 +6,9 @@ It represents a communication relationship between exactly two peers. The term *
 
 For example, when communicating with a `DedicatedWorker`, both the page and the worker can use `Client`:
 
-```text
-Client ───────────── Client
-             one-to-one
+```mermaid
+flowchart LR
+    A([Client]) -- "one-to-one" --- B([Client])
 ```
 
 For one-to-many communication, `@shinka-rpc/core` provides [`Hub`](#hub), which manages a collection of [`Bus`](#bus) instances. A `Bus` represents an individual connection, while `Client` provides the user-facing one-to-one endpoint built on top of it.
@@ -33,35 +33,30 @@ const transport = sharedWorkerClient(
   () => new SharedWorker(new URL("./worker.ts", import.meta.url)),
 );
 
-export const client = new Client({
-  outscope,
-  transport,
-  serializer,
-});
+export const client = new Client({ outscope, transport, serializer });
 
 client.addEventListener("error", console.error);
 
 client.start();
 ```
 
-See [`@shinka-rpc/outscope`]() for `OutScope`.
+See [`@shinka-rpc/outscope`](../other/outscope.md) for `OutScope`.
 
-See [Transport documentation]() for transports.
+See [Transport documentation](../transports/) for transports.
 
-See [Serializer documentation]() for serializers.
+See [Serializer documentation](../serializers/) for serializers.
 
-See [LiMon documentation]() for liveness monitoring.
+See [LiMon documentation](../limons/) for liveness monitoring.
 
-See [Exclusive Lock documentation]() for exclusive locking.
+See [Exclusive Lock documentation](../other/exclusive-lock.md) for exclusive locking.
 
 ## Requests
 
 A request sends data to the remote peer and waits for its response.
 
 ```ts
-const result = await client.request("get-user", {
-  id: 42,
-});
+type User = { /* ... */ };
+const result = await client.request<User>("get-user", { id: 42 });
 ```
 
 Requests are identified by a `key`. The payload can contain arbitrary application data supported by the configured serializer.
@@ -203,7 +198,7 @@ Event listeners are invoked asynchronously.
 
 `Client` provides `exclusiveLock()` through its underlying communication bus.
 
-See [Exclusive Lock documentation]() for details.
+See [Exclusive Lock documentation](../other/exclusive-lock.md) for details.
 
 ## Configuration
 
@@ -226,7 +221,7 @@ Defines the lifetime of the execution scope in which the client operates.
 
 The client subscribes to the scope's termination and automatically stops when the scope ends.
 
-See [`@shinka-rpc/outscope`]().
+See [`@shinka-rpc/outscope`](../other/outscope.md).
 
 ### `transport`
 
@@ -234,7 +229,7 @@ Provides the underlying communication mechanism.
 
 The transport is independent of the `Client` abstraction and can represent any suitable communication channel.
 
-See [Transport documentation]().
+See [Transport documentation](../transports/).
 
 ### `serializer`
 
@@ -242,7 +237,7 @@ Defines how messages are serialized and deserialized.
 
 The default serializer is used when this option is omitted.
 
-See [Serializer documentation]().
+See [Serializer documentation](../serializers/).
 
 ### `limon`
 
@@ -250,7 +245,7 @@ Configures the optional Liveness Monitor.
 
 The default value is `null`, meaning that no liveness monitor is used.
 
-See [LiMon documentation]().
+See [LiMon documentation](../limons/).
 
 ### `lock`
 
@@ -258,7 +253,7 @@ Configures the exclusive-lock implementation.
 
 The default implementation is used when this option is omitted.
 
-See [Exclusive Lock documentation]().
+See [Exclusive Lock documentation](../other/exclusive-lock.md).
 
 ### `responseTimeout`
 
@@ -362,7 +357,7 @@ Acquires an exclusive communication lock.
 client.exclusiveLock(timeout)
 ```
 
-See [Exclusive Lock documentation]().
+See [Exclusive Lock documentation](../other/exclusive-lock.md).
 
 ### `extra`
 
@@ -388,12 +383,16 @@ A `Client` is a specialized user-facing form of `Bus` for one-to-one communicati
 
 A `Hub`, on the other hand, does not represent a connection itself. It creates and manages individual `Bus` instances:
 
-```text
-                 ┌──── Bus ──── Peer
-                 │
-Hub ─────────────┼──── Bus ──── Peer
-                 │
-                 └──── Bus ──── Peer
+```mermaid
+flowchart LR
+    HUB([Hub])
+    B1([Bus]) --- P1([Peer])
+    B2([Bus]) --- P2([Peer])
+    B3([Bus]) --- P3([Peer])
+    
+    HUB --- B1
+    HUB --- B2
+    HUB --- B3
 ```
 
 This distinction is independent of the underlying transport and of which peer is considered a "server" or "client" by the application.

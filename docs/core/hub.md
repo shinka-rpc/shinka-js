@@ -2,17 +2,21 @@
 
 `Hub` is a low-level one-to-many connection manager in `@shinka-rpc/core`.
 
-Unlike [`Client`](), which represents a one-to-one communication relationship, a `Hub` manages multiple independent connections. Each connection is represented by a [`Bus`]() instance.
+Unlike [`Client`](./client.md), which represents a one-to-one communication relationship, a `Hub` manages multiple independent connections. Each connection is represented by a [`Bus`](./bus.md) instance.
 
-```text
-                    ┌──── Bus ──── Peer
-                    │
-Hub ────────────────┼──── Bus ──── Peer
-                    │
-                    └──── Bus ──── Peer
+```mermaid
+flowchart LR
+    HUB([Hub])
+    B1([Bus]) --- P1([Peer])
+    B2([Bus]) --- P2([Peer])
+    B3([Bus]) --- P3([Peer])
+    
+    HUB --- B1
+    HUB --- B2
+    HUB --- B3
 ```
 
-`Hub` is primarily an internal building block used by higher-level abstractions such as [`Server`]() and [`Pool`](). Most applications should use those abstractions instead of creating a `Hub` directly.
+`Hub` is primarily an internal building block used by higher-level abstractions such as [`Server`](./server.md) and [`Pool`](./pool.md). Most applications should use those abstractions instead of creating a `Hub` directly.
 
 Advanced users can use `Hub` when they need direct control over how connections are created and managed.
 
@@ -29,16 +33,14 @@ A `Hub` requires an `OutScope` and can optionally be configured with a liveness 
 ```ts
 import { Hub } from "@shinka-rpc/core";
 
-const hub = new Hub({
-  outscope,
-});
+const hub = new Hub({ outscope });
 ```
 
-See [`@shinka-rpc/outscope`]() for `OutScope`.
+See [`@shinka-rpc/outscope`](../other/outscope.md) for `OutScope`.
 
-See [LiMon documentation]() for liveness monitoring.
+See [LiMon documentation](../limons/) for liveness monitoring.
 
-See [Exclusive Lock documentation]() for exclusive locking.
+See [Exclusive Lock documentation](../other/exclusive-lock.md) for exclusive locking.
 
 ## Connecting peers
 
@@ -53,7 +55,7 @@ const bus = await hub.connect({
 });
 ```
 
-Each call to `connect()` creates a new [`Bus`]().
+Each call to `connect()` creates a new [`Bus`](./bus.md).
 
 The returned `Bus` represents exactly one connection and can be used to communicate with its corresponding peer:
 
@@ -225,7 +227,7 @@ type HubOptions<SO, TO> = Partial<{
 
 Defines the lifetime of the execution scope in which the hub operates.
 
-See [`@shinka-rpc/outscope`]().
+See [`@shinka-rpc/outscope`](../other/outscope.md).
 
 ### `responseTimeout`
 
@@ -237,13 +239,13 @@ If omitted, the package default is used.
 
 Configures the optional Liveness Monitor for connections created by the hub.
 
-See [LiMon documentation]().
+See [LiMon documentation](../limons/).
 
 ### `lock`
 
 Configures the exclusive-lock implementation shared by connections created by the hub.
 
-See [Exclusive Lock documentation]().
+See [Exclusive Lock documentation](../other/exclusive-lock.md).
 
 ## `connect()`
 
@@ -318,4 +320,4 @@ Typical use cases include:
 * integrating `@shinka-rpc/core` with a custom transport layer;
 * implementing advanced connection lifecycle policies.
 
-For normal application code, prefer [`Client`]() or higher-level abstractions such as [`Server`]() and [`Pool`]().
+For normal application code, prefer [`Client`](./client.md) or higher-level abstractions such as [`Server`](./server.md) and [`Pool`](./pool.md).

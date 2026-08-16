@@ -12,115 +12,51 @@ At the same time, *shinka* is also a word for a type of ham or cured meat in sev
 
 Short answer: under `Bus` hood. And it's not single:
 
-```mermaid
-graph TB
-  subgraph BUS ["Bus"]
-    subgraph L ["LiMon shinka [optional]"]
-      subgraph LDO ["ShinkaDo"]
-        direction RL
-        LREQ(["request"]):::request
-        LEVT(["dataEvent"]):::dataEvent
-      end
-      subgraph LON ["ShinkaOn"]
-        direction RL
-        LONR(["onRequest"]):::onRequest
-        LONE(["onDataEvent"]):::onDataEvent
-      end
-    end
-    subgraph U ["User shinka"]
-      subgraph UDO ["ShinkaDo"]
-        direction RL
-        UREQ(["request"]):::request
-        UEVT(["dataEvent"]):::dataEvent
-      end
-      subgraph UON ["ShinkaOn"]
-        direction RL
-        UONR(["onRequest"]):::onRequest
-        UONE(["onDataEvent"]):::onDataEvent
-      end
-    end
-    subgraph B ["Bus shinka"]
-      subgraph BDO ["ShinkaDo"]
-        direction RL
-      BREQ(["request"]):::request
-      BEVT(["dataEvent"]):::dataEvent
-      end
-      subgraph BON ["ShinkaOn"]
-        direction RL
-      BONR(["onRequest"]):::onRequest
-      BONE(["onDataEvent"]):::onDataEvent
-      end
-    end
-    subgraph S ["Serializer shinka"]
-      subgraph SDO ["ShinkaDo"]
-        direction RL
-        SREQ(["request"]):::request
-        SEVT(["dataEvent"]):::dataEvent
-      end
-      subgraph SON ["ShinkaOn"]
-        direction RL
-        SONR(["onRequest"]):::onRequest
-        SONE(["onDataEvent"]):::onDataEvent
-      end
-    end
-    subgraph T ["Transport shinka"]
-      subgraph TDO ["ShinkaDo"]
-        direction RL
-        TREQ(["request"]):::request
-        TEVT(["dataEvent"]):::dataEvent
-      end
-      subgraph TON ["ShinkaOn"]
-        direction RL
-        TONR(["onRequest"]):::onRequest
-        TONE(["onDataEvent"]):::onDataEvent
-      end
-    end
-  end
+![diagram](../img/bus-shinka.svg "And where is this `shinka`?")
 
-  classDef request stroke:#666
-  classDef dataEvent stroke:#00f
-  classDef onRequest stroke:#0f0
-  classDef onDataEvent stroke:#f00
-```
-
-There are ***5*** independent `shinka`s under the bus hood: own for _transport_,
-_serializer_, _bus_, _user_ and optionally _limon_. Your application defined `onRequest` /
-`onDataEvent` handlers and `request` / `dataEvent` methods are just
-`user shinka`
+There are ***6*** independent `shinka`s under the bus hood: own for _user_,
+_bus_, special _non-blocking_ shinka (serving [ExclusiveLock](../other/exclusive-lock.md)),
+_transport_, _serializer_,  and optionally _limon_. Your application defined `onRequest` /
+`onDataEvent` handlers and `request` / `dataEvent` methods are just `user shinka`
 
 ::: tip BUT
-All 5 `shinka`s are handled by single connection. They are dispatched via
+All 6 `shinka`s are handled by single connection. They are dispatched via
 internal leading `MessageType` field
 :::
 
 ::: details Literally:
 ```typescript
 export const enum MessageType {
-  // TRANSPORT
-  TRANSPORT_REQUEST = 0,
-  TRANSPORT_SUCCESS = 1,
-  TRANSPORT_ERROR = 2,
-  TRANSPORT_EVENT = 3,
-  // SERIALIZER
-  SERIALIZER_REQUEST = 4,
-  SERIALIZER_SUCCESS = 5,
-  SERIALIZER_ERROR = 6,
-  SERIALIZER_EVENT = 7,
-  // BUS
-  BUS_REQUEST = 8,
-  BUS_SUCCESS = 9,
-  BUS_ERROR = 10,
-  BUS_EVENT = 11,
   // USER
-  USER_REQUEST = 12,
-  USER_SUCCESS = 13,
-  USER_ERROR = 14,
-  USER_EVENT = 15,
+  USER_REQUEST = 0,
+  USER_SUCCESS = 1,
+  USER_ERROR = 2,
+  USER_EVENT = 3,
+  // BUS
+  BUS_REQUEST = 4,
+  BUS_SUCCESS = 5,
+  BUS_ERROR = 6,
+  BUS_EVENT = 7,
+  // NON_BLOCKING
+  NB_REQUEST = 8,
+  NB_SUCCESS = 9,
+  NB_ERROR = 10,
+  NB_EVENT = 11,
+  // TRANSPORT
+  TRANSPORT_REQUEST = 12,
+  TRANSPORT_SUCCESS = 13,
+  TRANSPORT_ERROR = 14,
+  TRANSPORT_EVENT = 15,
+  // SERIALIZER
+  SERIALIZER_REQUEST = 16,
+  SERIALIZER_SUCCESS = 17,
+  SERIALIZER_ERROR = 18,
+  SERIALIZER_EVENT = 19,
   // LIMON
-  LIMON_REQUEST = 16,
-  LIMON_SUCCESS = 17,
-  LIMON_ERROR = 18,
-  LIMON_EVENT = 19,
+  LIMON_REQUEST = 20,
+  LIMON_SUCCESS = 21,
+  LIMON_ERROR = 22,
+  LIMON_EVENT = 23,
 }
 ```
 :::

@@ -2,19 +2,23 @@
 
 `Pool` is an advanced connection manager for maintaining a reusable set of one-to-one connections.
 
-Unlike [`Hub`](), which exposes and manages individual [`Bus`]() instances, `Pool` manages a collection of connections and provides them to consumers on demand.
+Unlike [`Hub`](./hub.md), which exposes and manages individual [`Bus`](./bus.md) instances, `Pool` manages a collection of connections and provides them to consumers on demand.
 
-```text id="1k8g3c"
-                    ┌──── Bus ──── Peer
-                    │
-Pool ───────────────┼──── Bus ──── Peer
-                    │
-                    └──── Bus ──── Peer
+```mermaid
+flowchart LR
+    HUB([Hub])
+    B1([Bus]) --- P1([Peer])
+    B2([Bus]) --- P2([Peer])
+    B3([Bus]) --- P3([Peer])
+    
+    HUB --- B1
+    HUB --- B2
+    HUB --- B3
 ```
 
 A connection acquired from the pool is exclusively owned by the caller until it is disposed. Once released, the connection becomes available for another consumer.
 
-`Pool` is primarily intended for advanced use cases and as a building block for higher-level abstractions such as [`Server`](). Most applications should not need to use it directly.
+`Pool` is primarily intended for advanced use cases and as a building block for higher-level abstractions such as [`Server`](./server.md). Most applications should not need to use it directly.
 
 ## Installation
 
@@ -29,22 +33,18 @@ A pool requires an `OutScope`, a transport, and a scheduler.
 ```ts
 import { Pool } from "@shinka-rpc/core";
 
-const pool = new Pool({
-  outscope,
-  transport,
-  scheduler,
-});
+const pool = new Pool({ outscope, transport, scheduler });
 ```
 
-See [`@shinka-rpc/outscope`]() for `OutScope`.
+See [`@shinka-rpc/outscope`](../other/outscope.md) for `OutScope`.
 
-See [Transport documentation]() for transports.
+See [Transport documentation](../transports/) for transports.
 
-See [Serializer documentation]() for serializers.
+See [Serializer documentation](../serializers/) for serializers.
 
-See [LiMon documentation]() for liveness monitoring.
+See [LiMon documentation](../limons/) for liveness monitoring.
 
-See [Exclusive Lock documentation]() for exclusive locking.
+See [Exclusive Lock documentation](../other/exclusive-lock.md) for exclusive locking.
 
 ## Pool size
 
@@ -204,7 +204,7 @@ pool.addEventListener("error", (error) => {
 });
 ```
 
-These events are delegated to the underlying [`Hub`]().
+These events are delegated to the underlying [`Hub`](./hub.md).
 
 ## Communication through an acquired connection
 
@@ -313,19 +313,19 @@ type PoolProps<SO, TO> = {
 
 Defines the lifetime of the execution scope in which the pool operates.
 
-See [`@shinka-rpc/outscope`]().
+See [`@shinka-rpc/outscope`](../other/outscope.md).
 
 ### `transport`
 
 The transport used to create each connection in the pool.
 
-See [Transport documentation]().
+See [Transport documentation](../transports/).
 
 ### `serializer`
 
 The serializer used by connections created by the pool.
 
-See [Serializer documentation]().
+See [Serializer documentation](../serializers/).
 
 ### `scheduler`
 
@@ -337,13 +337,13 @@ This option is required.
 
 Configures the optional Liveness Monitor for connections created by the pool.
 
-See [LiMon documentation]().
+See [LiMon documentation](../limons/).
 
 ### `lock`
 
 Configures the exclusive-lock implementation used by connections created by the pool.
 
-See [Exclusive Lock documentation]().
+See [Exclusive Lock documentation](../other/exclusive-lock.md).
 
 ### `responseTimeout`
 
@@ -453,7 +453,7 @@ A `Pool` is appropriate when the application needs a bounded set of reusable con
 
 `Pool` is intentionally a low-level abstraction. It exposes scheduling and connection-management primitives rather than prescribing a particular pooling strategy.
 
-Most applications should use [`Client`]() for one-to-one communication or [`Server`]() for higher-level server-side connection management.
+Most applications should use [`Client`](./client.md) for one-to-one communication or [`Server`](./server.md) for higher-level server-side connection management.
 
 Use `Pool` directly when the application needs explicit control over:
 

@@ -2,7 +2,7 @@
 
 `Server` represents the server side of a one-to-many communication relationship.
 
-Unlike [`Client`](#), which represents a single one-to-one communication endpoint, `Server` accepts connections from multiple peers and creates a separate [`Bus`](#) for each connection.
+Unlike [`Client`](./client.md), which represents a single one-to-one communication endpoint, `Server` accepts connections from multiple peers and creates a separate [`Bus`](./client.md) for each connection.
 
 A `Server` is typically the entry point for accepting incoming connections. Each accepted connection is represented by its own `Bus`, while request and event handlers can be registered once on the server and shared by all connections.
 
@@ -19,9 +19,7 @@ const server = new Server({
 });
 
 server.onRequest("meta", async () => {
-  return {
-    version: "1.0.0",
-  };
+  return { version: "1.0.0" };
 });
 
 server.onDataEvent("log", (data, bus) => {
@@ -33,26 +31,22 @@ server.addEventListener("error", console.error);
 server.start();
 ```
 
-The exact transport implementation is independent of `Server`. See the [transport documentation]() for details.
+The exact transport implementation is independent of `Server`. See the [transport documentation](../transports/) for details.
 
 ## Connection model
 
 `Server` represents a **one-to-many** relationship:
 
-```text
-                    ┌─────────────┐
-                    │   Server    │
-                    └──────┬──────┘
-                           │
-              ┌────────────┼────────────┐
-              │            │            │
-              ▼            ▼            ▼
-           ┌─────┐      ┌─────┐      ┌─────┐
-           │ Bus │      │ Bus │      │ Bus │
-           └─────┘      └─────┘      └─────┘
-              │            │            │
-              ▼            ▼            ▼
-           Client       Client       Client
+```mermaid
+flowchart TD
+    S([Server])
+    B1([Bus]) --- C1([Client])
+    B2([Bus]) --- C2([Client])
+    B3([Bus]) --- C3([Client])
+    
+    S --- B1
+    S --- B2
+    S --- B3
 ```
 
 Every accepted connection gets its own `Bus`.
@@ -71,13 +65,11 @@ For example:
 
 ```ts
 server.onDataEvent("message", (data, bus) => {
-  bus.dataEvent("message", {
-    received: data,
-  });
+  bus.dataEvent("message", { received: data });
 });
 ```
 
-See the [`Bus` documentation]() for details about connection-level operations.
+See the [`Bus` documentation](./bus.md) for details about connection-level operations.
 
 ## `Server` vs `Client`
 
@@ -85,16 +77,23 @@ See the [`Bus` documentation]() for details about connection-level operations.
 
 `Client` represents **one-to-one** communication:
 
-```text
-Client ───────── Client
+```mermaid
+flowchart LR
+    A([Client]) --- B([Client])
 ```
 
 `Server` represents **one-to-many** communication:
 
-```text
-             ┌─ Client
-Server ──────┼─ Client
-             └─ Client
+```mermaid
+flowchart LR
+    S([Server])
+    C1([Client])
+    C2([Client])
+    C3([Client])
+    
+    S --- C1
+    S --- C2
+    S --- C3
 ```
 
 The name of the transport does not determine whether an endpoint is a `Client` or a `Server`.
@@ -124,7 +123,7 @@ Defines the lifetime of the execution scope in which the server operates.
 
 `Server` does not assume a particular runtime or lifecycle API. The supplied `OutScope` implementation determines when the surrounding execution scope ends.
 
-See the [`@shinka-rpc/outscope` documentation]().
+See the [`@shinka-rpc/outscope` documentation](../other/outscope.md).
 
 This option is required.
 
@@ -140,7 +139,7 @@ The transport is responsible for accepting incoming connections and notifying `S
 
 The transport is deliberately independent from the `Server` abstraction and can be implemented over different communication mechanisms.
 
-See the [transport documentation]().
+See the [transport documentation](../transports/).
 
 This option is required.
 
@@ -154,7 +153,7 @@ Defines how messages are serialized and deserialized.
 
 If omitted, the default serializer is used.
 
-See the [serializer documentation]().
+See the [serializer documentation](../serializers/).
 
 ### `limon`
 
@@ -166,7 +165,7 @@ Optional liveness monitoring for individual connections.
 
 When configured, each `Bus` created by the server gets its own LiMon instance.
 
-See the [LiMon documentation]().
+See the [LiMon documentation](../limons/).
 
 ### `responseTimeout`
 
@@ -188,7 +187,7 @@ Implementation of the exclusive-lock mechanism used by connections managed by th
 
 The default implementation is used when omitted.
 
-See the [exclusive lock documentation]().
+See the [exclusive lock documentation](../other/exclusive-lock.md).
 
 ## Request handlers
 
@@ -358,4 +357,4 @@ server.extra.authentication = authenticationService;
 
 Most applications should use `Server` directly. `Hub` is exposed primarily for advanced use cases where the application needs to manage connection creation independently from a specific server transport.
 
-See the [`Hub` documentation]().
+See the [`Hub` documentation](./hub.md).
