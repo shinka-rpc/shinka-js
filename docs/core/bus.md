@@ -7,9 +7,12 @@ abstractions such as [`Client`](./client.md), [`Server`](./server.md),
 [`Pool`](./pool.md) and [`Hub`](./hub.md) use `Bus` to represent and manage
 their individual connections.
 
-A `Bus` does not define the role of either endpoint. It only represents the communication channel between two peers.
+A `Bus` does not define the role of either endpoint. It only represents the
+communication channel between two peers.
 
-For example, both sides of a `DedicatedWorker` connection can be represented by `Bus` instances created through `Client`, even though one side happens to run inside a worker.
+For example, both sides of a `DedicatedWorker` connection can be represented by
+`Bus` instances created through `Client`, even though one side happens to run
+inside a worker.
 
 ## Connection model
 
@@ -17,13 +20,11 @@ A `Bus` always represents exactly **one connection**:
 
 ```mermaid
 flowchart LR
-    A([Bus A])
-    B([Bus B])
-
-    A <--> B
+    A([Bus A]) <--> B([Bus B])
 ```
 
-The objects on both sides are peers. `Bus` does not distinguish between a "client" and a "server".
+The objects on both sides are peers. `Bus` does not distinguish between a
+"client" and a "server".
 
 Higher-level abstractions determine how connections are organized:
 
@@ -34,8 +35,8 @@ Higher-level abstractions determine how connections are organized:
 | `Hub`    | one-to-many connection manager     |
 | `Pool`   | reusable collection of connections |
 
-
-See the respective documentation for [`Client`](./client.md), [`Server`](./server.md), [`Hub`](./hub.md) and [`Pool`](./pool.md).
+See the respective documentation for [`Client`](./client.md),
+[`Server`](./server.md), [`Hub`](./hub.md) and [`Pool`](./pool.md).
 
 ## Creating a `Bus`
 
@@ -51,7 +52,8 @@ A `Server` and `Hub` create a `Bus` for every accepted connection.
 
 A `Pool` manages multiple `Bus` instances and exposes them through disposable proxies.
 
-Direct construction is primarily useful when building higher-level abstractions on top of `@shinka-rpc/core`.
+Direct construction is primarily useful when building higher-level abstractions
+on top of `@shinka-rpc/core`.
 
 ## Sending requests
 
@@ -82,9 +84,7 @@ The returned value becomes the response of `request()`.
 The requesting side:
 
 ```ts
-const user = await bus.request("user", {
-  id: 42,
-});
+const user = await bus.request("user", { id: 42 });
 ```
 
 The receiving side:
@@ -97,7 +97,8 @@ bus.onRequest("user", async (data) => {
 
 Requests are asynchronous and return a `Promise`.
 
-The request response is subject to the configured response timeout. See the [`responseTimeout` documentation]().
+The request response is subject to the configured response timeout. See the
+[`responseTimeout` documentation]().
 
 ## Handling requests
 
@@ -114,23 +115,22 @@ The handler receives the request key, request data, and the `Bus` itself as `thi
 ```ts
 bus.onRequest("user", async (data, bus) => {
   console.log("Request received through", bus);
-
   return await getUser(data.id);
 });
 ```
 
-The `thisArg` is particularly useful when the same handler registry is shared by multiple connections.
+The `thisArg` is particularly useful when the same handler registry is shared
+by multiple connections.
 
-For example, `Server` registers handlers once and passes the corresponding `Bus` to each handler.
+For example, `Server` registers handlers once and passes the corresponding `Bus`
+to each handler.
 
 ## Sending data events
 
 Use `dataEvent()` to send a one-way event to the remote peer.
 
 ```ts
-bus.dataEvent("message", {
-  text: "Hello",
-});
+bus.dataEvent("message", { text: "Hello" });
 ```
 
 A data event does not produce a response.
@@ -138,21 +138,18 @@ A data event does not produce a response.
 The remote side can subscribe with `onDataEvent()`:
 
 ```ts
-bus.onDataEvent("message", (data, bus) => {
-  console.log(data.text);
-});
+bus.onDataEvent("message", (data, bus) => console.log(data.text));
 ```
 
-Data events are useful for notifications, state updates, and other messages where request/response semantics are unnecessary.
+Data events are useful for notifications, state updates, and other messages
+where request/response semantics are unnecessary.
 
 ## Handling data events
 
 Register a handler with `onDataEvent()`:
 
 ```ts
-bus.onDataEvent("message", (data) => {
-  console.log("Received:", data);
-});
+bus.onDataEvent("message", (data) => console.log("Received:", data));
 ```
 
 The handler receives:
@@ -162,9 +159,7 @@ The handler receives:
 3. the `Bus` that received the event.
 
 ```ts
-bus.onDataEvent("message", (data, bus) => {
-  console.log(data, bus);
-});
+bus.onDataEvent("message", (data, bus) => console.log(data, bus));
 ```
 
 ## Starting a connection
@@ -175,11 +170,13 @@ await bus.start();
 
 Starts the connection.
 
-The exact meaning of establishing a connection is determined by the configured transport. See the [transport documentation](../transports/).
+The exact meaning of establishing a connection is determined by the configured
+transport. See the [transport documentation](../transports/).
 
 Once the bus is started, its request and event APIs can be used.
 
-The `connect` event is emitted after the bus has successfully completed its startup sequence.
+The `connect` event is emitted after the bus has successfully completed its
+startup sequence.
 
 Calling `start()` on an already started bus has no effect.
 
@@ -191,7 +188,8 @@ await bus.stop();
 
 Stops the connection and releases its resources.
 
-If the connection is currently active, the `disconnect` event is emitted after cleanup has completed.
+If the connection is currently active, the `disconnect` event is emitted after
+cleanup has completed.
 
 Stopping a bus also stops its serializer and liveness monitor, if configured.
 
@@ -217,7 +215,8 @@ The bus can therefore be reused after it has been stopped.
 const latency = await bus.ping();
 ```
 
-Sends a ping request to the remote peer and returns the elapsed time in milliseconds.
+Sends a ping request to the remote peer and returns the elapsed time in
+milliseconds.
 
 ```ts
 const latency = await bus.ping();
@@ -225,7 +224,8 @@ const latency = await bus.ping();
 console.log(`Round-trip time: ${latency} ms`);
 ```
 
-The returned value measures the request/response round trip rather than the underlying transport latency alone.
+The returned value measures the request/response round trip rather than the
+underlying transport latency alone.
 
 ## Events
 
@@ -238,25 +238,15 @@ The returned value measures the request/response round trip rather than the unde
 Register a listener with `addEventListener()`:
 
 ```ts
-bus.addEventListener("connect", () => {
-  console.log("Connected");
-});
-
-bus.addEventListener("disconnect", () => {
-  console.log("Disconnected");
-});
-
-bus.addEventListener("error", (error) => {
-  console.error(error);
-});
+bus.addEventListener("connect", () => console.log("Connected"));
+bus.addEventListener("disconnect", () => console.log("Disconnected"));
+bus.addEventListener("error", console.error);
 ```
 
 Remove a listener with `removeEventListener()`:
 
 ```ts
-const onDisconnect = () => {
-  console.log("Disconnected");
-};
+const onDisconnect = () => console.log("Disconnected");
 
 bus.addEventListener("disconnect", onDisconnect);
 bus.removeEventListener("disconnect", onDisconnect);
@@ -289,7 +279,8 @@ Errors are reported through the event system rather than being silently ignored.
 
 ## Exclusive lock
 
-`Bus` provides `exclusiveLock()` for operations that require exclusive access to the communication channel.
+`Bus` provides `exclusiveLock()` for operations that require exclusive access to
+the communication channel.
 
 ```ts
 {
@@ -298,9 +289,12 @@ Errors are reported through the event system rather than being silently ignored.
 }
 ```
 
-The lock guarantees the required channel-level exclusivity between cooperating components.
+The lock guarantees the required channel-level exclusivity between cooperating
+components.
 
-This mechanism is primarily intended for internal components and advanced integrations, for example when changing communication-related state that must not race with other messages.
+This mechanism is primarily intended for internal components and advanced
+integrations, for example when changing communication-related state that must
+not race with other messages.
 
 See the [exclusive lock documentation](../other/exclusive-lock.md).
 
@@ -319,12 +313,12 @@ bus.extra.session = session;
 bus.extra.authenticated = true;
 ```
 
-When a `Bus` is obtained from a `Server` or `Hub`, this object belongs to that particular connection.
+When a `Bus` is obtained from a `Server` or `Hub`, this object belongs to that
+particular connection.
 
 ## Lifecycle
 
 A typical `Bus` lifecycle is:
-
 
 ```mermaid
 flowchart LR
@@ -338,7 +332,8 @@ flowchart LR
     STARTED -- "restart()" --- STOPPED --> STARTED
 ```
 
-The bus cannot be started while it is already starting or stopping, and invalid lifecycle operations are reported through the `error` event.
+The bus cannot be started while it is already starting or stopping, and invalid
+lifecycle operations are reported through the `error` event.
 
 ## `Bus` as a low-level API
 
@@ -379,4 +374,5 @@ And connection diagnostics through:
 await bus.ping();
 ```
 
-This makes `Bus` suitable as the common building block for both simple one-to-one connections and more complex connection managers.
+This makes `Bus` suitable as the common building block for both simple one-to-one
+connections and more complex connection managers.

@@ -1,10 +1,15 @@
 # Transports
 
-A **Transport** is the communication layer used by `@shinka-rpc/core` to exchange serialized data between two peers.
+A **Transport** is the communication layer used by `@shinka-rpc/core` to
+exchange serialized data between two peers.
 
-The core does not depend on a particular communication mechanism. A transport can be implemented on top of WebSocket, `SharedWorker`, `DedicatedWorker`, browser extension messaging, or any other mechanism capable of providing the required operations.
+The core does not depend on a particular communication mechanism. A transport
+can be implemented on top of WebSocket, `SharedWorker`, `DedicatedWorker`,
+browser extension messaging, or any other mechanism capable of providing the
+required operations.
 
-In other words, a transport is an adapter between the RPC layer and an underlying communication mechanism:
+In other words, a transport is an adapter between the RPC layer and an
+underlying communication mechanism:
 
 ```mermaid
 flowchart TD
@@ -18,7 +23,9 @@ flowchart TD
     id3 --> id4
 ```
 
-The transport operates on serialized data and does not need to know what those data represent. RPC messages, control messages, or any other protocol details remain outside the transport's responsibility.
+The transport operates on serialized data and does not need to know what those
+data represent. RPC messages, control messages, or any other protocol details
+remain outside the transport's responsibility.
 
 ## Transport instance
 
@@ -42,23 +49,28 @@ type TransportInstance<TO> = {
 
 Sends serialized data through the underlying communication mechanism.
 
-The transport does not interpret the data. It is only responsible for delivering it to the other side.
+The transport does not interpret the data. It is only responsible for delivering
+it to the other side.
 
 ### `close()`
 
 Closes the communication channel.
 
-The returned promise allows transports with asynchronous shutdown procedures to complete their cleanup.
+The returned promise allows transports with asynchronous shutdown procedures to
+complete their cleanup.
 
 ### `onReady`
 
-An optional callback used by transports whose connection becomes usable asynchronously.
+An optional callback used by transports whose connection becomes usable
+asynchronously.
 
-A transport may therefore be created before the underlying communication channel is ready.
+A transport may therefore be created before the underlying communication channel
+is ready.
 
 ### `instruction`
 
-Describes lifecycle properties of the underlying transport that cannot necessarily be observed by the peer directly.
+Describes lifecycle properties of the underlying transport that cannot
+necessarily be observed by the peer directly.
 
 ```ts
 instruction: {
@@ -67,21 +79,31 @@ instruction: {
 }
 ```
 
-Some communication mechanisms do not provide a reliable way for one side to observe when the other side connects or disappears.
+Some communication mechanisms do not provide a reliable way for one side to
+observe when the other side connects or disappears.
 
-For example, a `SharedWorker` may continue running after a page has been closed and may not receive a reliable event indicating that the page is gone. In such cases, the transport can instruct the core to explicitly communicate these lifecycle events to the peer.
+For example, a `SharedWorker` may continue running after a page has been closed
+and may not receive a reliable event indicating that the page is gone. In such
+cases, the transport can instruct the core to explicitly communicate these
+lifecycle events to the peer.
 
-`hi` indicates that the connection should explicitly announce its establishment to the peer.
+`hi` indicates that the connection should explicitly announce its establishment
+to the peer.
 
-`bye` indicates that the connection should explicitly announce its termination before closing.
+`bye` indicates that the connection should explicitly announce its termination
+before closing.
 
-This is different from detecting the underlying connection itself. The transport uses these instructions to tell the core **which lifecycle events cannot be reliably inferred from the underlying mechanism**.
+This is different from detecting the underlying connection itself. The transport
+uses these instructions to tell the core **which lifecycle events cannot be
+reliably inferred from the underlying mechanism**.
 
-A transport such as WebSocket may not need these instructions because connection establishment and closure are already observable through the underlying protocol.
+A transport such as WebSocket may not need these instructions because connection
+establishment and closure are already observable through the underlying protocol.
 
 ## Transport factory
 
-A `TransportFactory` creates transport instances and connects the underlying mechanism to the core:
+A `TransportFactory` creates transport instances and connects the underlying
+mechanism to the core:
 
 ```ts
 type TransportFactory<SO, TO, TS> = (
@@ -97,7 +119,8 @@ The factory receives callbacks for events originating from the underlying transp
 * `onRawData` — called when serialized data is received;
 * `onClosed` — called when the underlying communication channel is closed.
 
-The factory therefore acts as the boundary between the external communication mechanism and `@shinka-rpc/core`:
+The factory therefore acts as the boundary between the external communication
+mechanism and `@shinka-rpc/core`:
 
 ```mermaid
 flowchart LR
@@ -125,9 +148,12 @@ type TransportClient<SO, TO, TS> = TransportSubscribe<
 >;
 ```
 
-A client transport produces a `TransportFactory`, which is then used by the core to create the communication channel.
+A client transport produces a `TransportFactory`, which is then used by the core
+to create the communication channel.
 
-The transport implementation is responsible for establishing the underlying connection. Once established, the resulting `TransportInstance` provides the common interface used by the core.
+The transport implementation is responsible for establishing the underlying
+connection. Once established, the resulting `TransportInstance` provides the
+common interface used by the core.
 
 ## Server transports
 
@@ -145,7 +171,8 @@ type TransportServer<SO, TO, TS> = (
 ) => void;
 ```
 
-When the underlying mechanism detects a new peer, the server transport passes its `TransportFactory` to `connect()`.
+When the underlying mechanism detects a new peer, the server transport passes
+its `TransportFactory` to `connect()`.
 
 Conceptually:
 
@@ -169,7 +196,8 @@ The server transport can also expose server lifecycle events:
 * `predisconnect`
 * `postdisconnect`
 
-These events allow the transport implementation to integrate its own connection management with the core.
+These events allow the transport implementation to integrate its own connection
+management with the core.
 
 ## Transport is a boundary, not a protocol
 
@@ -181,15 +209,22 @@ The transport is only expected to provide the primitives required by the core:
 2. receive serialized data;
 3. close the communication channel;
 4. report relevant connection lifecycle events;
-5. explicitly announce lifecycle events when the underlying mechanism cannot expose them itself.
+5. explicitly announce lifecycle events when the underlying mechanism cannot
+expose them itself.
 
-Everything above this boundary belongs to the core or to higher-level protocol components.
+Everything above this boundary belongs to the core or to higher-level protocol
+components.
 
-This makes the transport abstraction independent of the underlying communication technology.
+This makes the transport abstraction independent of the underlying communication
+technology.
 
-The same core can therefore operate over a WebSocket, a worker messaging channel, browser extension messaging, or a completely different medium.
+The same core can therefore operate over a WebSocket, a worker messaging
+channel, browser extension messaging, or a completely different medium.
 
 In principle, if an appropriate adapter can be implemented, almost anything can
-be a transport — even something as unconventional as [RFC 1149](https://en.wikipedia.org/wiki/IP_over_Avian_Carriers).
+be a transport — even something as unconventional as
+[RFC 1149](https://en.wikipedia.org/wiki/IP_over_Avian_Carriers).
 
-The important part is not *how* the data travels. The important part is that the transport provides a reliable boundary through which `@shinka-rpc/core` can communicate with its peer.
+The important part is not *how* the data travels. The important part is that the
+transport provides a reliable boundary through which `@shinka-rpc/core` can
+communicate with its peer.

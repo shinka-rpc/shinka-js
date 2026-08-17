@@ -2,7 +2,9 @@
 
 `Hub` is a low-level one-to-many connection manager in `@shinka-rpc/core`.
 
-Unlike [`Client`](./client.md), which represents a one-to-one communication relationship, a `Hub` manages multiple independent connections. Each connection is represented by a [`Bus`](./bus.md) instance.
+Unlike [`Client`](./client.md), which represents a one-to-one communication
+relationship, a `Hub` manages multiple independent connections. Each connection
+is represented by a [`Bus`](./bus.md) instance.
 
 ```mermaid
 flowchart LR
@@ -16,9 +18,12 @@ flowchart LR
     HUB --- B3
 ```
 
-`Hub` is primarily an internal building block used by higher-level abstractions such as [`Server`](./server.md) and [`Pool`](./pool.md). Most applications should use those abstractions instead of creating a `Hub` directly.
+`Hub` is primarily an internal building block used by higher-level abstractions
+such as [`Server`](./server.md) and [`Pool`](./pool.md). Most applications
+should use those abstractions instead of creating a `Hub` directly.
 
-Advanced users can use `Hub` when they need direct control over how connections are created and managed.
+Advanced users can use `Hub` when they need direct control over how connections
+are created and managed.
 
 ## Installation
 
@@ -28,7 +33,8 @@ npm install @shinka-rpc/core
 
 ## Creating a Hub
 
-A `Hub` requires an `OutScope` and can optionally be configured with a liveness monitor, exclusive lock, and request timeout.
+A `Hub` requires an `OutScope` and can optionally be configured with a liveness
+monitor, exclusive lock, and request timeout.
 
 ```ts
 import { Hub } from "@shinka-rpc/core";
@@ -40,30 +46,27 @@ See [`@shinka-rpc/outscope`](../other/outscope.md) for `OutScope`.
 
 See [LiMon documentation](../limons/) for liveness monitoring.
 
-See [Exclusive Lock documentation](../other/exclusive-lock.md) for exclusive locking.
+See [Exclusive Lock documentation](../other/exclusive-lock.md) for exclusive
+locking.
 
 ## Connecting peers
 
-Unlike `Client`, a `Hub` does not receive a transport and serializer in its constructor.
+Unlike `Client`, a `Hub` does not receive a transport and serializer in its
+constructor.
 
 They are supplied for each connection through `connect()`:
 
 ```ts
-const bus = await hub.connect({
-  transport,
-  serializer,
-});
+const bus = await hub.connect({ transport, serializer });
 ```
 
 Each call to `connect()` creates a new [`Bus`](./bus.md).
 
-The returned `Bus` represents exactly one connection and can be used to communicate with its corresponding peer:
+The returned `Bus` represents exactly one connection and can be used to
+communicate with its corresponding peer:
 
 ```ts
-const bus = await hub.connect({
-  transport,
-  serializer,
-});
+const bus = await hub.connect({ transport, serializer });
 
 await bus.request("get-data", {});
 ```
@@ -71,15 +74,8 @@ await bus.request("get-data", {});
 Multiple connections can be created from the same `Hub`:
 
 ```ts
-const first = await hub.connect({
-  transport: firstTransport,
-  serializer,
-});
-
-const second = await hub.connect({
-  transport: secondTransport,
-  serializer,
-});
+const first = await hub.connect({ transport: firstTransport, serializer });
+const second = await hub.connect({ transport: secondTransport, serializer });
 ```
 
 The hub keeps track of all active connections.
@@ -104,9 +100,11 @@ hub.onDataEvent("message", (data, bus) => {
 });
 ```
 
-The handler receives the `Bus` representing the connection from which the event originated.
+The handler receives the `Bus` representing the connection from which the event
+originated.
 
-This makes it possible to distinguish between multiple peers without registering separate handlers for every connection.
+This makes it possible to distinguish between multiple peers without registering
+separate handlers for every connection.
 
 ## Requests
 
@@ -124,7 +122,8 @@ The callback receives:
 2. the `Bus` associated with the connection;
 3. the request context as provided by the handler API.
 
-The `Bus` can be used to send a response-independent event or make another request to the same peer.
+The `Bus` can be used to send a response-independent event or make another
+request to the same peer.
 
 For example:
 
@@ -132,9 +131,7 @@ For example:
 hub.onRequest("subscribe", async (data, bus) => {
   await subscribe(data.id);
 
-  bus.dataEvent("subscribed", {
-    id: data.id,
-  });
+  bus.dataEvent("subscribed", { id: data.id });
 });
 ```
 
@@ -155,20 +152,13 @@ The `Bus` argument identifies the connection that produced the event.
 A `Hub` can observe lifecycle events from all connections it manages.
 
 ```ts
-hub.addEventListener("connect", (bus) => {
-  console.log("Connected:", bus);
-});
-
-hub.addEventListener("disconnect", (bus) => {
-  console.log("Disconnected:", bus);
-});
-
-hub.addEventListener("error", (error) => {
-  console.error(error);
-});
+hub.addEventListener("connect", (bus) => console.log("Connected:", bus));
+hub.addEventListener("disconnect", (bus) => console.log("Disconnected:", bus));
+hub.addEventListener("error", console.error);
 ```
 
-Unlike `Client`, these listeners operate at the hub level and therefore apply to all connections created by the hub.
+Unlike `Client`, these listeners operate at the hub level and therefore apply to
+all connections created by the hub.
 
 ## Disposing the Hub
 
@@ -180,17 +170,16 @@ await hub.dispose();
 
 Connections that are already disconnected are removed from the hub automatically.
 
-`dispose()` is also used to synchronize connection creation with disposal. A connection attempt that overlaps with disposal waits until disposal has completed before creating its `Bus`.
+`dispose()` is also used to synchronize connection creation with disposal. A
+connection attempt that overlaps with disposal waits until disposal has
+completed before creating its `Bus`.
 
 After disposal completes, the hub can be used again:
 
 ```ts
 await hub.dispose();
 
-const bus = await hub.connect({
-  transport,
-  serializer,
-});
+const bus = await hub.connect({ transport, serializer });
 ```
 
 ## Connection count
@@ -203,7 +192,8 @@ console.log(hub.size);
 
 ## Disposal state
 
-The `isDisposing` property indicates whether the hub is currently disposing its connections:
+The `isDisposing` property indicates whether the hub is currently disposing its
+connections:
 
 ```ts
 if (hub.isDisposing) {
@@ -231,7 +221,8 @@ See [`@shinka-rpc/outscope`](../other/outscope.md).
 
 ### `responseTimeout`
 
-Specifies the default timeout for requests made through connections managed by the hub.
+Specifies the default timeout for requests made through connections managed by
+the hub.
 
 If omitted, the package default is used.
 
@@ -243,7 +234,8 @@ See [LiMon documentation](../limons/).
 
 ### `lock`
 
-Configures the exclusive-lock implementation shared by connections created by the hub.
+Configures the exclusive-lock implementation shared by connections created by
+the hub.
 
 See [Exclusive Lock documentation](../other/exclusive-lock.md).
 
@@ -252,15 +244,13 @@ See [Exclusive Lock documentation](../other/exclusive-lock.md).
 Creates and starts a new connection.
 
 ```ts
-hub.connect({
-  transport,
-  serializer,
-}): Promise<Bus<SO, TO>>
+hub.connect({ transport, serializer }): Promise<Bus<SO, TO>>
 ```
 
 The `transport` and `serializer` are provided for the individual connection.
 
-The returned `Bus` is automatically registered in the hub and removed when it disconnects.
+The returned `Bus` is automatically registered in the hub and removed when it
+disconnects.
 
 ## `dispose()`
 
@@ -310,7 +300,8 @@ hub.isDisposing: boolean
 
 ## When to use Hub
 
-`Hub` is useful when an application needs to manage multiple independent connections while sharing handlers and configuration between them.
+`Hub` is useful when an application needs to manage multiple independent
+connections while sharing handlers and configuration between them.
 
 Typical use cases include:
 
@@ -320,4 +311,5 @@ Typical use cases include:
 * integrating `@shinka-rpc/core` with a custom transport layer;
 * implementing advanced connection lifecycle policies.
 
-For normal application code, prefer [`Client`](./client.md) or higher-level abstractions such as [`Server`](./server.md) and [`Pool`](./pool.md).
+For normal application code, prefer [`Client`](./client.md) or higher-level
+abstractions such as [`Server`](./server.md) and [`Pool`](./pool.md).

@@ -46,13 +46,25 @@ const config = defineConfig({
     // https://vitepress.dev/reference/default-theme-config
 
     nav: [
-      { text: "Home", link: "/" },
-      { text: "Core", link: "/core/" },
-      { text: "Transports", link: "/transports/" },
-      { text: "Serializers", link: "/serializers/" },
-      { text: "<b>LiMon</b>s", link: "/limons/" },
-      { text: "Schedulers", link: "/schedulers/" },
-      { text: "Other", link: "/other/" },
+      { text: "Home", link: "/", activeMatch: "^/$" },
+      { text: "Core", link: "/core/", activeMatch: "^/core/" },
+      {
+        text: "Transports",
+        link: "/transports/",
+        activeMatch: "^/transports/",
+      },
+      {
+        text: "Serializers",
+        link: "/serializers/",
+        activeMatch: "^/serializers/",
+      },
+      { text: "<b>LiMon</b>s", link: "/limons/", activeMatch: "^/limons/" },
+      {
+        text: "Schedulers",
+        link: "/schedulers/",
+        activeMatch: "^/schedulers/",
+      },
+      { text: "Other", link: "/other/", activeMatch: "^/other/" },
     ],
 
     sidebar: {

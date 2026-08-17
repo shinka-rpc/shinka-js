@@ -2,16 +2,22 @@
 
 `Client` is a one-to-one communication endpoint in `@shinka-rpc/core`.
 
-It represents a communication relationship between exactly two peers. The term *client* does not imply a client/server role: both sides of a connection may be represented by a `Client`.
+It represents a communication relationship between exactly two peers. The term
+*client* does not imply a client/server role: both sides of a connection may be
+represented by a `Client`.
 
-For example, when communicating with a `DedicatedWorker`, both the page and the worker can use `Client`:
+For example, when communicating with a `DedicatedWorker`, both the page and the
+worker can use `Client`:
 
 ```mermaid
 flowchart LR
     A([Client]) -- "one-to-one" --- B([Client])
 ```
 
-For one-to-many communication, `@shinka-rpc/core` provides [`Hub`](#hub), which manages a collection of [`Bus`](#bus) instances. A `Bus` represents an individual connection, while `Client` provides the user-facing one-to-one endpoint built on top of it.
+For one-to-many communication, `@shinka-rpc/core` provides [`Hub`](#hub),
+which manages a collection of [`Bus`](#bus) instances. A `Bus` represents an
+individual connection, while `Client` provides the user-facing one-to-one
+endpoint built on top of it.
 
 ## Installation
 
@@ -21,7 +27,8 @@ npm install @shinka-rpc/core
 
 ## Quick start
 
-A `Client` requires an `OutScope` and a transport. Serialization, liveness monitoring, and exclusive locking can be configured independently.
+A `Client` requires an `OutScope` and a transport. Serialization, liveness
+monitoring, and exclusive locking can be configured independently.
 
 ```ts
 import { Client } from "@shinka-rpc/core";
@@ -59,7 +66,8 @@ type User = { /* ... */ };
 const result = await client.request<User>("get-user", { id: 42 });
 ```
 
-Requests are identified by a `key`. The payload can contain arbitrary application data supported by the configured serializer.
+Requests are identified by a `key`. The payload can contain arbitrary
+application data supported by the configured serializer.
 
 The remote peer handles the request with `onRequest`:
 
@@ -69,7 +77,8 @@ client.onRequest("get-user", async (data) => {
 });
 ```
 
-The callback may return a value synchronously or asynchronously. Its result becomes the response to the request.
+The callback may return a value synchronously or asynchronously. Its result
+becomes the response to the request.
 
 ### Registering request handlers
 
@@ -89,24 +98,21 @@ client.onRequest("get-user", async (data, client) => {
 });
 ```
 
-The `thisArg` is useful when a handler needs to access the client that received the request.
+The `thisArg` is useful when a handler needs to access the client that received
+the request.
 
 ## Data events
 
 Data events provide one-way communication without waiting for a response.
 
 ```ts
-client.dataEvent("status", {
-  state: "ready",
-});
+client.dataEvent("status", { state: "ready" });
 ```
 
 The remote peer can subscribe to the event:
 
 ```ts
-client.onDataEvent("status", (data, client) => {
-  console.log(data);
-});
+client.onDataEvent("status", (data, client) => console.log(data));
 ```
 
 Unlike requests, data events do not produce a response.
@@ -152,7 +158,8 @@ await client.restart();
 
 ### `ping()`
 
-Sends a ping request to the remote peer and returns the elapsed round-trip time in milliseconds.
+Sends a ping request to the remote peer and returns the elapsed round-trip time
+in milliseconds.
 
 ```ts
 const latency = await client.ping();
@@ -165,17 +172,9 @@ console.log(`Latency: ${latency} ms`);
 A client can subscribe to connection lifecycle events with `addEventListener()`.
 
 ```ts
-client.addEventListener("connect", () => {
-  console.log("Connected");
-});
-
-client.addEventListener("disconnect", () => {
-  console.log("Disconnected");
-});
-
-client.addEventListener("error", (error) => {
-  console.error(error);
-});
+client.addEventListener("connect", () => console.log("Connected"));
+client.addEventListener("disconnect", () => console.log("Disconnected"));
+client.addEventListener("error", (error) => console.error(error));
 ```
 
 The supported event types are:
@@ -219,7 +218,8 @@ type BusProps<SO, TO> = {
 
 Defines the lifetime of the execution scope in which the client operates.
 
-The client subscribes to the scope's termination and automatically stops when the scope ends.
+The client subscribes to the scope's termination and automatically stops when
+the scope ends.
 
 See [`@shinka-rpc/outscope`](../other/outscope.md).
 
@@ -227,7 +227,8 @@ See [`@shinka-rpc/outscope`](../other/outscope.md).
 
 Provides the underlying communication mechanism.
 
-The transport is independent of the `Client` abstraction and can represent any suitable communication channel.
+The transport is independent of the `Client` abstraction and can represent any
+suitable communication channel.
 
 See [Transport documentation](../transports/).
 
@@ -381,7 +382,8 @@ These types represent different communication relationships:
 
 A `Client` is a specialized user-facing form of `Bus` for one-to-one communication.
 
-A `Hub`, on the other hand, does not represent a connection itself. It creates and manages individual `Bus` instances:
+A `Hub`, on the other hand, does not represent a connection itself. It creates
+and manages individual `Bus` instances:
 
 ```mermaid
 flowchart LR
@@ -395,4 +397,5 @@ flowchart LR
     HUB --- B3
 ```
 
-This distinction is independent of the underlying transport and of which peer is considered a "server" or "client" by the application.
+This distinction is independent of the underlying transport and of which peer is
+considered a "server" or "client" by the application.

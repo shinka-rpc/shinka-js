@@ -3,9 +3,15 @@
 ::: details What does `shinka` mean?
 The name **Shinka** is a wordplay on the concept of a message **bus**.
 
-In several Slavic languages, the term *bus* (as in *message bus* or *data bus*) is translated as **"shina"** (шина), literally meaning a data bus. **Shinka** (шинка) is the diminutive form of *shina*, which could be loosely translated as "little bus".
+In several Slavic languages, the term *bus* (as in *message bus* or *data bus*)
+is translated as **"shina"** (шина), literally meaning a data bus. **Shinka**
+(шинка) is the diminutive form of *shina*, which could be loosely translated as
+"little bus".
 
-At the same time, *shinka* is also a word for a type of ham or cured meat in several languages, including Ukrainian, Belarusian, Polish, and even German (*Schinken*). The result is a deliberately playful name that references both messaging infrastructure and an unexpected culinary coincidence.
+At the same time, *shinka* is also a word for a type of ham or cured meat in
+several languages, including Ukrainian, Belarusian, Polish, and even German
+(*Schinken*). The result is a deliberately playful name that references both
+messaging infrastructure and an unexpected culinary coincidence.
 :::
 
 # And where is this `shinka`?

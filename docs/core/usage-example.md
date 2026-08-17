@@ -41,7 +41,7 @@ server.onRequest("request-async", async () => {
 
 server.onRequest("get-token", () => token);
 
-// event handlers may be both syncronous and asyncronous
+// event handlers may be both synchronous and asynchronous
 server.onDataEvent(
   "set-token",
   ([newToken, sayUpdated]: [string, bool], bus) => {
@@ -54,7 +54,7 @@ server.onDataEvent(
 
 // Here we wrap `request` method. Both `request` and `dataEvent` accept only one
 // argument. To make them able to accept any number of args you have to pack
-// argsuments into `Array` or `Object` -- as you prefer.
+// arguments into `Array` or `Object` -- as you prefer.
 // Generally `Array` is more compact after serializing
 const notifyUpdated = (bus: Bus) =>
   bus.dataEvent("notify-updated", [tokenLastUpdated, bus.extra.id]);
