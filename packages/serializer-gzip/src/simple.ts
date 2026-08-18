@@ -69,7 +69,7 @@ const makeDeserializer = {
   >
 >;
 
-export const simpleGzip = <SO, TO, B>(parent: SerializerRoot<SO, TO, any>) =>
+export const simpleGzip = <SO, TO>(parent: SerializerRoot<SO, TO, any>) =>
   ((shinkaOn) => {
     const parentSerializerFactory = parent(shinkaOn);
 
@@ -103,4 +103,4 @@ export const simpleGzip = <SO, TO, B>(parent: SerializerRoot<SO, TO, any>) =>
         typeHints: parentInstance.typeHints,
       };
     };
-  }) as SerializerRoot<any, any, any>;
+  }) satisfies SerializerRoot<any, any, any>;

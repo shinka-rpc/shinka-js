@@ -5,4 +5,4 @@ export default ((shinkaOn) => (thisArg, opts) => ({
   deserialize: JSON.parse,
   transportInitOpts: { mode: "text", contentType: "application/json" },
   typeHints: { serialize: "Function", deserialize: "Function" },
-})) as SerializerRoot<any, any, any>;
+})) satisfies SerializerRoot<any, any, any>;

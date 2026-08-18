@@ -4,7 +4,7 @@
 
 Unlike [`Client`](./client.md), which represents a single one-to-one
 communication endpoint, `Server` accepts connections from multiple peers and
-creates a separate [`Bus`](./client.md) for each connection.
+creates a separate [`Bus`](./bus.md) for each connection.
 
 A `Server` is typically the entry point for accepting incoming connections.
 Each accepted connection is represented by its own `Bus`, while request and

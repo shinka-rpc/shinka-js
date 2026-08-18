@@ -17,6 +17,6 @@ export default ((shinkaOn) => () => ({
   deserialize,
   transportInitOpts: { mode: "binary", contentType: "application/bson" },
   typeHints: { serialize: "Function", deserialize: "Function" },
-})) as SerializerRoot<any, any, any>;
+})) satisfies SerializerRoot<any, any, any>;
 ```
 :::

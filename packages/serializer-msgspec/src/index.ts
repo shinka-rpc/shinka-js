@@ -1,9 +1,9 @@
-import type { SerializerRoot } from "@shinka-rpc/core";
+import type { SerializerRoot, DeserializerFn } from "@shinka-rpc/core";
 import { encode, decode, type EncoderOptions } from "@msgpack/msgpack";
 
 export default ((shinkaOn) => (thisArg, opts) => ({
   serialize: encode,
-  deserialize: decode,
+  deserialize: decode as DeserializerFn<any, Uint8Array>,
   transportInitOpts: { mode: "binary", contentType: "application/vnd.msgpack" },
   typeHints: { serialize: "Function", deserialize: "Function" },
-})) as SerializerRoot<EncoderOptions, any, any>;
+})) satisfies SerializerRoot<EncoderOptions, any, any>;
