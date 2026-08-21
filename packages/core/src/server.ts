@@ -25,6 +25,8 @@ import type {
   TransportRF,
   SerializerRF,
   InternalHandlerRegistries,
+  IBus,
+  CompleteFn,
 } from "./types";
 
 import { baseListenerFactory } from "./factory/base-listener-factory";
@@ -41,23 +43,28 @@ const createServerEventListeners = baseListenerFactory(
   Set<() => void>,
 );
 
-const connectFn = <SO, TO>(
-  connect: (props: HubConnectProps<SO, TO>) => Promise<Bus<SO, TO>>,
+const connectFn = <SO, TO, TC>(
+  connect: (props: HubConnectProps<SO, TO, TC>) => Promise<Bus<SO, TO, TC>>,
   transportHandlers: InternalHandlerRegistries<SO, TO, any>,
   serializer: SerializerRF<SO, TO, any>,
-  transportFactory: TransportFactory<SO, TO, any>,
+  complete: CompleteFn<SO, TO, TC> | undefined,
+  transportFactory: TransportFactory<SO, TO, any, TC>,
 ) => {
-  const transport: TransportRF<SO, TO, any> = [
+  const transport: TransportRF<SO, TO, any, TC> = [
     transportHandlers,
     transportFactory,
   ];
-  const props: HubConnectProps<SO, TO> = { transport, serializer };
+  const props: HubConnectProps<SO, TO, TC> = {
+    transport,
+    serializer,
+    complete,
+  };
   connect(props);
 };
 
-const transportHelper = <SO, TO>(
-  transportServer: TransportServer<SO, TO, any>,
-  connect: TransportConnectFn<SO, TO, any>,
+const transportHelper = <SO, TO, TC>(
+  transportServer: TransportServer<SO, TO, any, TC>,
+  connect: TransportConnectFn<SO, TO, any, TC>,
   listeners: ManageEventListenerPair<ServerEventType>,
   shinkaOn: ShinkaOn<SO, TO, InternalHandlerThisArg<SO, TO, any>>,
 ) => transportServer(shinkaOn, connect, listeners);
@@ -76,22 +83,23 @@ type ServerVars = {
   state: ServerState;
 };
 
-export type ServerOptions<SO, TO> = HubOptions<SO, TO> & {
-  transport: TransportServer<SO, TO, any>;
+export type ServerOptions<SO, TO, TC> = HubOptions<SO, TO> & {
+  transport: TransportServer<SO, TO, any, TC>;
   serializer?: SerializerRoot<SO, TO, any>;
+  complete?: CompleteFn<SO, TO, TC>;
 };
 
-export class Server<SO, TO> {
-  #hub!: Hub<SO, TO>;
-  #connectDelegate!: DelegateType<TransportConnectFn<SO, TO, any>>;
+export class Server<SO, TO, TC> {
+  #hub!: Hub<SO, TO, TC>;
+  #connectDelegate!: DelegateType<TransportConnectFn<SO, TO, any, TC>>;
   #vars!: ServerVars;
-  #connectFn!: TransportConnectFn<SO, TO, any>;
+  #connectFn!: TransportConnectFn<SO, TO, any, TC>;
   #callEvent!: (type: ServerEventType, ...args: any) => void;
 
-  public onRequest!: ShinkaOnRequest<SO, TO, Bus<SO, TO>>;
-  public onDataEvent!: ShinkaOnDataEvent<Bus<SO, TO>>;
-  public addEventListener!: ManageEventListener<Bus<SO, TO>>;
-  public removeEventListener!: ManageEventListener<Bus<SO, TO>>;
+  public onRequest!: ShinkaOnRequest<SO, TO, IBus<SO, TO>>;
+  public onDataEvent!: ShinkaOnDataEvent<IBus<SO, TO>>;
+  public addEventListener!: ManageEventListener<IBus<SO, TO>>;
+  public removeEventListener!: ManageEventListener<IBus<SO, TO>>;
 
   public extra!: Record<string | symbol, any>;
 
@@ -100,9 +108,10 @@ export class Server<SO, TO> {
     transport: transportServerFactory,
     serializer: serializerRoot = defaultSerializerRoot,
     limon = null,
-    responseTimeout = defaultRequestTimeout,
+    responseTimeout,
     lock = defaultExclusiveLock,
-  }: ServerOptions<SO, TO>) {
+    complete,
+  }: ServerOptions<SO, TO, TC>) {
     this.#hub = new Hub({ outscope, responseTimeout, limon, lock });
     this.#vars = { state: ServerState.STOPPED };
     const { 0: listeners, 1: callEvent } = createEventListenerPair(
@@ -110,10 +119,10 @@ export class Server<SO, TO> {
     );
     this.#callEvent = callEvent;
     this.#connectDelegate = delegate(
-      connectDefault as TransportConnectFn<SO, TO, any>,
+      connectDefault as TransportConnectFn<SO, TO, any, TC>,
     );
     const { 0: transportRegistries } = setupHandlerRegistries(
-      (transportHelper<SO, TO>).bind(
+      (transportHelper<SO, TO, TC>).bind(
         0,
         transportServerFactory,
         this.#connectDelegate.call,
@@ -123,11 +132,12 @@ export class Server<SO, TO> {
 
     const serializerRF = setupHandlerRegistries(serializerRoot);
 
-    this.#connectFn = (connectFn<SO, TO>).bind(
+    this.#connectFn = (connectFn<SO, TO, TC>).bind(
       0,
       this.#hub.connect,
       transportRegistries,
       serializerRF,
+      complete,
     );
 
     this.onDataEvent = this.#hub.onDataEvent;

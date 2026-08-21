@@ -1,5 +1,5 @@
 import type { TransportClient } from "@shinka-rpc/core";
-import makeSendRawFn from "@shinka-rpc/libtransport-message-port-send";
+import makeSendRawFn from "@shinka-rpc/libtransport/message-port-send";
 
 export const dedicatedWorkerClient = (create: () => Worker) =>
   ((shinkaOn) => (thisArg, onRawData, onClosed, opts) => {
@@ -9,5 +9,10 @@ export const dedicatedWorkerClient = (create: () => Worker) =>
     instance.onmessageerror = onClosed;
     const close = async () => instance.terminate();
     const send = makeSendRawFn[opts.mode](instance);
-    return { send, close, instruction: { hi: true, bye: true } };
-  }) as TransportClient<any, any, any>;
+    return {
+      send,
+      close,
+      instruction: { hi: true, bye: true },
+      context: instance,
+    };
+  }) as TransportClient<any, any, any, Worker>;

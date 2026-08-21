@@ -6,13 +6,10 @@ import type {
   ShinkaOnRequest,
   ShinkaOnDataEvent,
   ManageEventListener,
+  CompleteFn,
 } from "./types";
 import { Hub, type HubOptions, type HubConnectProps } from "./hub";
-import {
-  defaultExclusiveLock,
-  defaultSerializerRoot,
-  defaultRequestTimeout,
-} from "./defaults";
+import { defaultSerializerRoot } from "./defaults";
 import { setupHandlerRegistries } from "./shinka";
 import { BusProxy } from "./bus-proxy";
 
@@ -21,10 +18,11 @@ export type IScheduler<T> = {
   pop: () => Promise<T>;
 };
 
-export type PoolProps<SO, TO> = HubOptions<SO, TO> & {
-  transport: TransportClient<SO, TO, any>;
+export type PoolProps<SO, TO, TC> = HubOptions<SO, TO> & {
+  transport: TransportClient<SO, TO, any, TC>;
   serializer?: SerializerRoot<SO, TO, any>;
   scheduler: IScheduler<[IBus<SO, TO>, () => void]>;
+  complete?: CompleteFn<SO, TO, TC>;
 };
 
 type PoolVars = {
@@ -45,9 +43,9 @@ const makePair = <SO, TO>(
   return pair;
 };
 
-export class Pool<SO, TO> implements ShinkaOn<SO, TO, IBus<SO, TO>> {
-  #hub!: Hub<SO, TO>;
-  #connect!: HubConnectProps<SO, TO>;
+export class Pool<SO, TO, TC> implements ShinkaOn<SO, TO, IBus<SO, TO>> {
+  #hub!: Hub<SO, TO, TC>;
+  #connect!: HubConnectProps<SO, TO, TC>;
   #scheduler!: IScheduler<[IBus<SO, TO>, () => void]>;
   #acquired!: Set<IBus<SO, TO>>;
   #vars!: PoolVars;
@@ -65,16 +63,19 @@ export class Pool<SO, TO> implements ShinkaOn<SO, TO, IBus<SO, TO>> {
     scheduler,
     serializer = defaultSerializerRoot,
     limon = null,
-    lock = defaultExclusiveLock,
-    responseTimeout = defaultRequestTimeout,
-  }: PoolProps<SO, TO>) {
+    lock,
+    responseTimeout,
+    complete,
+  }: PoolProps<SO, TO, TC>) {
     this.#hub = new Hub({ outscope, limon, lock, responseTimeout });
     this.#scheduler = scheduler;
     this.#acquired = new Set();
     this.#vars = { size: 0 };
+
     this.#connect = {
       transport: setupHandlerRegistries(transport),
       serializer: setupHandlerRegistries(serializer),
+      complete,
     };
 
     this.onDataEvent = this.#hub.onDataEvent;

@@ -19,4 +19,4 @@ export const testListeners: State =
 export default {
   add: testListeners.add.bind(testListeners),
   remove: testListeners.delete.bind(testListeners),
-} as OutScope;
+} satisfies OutScope;

@@ -3,19 +3,26 @@ declare const browser: typeof chrome;
 
 import type { TransportServer } from "@shinka-rpc/core";
 
-export const messagePortTransport: TransportServer<any, any, any> = (
-  shinkaOn,
-  connect,
-  eventListeners,
-) => {
+export type ExtensionTransportContext = chrome.runtime.Port;
+
+export const messagePortTransport: TransportServer<
+  any,
+  any,
+  any,
+  ExtensionTransportContext
+> = (shinkaOn, connect, eventListeners) => {
   const listener = (port: chrome.runtime.Port) =>
     connect((thisArg, onRawData, onClosed, opts) => {
-      port.onMessage.addListener((e) => onRawData(e.data));
+      port.onMessage.addListener(onRawData);
       port.onDisconnect.addListener(onClosed);
-      // @ts-ignore
       const send = port.postMessage.bind(port);
       const close = async () => port.disconnect();
-      return { send, close, instruction: { hi: true, bye: true } };
+      return {
+        send,
+        close,
+        instruction: { hi: true, bye: true },
+        context: port,
+      };
     });
 
   eventListeners.add("connect", () =>

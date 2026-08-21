@@ -15,5 +15,5 @@ export const content2mainTransport = (
     const close = async () => window.removeEventListener("message", _onmessage);
     const send = async (data: unknown) =>
       window.postMessage([TAG_SEND, data], "*");
-    return { send, close, instruction: {} };
-  }) as TransportClient<any, any, any>;
+    return { send, close, instruction: {}, context: null };
+  }) as TransportClient<any, any, any, null>;

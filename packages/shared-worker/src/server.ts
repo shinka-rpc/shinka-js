@@ -1,5 +1,5 @@
 import type { TransportServer } from "@shinka-rpc/core";
-import makeSendRawFn from "@shinka-rpc/libtransport-message-port-send";
+import makeSendRawFn from "@shinka-rpc/libtransport/message-port-send";
 
 export const sharedWorkerServer = ((shinkaOn, connect, eventListeners) => {
   const swEventHandler = (connectEvent: Event) => {
@@ -11,7 +11,7 @@ export const sharedWorkerServer = ((shinkaOn, connect, eventListeners) => {
       const send = makeSendRawFn[opts.mode](port);
       port.onmessage = (ev) => onRawData(ev.data);
       port.onmessageerror = onClosed;
-      return { send, close, instruction: {} };
+      return { send, close, instruction: {}, context: port };
     });
   };
   eventListeners.add("connect", () =>
@@ -20,4 +20,4 @@ export const sharedWorkerServer = ((shinkaOn, connect, eventListeners) => {
   eventListeners.add("predisconnect", () =>
     removeEventListener("connect", swEventHandler),
   );
-}) as TransportServer<any, any, any>;
+}) as TransportServer<any, any, any, MessagePort>;

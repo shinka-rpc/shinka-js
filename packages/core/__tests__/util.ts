@@ -135,6 +135,15 @@ export const createAsyncHandler = (
     },
   );
 
+export const createDataEventHandler = (
+  key: string,
+  bus: ShinkaOn<any, any, any>,
+  results: Record<string, any>[],
+) =>
+  bus.onDataEvent(key, (arg: any) => {
+    results.push({ key: "data-event", arg });
+  });
+
 export const createMockBusService =
   (KEY: string) =>
   (

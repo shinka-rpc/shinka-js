@@ -1,13 +1,14 @@
 import { expect, test } from "@jest/globals";
 import outscope from "../../outscope/src/tests";
 import { defaultExclusiveLock } from "../../exclusive-lock/src";
+import { sleep } from "../../util";
 
 import {
   Client,
   SerializerRoot,
   InternalHandlerThisArg,
   ExclusiveLock,
-} from "@shinka-rpc/core";
+} from "../src";
 
 import {
   mkPipePair,
@@ -15,6 +16,7 @@ import {
   createMockSerializerAsync,
   createMockSerializerSync,
   createSyncHandler,
+  createDataEventHandler,
   createMockBusService,
   createAsyncHandler,
 } from "./util";
@@ -104,8 +106,17 @@ test("sync-simple-ok", async () => {
     createMockSerializerSync,
   );
   const bus1Sync = createMockBusService("bus1-sync");
+
   createSyncHandler("bus1-sync", bus1, results);
+  createDataEventHandler("bus1-event", bus1, results);
+
   await start();
+
+  bus2.dataEvent("bus1-event", "event:bus2->bus1");
+
+  // Yes, twice await 0
+  await sleep(0);
+  await sleep(0);
 
   results.push({
     key: "bus1-sync-response-got",
@@ -117,6 +128,9 @@ test("sync-simple-ok", async () => {
   expect(results).toStrictEqual([
     { key: "bus1-event", val: "connect" },
     { key: "bus2-event", val: "connect" },
+    { key: "bus2-serializer-sync", opts: undefined },
+    { key: "bus2-transport", opts: undefined },
+    { key: "data-event", arg: "event:bus2->bus1" },
     { key: "bus2-serializer-sync", opts: "bus1-sync-req-serialize" },
     { key: "bus2-transport", opts: "bus1-sync-req-transport" },
     { key: "sync-request", arg: "bus1-sync-simple-ok" },

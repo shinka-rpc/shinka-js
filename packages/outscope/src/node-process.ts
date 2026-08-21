@@ -12,4 +12,4 @@ process.on("exit", () => {
 export default {
   add: (target) => shutdownCallbacks.add(target),
   remove: (target) => shutdownCallbacks.delete(target),
-} as OutScope;
+} satisfies OutScope;

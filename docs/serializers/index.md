@@ -9,13 +9,11 @@ message body. A serializer converts this internal representation into data
 suitable for a transport and converts received data back into a `Message`.
 
 ```mermaid
-flowchart TD
-  A["Message"] --> B["serialize"]
-  B --> C["SerializedData"]
-  C --> D["Transport"]
-  D --> E["SerializedData"]
-  E --> F["deserialize"]
-  F --> G["Message"]
+flowchart LR
+  A["Message"] -- "serialize()" --> B["SerializedData"]
+  B --> C@{ shape: das, label: "Transport" }
+  C --> D["SerializedData"]
+  D -- "deserialize()" --> E["Message"]
 ```
 
 Serialization is deliberately separated from transport. A transport does not

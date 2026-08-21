@@ -2,6 +2,8 @@
   "compilerOptions": {
     "paths": {
       "@shinka-rpc/outscope/*": ["./packages/outscope/src/*"],
+      "@shinka-rpc/libtransport/*": ["./packages/libtransport/src/*"],
+      "@shinka-rpc/libserializer/*": ["./packages/libserializer/src/*"],
       "@shinka-rpc/*": ["./packages/*/src/"]
     }
   }

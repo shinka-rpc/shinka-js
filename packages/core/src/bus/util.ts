@@ -87,8 +87,10 @@ export function nbEventRelease<SO, TO>(this: NBShinka<SO, TO, any>) {
   return nbEvent.release(this.dataEvent);
 }
 
-export const eventListenerCaller = <B>(
+export function eventListenerCaller<B>(
+  this: B,
   listener: ShinkaEventListener<B>,
-  thisArg: B,
   target: any,
-) => listener(thisArg, target);
+) {
+  listener(this, target);
+}

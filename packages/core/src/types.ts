@@ -185,23 +185,19 @@ export type SerializerTypeHints = {
   deserialize: FnConstructorName;
 };
 
-export type SerializerFnSync<
-  I extends Message<any>,
-  O extends SerializedData,
-  SO,
-> = (data: I, opts?: SO) => O;
+export type SerializerFnSync<I, O extends SerializedData, SO> = (
+  data: I,
+  opts?: SO,
+) => O;
 
-export type SerializerFnAsync<
-  I extends Message<any>,
-  O extends SerializedData,
-  SO,
-> = (data: I, opts?: SO) => Promise<O>;
+export type SerializerFnAsync<I, O extends SerializedData, SO> = (
+  data: I,
+  opts?: SO,
+) => Promise<O>;
 
-export type SerializerFn<
-  I extends Message<any>,
-  O extends SerializedData,
-  SO,
-> = SerializerFnSync<I, O, SO> | SerializerFnAsync<I, O, SO>;
+export type SerializerFn<I, O extends SerializedData, SO> =
+  | SerializerFnSync<I, O, SO>
+  | SerializerFnAsync<I, O, SO>;
 
 export type DeserializerFnSync<
   I extends Message<any>,
@@ -278,32 +274,34 @@ export type ManageEventListener<B> = BaseManageEventListener<
 
 export type TransportAPI = { hi: () => void; bye: () => void };
 
-export type TransportInstance<TO> = {
+export type TransportInstance<TO, TC> = {
   send: (data: any, opts?: TO) => void;
   close: () => Promise<void>;
   onReady?: OnReadyFn;
   instruction: { hi?: boolean; bye?: boolean };
+  context: TC;
 };
 
-export type TransportFactory<SO, TO, TS> = (
+export type TransportFactory<SO, TO, TS, TC> = (
   thisArg: InternalHandlerThisArg<SO, TO, TS>,
   onRawData: (data: SerializedData) => void,
   onClosed: () => void,
   opts: TransportInitOpts,
-) => Promise<TransportInstance<TO>> | TransportInstance<TO>;
+) => Promise<TransportInstance<TO, TC>> | TransportInstance<TO, TC>;
 
-export type TransportSubscribe<SO, TO, TS> = (
+export type TransportSubscribe<SO, TO, TS, TC> = (
   shinkaOn: ShinkaOn<SO, TO, InternalHandlerThisArg<SO, TO, TS>>,
-) => TransportFactory<SO, TO, TS>;
+) => TransportFactory<SO, TO, TS, TC>;
 
-export type TransportClient<SO, TO, TS> = TransportSubscribe<
+export type TransportClient<SO, TO, TS, TC> = TransportSubscribe<
   SO,
   TO,
-  InternalHandlerThisArg<SO, TO, TS>
+  InternalHandlerThisArg<SO, TO, TS>,
+  TC
 >;
 
-export type TransportConnectFn<SO, TO, TS> = (
-  transport: TransportFactory<SO, TO, TS>,
+export type TransportConnectFn<SO, TO, TS, TC> = (
+  transport: TransportFactory<SO, TO, TS, TC>,
 ) => void;
 
 export type ServerEventType = "connect" | "predisconnect" | "postdisconnect";
@@ -318,9 +316,9 @@ export type ManageEventListenerPair<TYPE> = {
   remove: BaseManageEventListener<TYPE, () => void>;
 };
 
-export type TransportServer<SO, TO, TS> = (
+export type TransportServer<SO, TO, TS, TC> = (
   shinkaOn: ShinkaOn<SO, TO, InternalHandlerThisArg<SO, TO, TS>>,
-  connect: TransportConnectFn<SO, TO, TS>,
+  connect: TransportConnectFn<SO, TO, TS, TC>,
   eventListeners: ManageEventListenerPair<ServerEventType>,
 ) => void;
 
@@ -352,9 +350,9 @@ export type LiMon<SO, TO, LS> = (
   shinkaOn: ShinkaOn<SO, TO, LiMonThisArg<SO, TO, LS>>,
 ) => LiMonFactory<SO, TO, LS>;
 
-export type TransportRF<SO, TO, TS> = [
+export type TransportRF<SO, TO, TS, TC> = [
   HandlerRegistries<SO, TO, InternalHandlerThisArg<SO, TO, TS>> | undefined,
-  TransportFactory<SO, TO, TS>,
+  TransportFactory<SO, TO, TS, TC>,
 ];
 
 export type SerializerRF<SO, TO, SS> = [
@@ -496,7 +494,7 @@ export type ExclusiveLock<SO, TO, STATE> = {
 export type ShinkaAndThisArgAll<SO, TO, NBS> = {
   user: Shinka<SO, TO, IBus<SO, TO>>;
   transport: InternalShinkaAndTA<SO, TO> & {
-    factory: TransportFactory<SO, TO, any>;
+    factory: TransportFactory<SO, TO, any, any>;
   };
   serializer: InternalShinkaAndTA<SO, TO> & {
     factory: SerializerFactory<SO, TO, any>;
@@ -508,12 +506,15 @@ export type ShinkaAndThisArgAll<SO, TO, NBS> = {
     | null;
 };
 
+export type CompleteFn<SO, TO, TC> = (ctx: TC, thisArg: IBus<SO, TO>) => void;
+
 // Synthetic
-export type BusProps<SO, TO> = {
+export type BusProps<SO, TO, TC> = {
   outscope: OutScope;
-  transport: TransportSubscribe<SO, TO, any>;
+  transport: TransportSubscribe<SO, TO, any, TC>;
   lock?: ExclusiveLock<SO, TO, any>;
   serializer?: SerializerRoot<SO, TO, any>;
   limon?: LiMon<SO, TO, any> | null;
   responseTimeout?: number;
+  complete?: CompleteFn<SO, TO, TC>;
 };

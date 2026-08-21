@@ -17,6 +17,8 @@ import type {
   SerializerRF,
   LiMonRF,
   ExclusiveLock,
+  IBus,
+  CompleteFn,
 } from "./types";
 
 const { freeze: objectFreeze } = Object;
@@ -31,23 +33,24 @@ export type HubOptions<SO, TO> = Partial<HubTimeoutSettings> & {
   lock?: ExclusiveLock<SO, TO, any>;
 };
 
-export type HubConnectProps<SO, TO> = {
-  transport: TransportRF<SO, TO, any>;
+export type HubConnectProps<SO, TO, TC> = {
+  transport: TransportRF<SO, TO, any, TC>;
   serializer: SerializerRF<SO, TO, any>;
+  complete?: CompleteFn<SO, TO, TC>;
 };
 
-export class Hub<SO, TO> {
+export class Hub<SO, TO, TC> {
   #outscope!: OutScope;
   #limonRF!: LiMonRF<SO, TO, any> | null;
   #lock!: ExclusiveLock<SO, TO, any>;
-  #userRegistries!: HandlerRegistries<SO, TO, Bus<SO, TO>>;
-  #eventListeners!: ShinkaEventListeners<Bus<SO, TO>>;
+  #userRegistries!: HandlerRegistries<SO, TO, IBus<SO, TO>>;
+  #eventListeners!: ShinkaEventListeners<IBus<SO, TO>>;
   #timeoutSettings!: HubTimeoutSettings;
-  #clients!: Set<Bus<SO, TO>>;
+  #clients!: Set<Bus<SO, TO, TC>>;
   #disposing!: ReusablePromise<void>;
 
-  public onRequest!: ShinkaOnRequest<SO, TO, Bus<SO, TO>>;
-  public onDataEvent!: ShinkaOnDataEvent<Bus<SO, TO>>;
+  public onRequest!: ShinkaOnRequest<SO, TO, IBus<SO, TO>>;
+  public onDataEvent!: ShinkaOnDataEvent<IBus<SO, TO>>;
   public extra!: Record<string | symbol, any>;
 
   constructor({
@@ -63,8 +66,8 @@ export class Hub<SO, TO> {
       responseTimeout,
     };
     this.#eventListeners = createEventListeners();
-    this.#userRegistries = createHandlerRegistries<SO, TO, Bus<SO, TO>>();
-    this.#clients = new Set<Bus<SO, TO>>();
+    this.#userRegistries = createHandlerRegistries<SO, TO, IBus<SO, TO>>();
+    this.#clients = new Set<Bus<SO, TO, TC>>();
     this.#disposing = new ReusablePromise();
     this.extra = {};
     this.onRequest = this.#userRegistries.onRequest;
@@ -73,15 +76,16 @@ export class Hub<SO, TO> {
     this.#disposing.resolve();
   }
 
-  #onClientDisconnect = (bus: Bus<SO, TO>) => this.#clients.delete(bus);
+  #onClientDisconnect = (bus: Bus<SO, TO, TC>) => this.#clients.delete(bus);
 
   public connect = async ({
     transport,
     serializer,
-  }: HubConnectProps<SO, TO>) => {
+    complete,
+  }: HubConnectProps<SO, TO, TC>) => {
     await this.#disposing;
 
-    const bus = new Bus<SO, TO>(
+    const bus = new Bus<SO, TO, TC>(
       this.#outscope,
       transport,
       serializer,
@@ -90,6 +94,7 @@ export class Hub<SO, TO> {
       this.#eventListeners,
       this.#lock,
       this.#timeoutSettings.responseTimeout,
+      complete,
     );
 
     objectFreeze(bus);
@@ -112,10 +117,10 @@ export class Hub<SO, TO> {
     }
   };
 
-  public addEventListener: ManageEventListener<Bus<SO, TO>> = (type, target) =>
+  public addEventListener: ManageEventListener<IBus<SO, TO>> = (type, target) =>
     this.#eventListeners[type].add(target);
 
-  public removeEventListener: ManageEventListener<Bus<SO, TO>> = (
+  public removeEventListener: ManageEventListener<IBus<SO, TO>> = (
     type,
     target,
   ) => this.#eventListeners[type].delete(target);

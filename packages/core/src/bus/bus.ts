@@ -49,6 +49,7 @@ import type {
   NB_FIFOEntry,
   NBThisArgSetVars,
   BusHandlerThisArg,
+  CompleteFn,
 } from "../types";
 
 import { defaultRequestTimeout, defaultExclusiveLock } from "../defaults";
@@ -106,7 +107,7 @@ const defaultSerializerOpts: SerializerInitOpts = objectFreeze({
 
 // ===
 
-export class Bus<SO, TO> implements IBus<SO, TO> {
+export class Bus<SO, TO, TC> implements IBus<SO, TO> {
   #outscope!: OutScope;
   #sta!: ShinkaAndThisArgAll<SO, TO, any>;
   #dispatchMap!: DispatchMap;
@@ -122,6 +123,7 @@ export class Bus<SO, TO> implements IBus<SO, TO> {
   #onTerminated!: () => void;
   #resetStatesQueue!: IQueue<() => void>;
   #resetBye!: () => void;
+  #complete!: CompleteFn<SO, TO, TC>;
 
   public request!: ShinkaRequest<SO, TO>;
   public dataEvent!: ShinkaDataEvent<SO, TO>;
@@ -130,13 +132,14 @@ export class Bus<SO, TO> implements IBus<SO, TO> {
 
   constructor(
     outscope: OutScope,
-    transportRF: TransportRF<SO, TO, any>,
+    transportRF: TransportRF<SO, TO, any, TC>,
     serializerRF: SerializerRF<SO, TO, any>,
     limonRF: LiMonRF<SO, TO, any> | null,
-    userRegistries: UserHandlerRegistries<SO, TO, Bus<SO, TO>>,
-    eventListeners: ShinkaEventListeners<Bus<SO, TO>>,
+    userRegistries: UserHandlerRegistries<SO, TO, IBus<SO, TO>>,
+    eventListeners: ShinkaEventListeners<IBus<SO, TO>>,
     exclusiveLockInstance = defaultExclusiveLock,
     responseTimeout = defaultRequestTimeout,
+    complete: CompleteFn<SO, TO, TC> = dummy,
   ) {
     this.#outscope = outscope;
     const { 0: transportRegistries, 1: transportFactory } = transportRF;
@@ -347,6 +350,8 @@ export class Bus<SO, TO> implements IBus<SO, TO> {
       this.stop,
     );
 
+    this.#complete = complete;
+
     this.request = userShinka.request;
     this.dataEvent = userShinka.dataEvent;
 
@@ -356,15 +361,13 @@ export class Bus<SO, TO> implements IBus<SO, TO> {
   #callEventListeners = (type: EventListenerType, target: any) => {
     const own = this.#eventListeners.own[type];
     for (const listener of own)
-      queueMicrotask(
-        (eventListenerCaller<this>).bind(0, listener, this, target),
-      );
+      queueMicrotask((eventListenerCaller<this>).bind(this, listener, target));
 
     const banned = this.#eventListeners.banned[type];
     for (const listener of this.#eventListeners.parent[type])
       if (!(banned.has(listener) || own.has(listener)))
         queueMicrotask(
-          (eventListenerCaller<this>).bind(0, listener, this, target),
+          (eventListenerCaller<this>).bind(this, listener, target),
         );
   };
 
@@ -422,6 +425,7 @@ export class Bus<SO, TO> implements IBus<SO, TO> {
         close,
         instruction,
         onReady: onReadyTransport,
+        context: transportCtx,
       } = maybeTransportInstance instanceof Promise
         ? await maybeTransportInstance
         : maybeTransportInstance;
@@ -448,6 +452,8 @@ export class Bus<SO, TO> implements IBus<SO, TO> {
         if (onReadySerializerPromise instanceof Promise)
           await onReadySerializerPromise;
       }
+
+      this.#complete(transportCtx, this);
 
       if (limonStart) limonStart();
       this.#sta.nb.TA.lock.start(this.#sta.nb.TA);

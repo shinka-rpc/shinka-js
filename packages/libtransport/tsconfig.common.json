@@ -2,6 +2,6 @@
   "extends": "../../tsconfig.common.json",
   "compilerOptions": {
     "rootDir": "./src",
-    "outDir": "../../dist/libtransport-message-port-send"
+    "outDir": "../../dist/libtransport"
   }
 }
