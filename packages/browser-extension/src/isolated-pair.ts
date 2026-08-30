@@ -2,7 +2,7 @@ import {
   Client,
   type TransportClient,
   type SerializerRoot,
-  type BusProps,
+  type ClientProps,
   CompleteFn,
 } from "@shinka-rpc/core";
 import outscope from "@shinka-rpc/outscope/browser-page";
@@ -30,7 +30,7 @@ export const createIsolatedPair = ({
     responseTimeout,
   });
 
-  const props: BusProps<any, any, IsolatedExtensionTransportContext> = {
+  const props: ClientProps<any, any, IsolatedExtensionTransportContext> = {
     serializer,
     outscope,
     transport: extensionTransport,

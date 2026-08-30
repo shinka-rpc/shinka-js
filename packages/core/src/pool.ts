@@ -1,14 +1,13 @@
 import type {
-  TransportClient,
-  SerializerRoot,
   IBus,
   ShinkaOn,
   ShinkaOnRequest,
   ShinkaOnDataEvent,
   ManageEventListener,
-  CompleteFn,
+  ClientProps,
+  BusProps,
 } from "./types";
-import { Hub, type HubOptions, type HubConnectProps } from "./hub";
+import { Hub } from "./hub";
 import { defaultSerializerRoot } from "./defaults";
 import { setupHandlerRegistries } from "./shinka";
 import { BusProxy } from "./bus-proxy";
@@ -18,11 +17,8 @@ export type IScheduler<T> = {
   pop: () => Promise<T>;
 };
 
-export type PoolProps<SO, TO, TC> = HubOptions<SO, TO> & {
-  transport: TransportClient<SO, TO, any, TC>;
-  serializer?: SerializerRoot<SO, TO, any>;
+export type PoolProps<SO, TO, TC> = ClientProps<SO, TO, TC> & {
   scheduler: IScheduler<[IBus<SO, TO>, () => void]>;
-  complete?: CompleteFn<SO, TO, TC>;
 };
 
 type PoolVars = {
@@ -45,7 +41,7 @@ const makePair = <SO, TO>(
 
 export class Pool<SO, TO, TC> implements ShinkaOn<SO, TO, IBus<SO, TO>> {
   #hub!: Hub<SO, TO, TC>;
-  #connect!: HubConnectProps<SO, TO, TC>;
+  #connectProps!: BusProps<SO, TO, TC>;
   #scheduler!: IScheduler<[IBus<SO, TO>, () => void]>;
   #acquired!: Set<IBus<SO, TO>>;
   #vars!: PoolVars;
@@ -67,12 +63,16 @@ export class Pool<SO, TO, TC> implements ShinkaOn<SO, TO, IBus<SO, TO>> {
     responseTimeout,
     complete,
   }: PoolProps<SO, TO, TC>) {
-    this.#hub = new Hub({ outscope, limon, lock, responseTimeout });
+    this.#hub = new Hub();
     this.#scheduler = scheduler;
     this.#acquired = new Set();
     this.#vars = { size: 0 };
 
-    this.#connect = {
+    this.#connectProps = {
+      outscope,
+      lock,
+      responseTimeout,
+      limon: limon && setupHandlerRegistries(limon),
       transport: setupHandlerRegistries(transport),
       serializer: setupHandlerRegistries(serializer),
       complete,
@@ -90,7 +90,7 @@ export class Pool<SO, TO, TC> implements ShinkaOn<SO, TO, IBus<SO, TO>> {
   #grow = async (diff: number) => {
     const promises: Promise<IBus<SO, TO>>[] = new Array(diff);
     for (let i = 0; i < diff; i++)
-      promises[i] = this.#hub.connect(this.#connect);
+      promises[i] = this.#hub.connect(this.#connectProps);
     const newConnections = await Promise.all(promises);
     for (const c of newConnections)
       this.#scheduler.push(makePair(this.#scheduler, this.#acquired, c));

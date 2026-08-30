@@ -38,6 +38,7 @@
     "@types/chrome": "*",
     "@types/node": "*",
     "@types/pako": "*",
+    "@types/ws": "*",
     "lerna": "^10",
     "pako": "^2"
   },

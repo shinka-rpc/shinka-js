@@ -54,6 +54,7 @@ export const gracefulShutdown = (
 
 export type VarsBye = {
   bye: 0 | 1;
+  closed: 0 | 1;
 };
 
 export function byeReset(this: VarsBye) {
@@ -65,7 +66,7 @@ export const onTerminated = (
   resetTransportCloseDelegate: () => void,
   busStop: () => void,
 ) => {
-  byeVars.bye = 0;
+  byeVars.closed = 1;
   resetTransportCloseDelegate();
   busStop();
 };

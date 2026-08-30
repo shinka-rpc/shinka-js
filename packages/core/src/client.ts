@@ -2,7 +2,7 @@ import { defaultSerializerRoot, defaultExclusiveLock } from "./defaults";
 import { Bus } from "./bus";
 import { setupHandlerRegistries, createHandlerRegistries } from "./shinka";
 import { createEventListeners } from "./factory/event-listeners-bus";
-import type { BusProps, ShinkaOnDataEvent, ShinkaOnRequest } from "./types";
+import type { ShinkaOnDataEvent, ShinkaOnRequest, ClientProps } from "./types";
 
 export class Client<SO, TO, TC> extends Bus<SO, TO, TC> {
   public onRequest!: ShinkaOnRequest<SO, TO, this>;
@@ -16,7 +16,7 @@ export class Client<SO, TO, TC> extends Bus<SO, TO, TC> {
     limon = null,
     responseTimeout,
     complete,
-  }: BusProps<SO, TO, TC>) {
+  }: ClientProps<SO, TO, TC>) {
     const transportRF = setupHandlerRegistries(transport);
     const serializerRF = setupHandlerRegistries(serializer);
     const limonRF = limon && setupHandlerRegistries(limon);

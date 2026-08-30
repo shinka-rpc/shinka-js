@@ -4,7 +4,7 @@ import outscope from "../../outscope/src/tests";
 import {
   Client,
   Server,
-  type Bus,
+  type IBus,
   type SerializerRoot,
   type ShinkaOn,
   type TransportConnectFn,
@@ -22,14 +22,14 @@ import {
   // createAsyncHandler,
 } from "./util";
 
-type ConnectPromiseWrapped = { resolve: (bus: Bus<any, any>) => void };
+type ConnectPromiseWrapped = { resolve: (bus: IBus<any, any>) => void };
 
 const fakeTransportServer = (
   pipe: ReturnType<typeof mkPipe>,
   key: string,
   results: Record<string, any>[],
 ) => {
-  const tf: TransportFactory<any, any, any> = async (
+  const tf: TransportFactory<any, any, any, null> = async (
     thisArg,
     onRawData,
     onClosed,
@@ -42,11 +42,11 @@ const fakeTransportServer = (
       send_(value);
     };
     dispatch(onRawData);
-    return { send, close, instruction: {} };
+    return { send, close, instruction: {}, context: null };
   };
   return (
     shinkaOn: ShinkaOn<any, any, any>,
-    connect: TransportConnectFn<any, any, any>,
+    connect: TransportConnectFn<any, any, any, null>,
   ) => setTimeout(connect, 0, tf);
 };
 
@@ -78,7 +78,7 @@ const setupClientServer = async (
     resolve: console.warn,
   };
 
-  const connectPromise = new Promise<Bus<any, any>>((resolve, reject) => {
+  const connectPromise = new Promise<IBus<any, any>>((resolve, reject) => {
     connectPromiseHandler.resolve = resolve;
   });
 

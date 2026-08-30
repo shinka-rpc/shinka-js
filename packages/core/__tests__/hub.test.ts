@@ -30,7 +30,7 @@ const setupClientHub = async (
     serializer: createSerializer("client1", results),
   });
 
-  const hub = new Hub({ outscope });
+  const hub = new Hub();
 
   client.addEventListener("connect", () =>
     results.push({ key: "client1-event", val: "connect" }),
@@ -51,16 +51,20 @@ const setupClientHub = async (
   const serializerHandlers = createHandlerRegistries<any, any, any>();
   const serializer = createSerializer("hub", results)(serializerHandlers);
 
-  const tf: TransportFactory<any, any, any> = async (thisArg, onRawData) => {
+  const tf: TransportFactory<any, any, any, null> = async (
+    thisArg,
+    onRawData,
+  ) => {
     const { 0: send, 1: dispatch } = pipe2to1;
     dispatch(onRawData);
     const close = async () => {};
-    return { send, close, instruction: {} };
+    return { send, close, instruction: {}, context: null };
   };
 
   const start = async () => {
     await client.start();
     return await hub.connect({
+      outscope,
       transport: [undefined, tf],
       serializer: [serializerHandlers, serializer],
     });

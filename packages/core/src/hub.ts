@@ -1,7 +1,4 @@
 import { ReusablePromise } from "@shinka-rpc/concurrency";
-import type { OutScope } from "@shinka-rpc/outscope";
-
-import { defaultRequestTimeout, defaultExclusiveLock } from "./defaults";
 
 import { Bus } from "./bus";
 import { createHandlerRegistries, type HandlerRegistries } from "./shinka";
@@ -13,39 +10,15 @@ import type {
   ManageEventListener,
   ShinkaOnRequest,
   ShinkaOnDataEvent,
-  TransportRF,
-  SerializerRF,
-  LiMonRF,
-  ExclusiveLock,
   IBus,
-  CompleteFn,
+  BusProps,
 } from "./types";
 
 const { freeze: objectFreeze } = Object;
 
-type HubTimeoutSettings = {
-  responseTimeout: number;
-};
-
-export type HubOptions<SO, TO> = Partial<HubTimeoutSettings> & {
-  outscope: OutScope;
-  limon?: LiMonRF<SO, TO, any> | null;
-  lock?: ExclusiveLock<SO, TO, any>;
-};
-
-export type HubConnectProps<SO, TO, TC> = {
-  transport: TransportRF<SO, TO, any, TC>;
-  serializer: SerializerRF<SO, TO, any>;
-  complete?: CompleteFn<SO, TO, TC>;
-};
-
 export class Hub<SO, TO, TC> {
-  #outscope!: OutScope;
-  #limonRF!: LiMonRF<SO, TO, any> | null;
-  #lock!: ExclusiveLock<SO, TO, any>;
   #userRegistries!: HandlerRegistries<SO, TO, IBus<SO, TO>>;
   #eventListeners!: ShinkaEventListeners<IBus<SO, TO>>;
-  #timeoutSettings!: HubTimeoutSettings;
   #clients!: Set<Bus<SO, TO, TC>>;
   #disposing!: ReusablePromise<void>;
 
@@ -53,18 +26,7 @@ export class Hub<SO, TO, TC> {
   public onDataEvent!: ShinkaOnDataEvent<IBus<SO, TO>>;
   public extra!: Record<string | symbol, any>;
 
-  constructor({
-    outscope,
-    responseTimeout = defaultRequestTimeout,
-    limon = null,
-    lock = defaultExclusiveLock,
-  }: HubOptions<SO, TO>) {
-    this.#outscope = outscope;
-    this.#limonRF = limon;
-    this.#lock = lock;
-    this.#timeoutSettings = {
-      responseTimeout,
-    };
+  constructor() {
     this.#eventListeners = createEventListeners();
     this.#userRegistries = createHandlerRegistries<SO, TO, IBus<SO, TO>>();
     this.#clients = new Set<Bus<SO, TO, TC>>();
@@ -79,21 +41,25 @@ export class Hub<SO, TO, TC> {
   #onClientDisconnect = (bus: Bus<SO, TO, TC>) => this.#clients.delete(bus);
 
   public connect = async ({
+    outscope,
     transport,
+    lock,
     serializer,
+    limon = null,
+    responseTimeout,
     complete,
-  }: HubConnectProps<SO, TO, TC>) => {
+  }: BusProps<SO, TO, TC>) => {
     await this.#disposing;
 
     const bus = new Bus<SO, TO, TC>(
-      this.#outscope,
+      outscope,
       transport,
       serializer,
-      this.#limonRF,
+      limon,
       this.#userRegistries,
       this.#eventListeners,
-      this.#lock,
-      this.#timeoutSettings.responseTimeout,
+      lock,
+      responseTimeout,
       complete,
     );
 

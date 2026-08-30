@@ -1,12 +1,8 @@
 import { delegate, type DelegateType } from "@shinka-rpc/util";
 
-import { Hub, type HubOptions, type HubConnectProps } from "./hub";
+import { Hub } from "./hub";
 
-import {
-  defaultRequestTimeout,
-  defaultSerializerRoot,
-  defaultExclusiveLock,
-} from "./defaults";
+import { defaultSerializerRoot, defaultExclusiveLock } from "./defaults";
 import { setupHandlerRegistries } from "./shinka";
 import type { Bus } from "./bus";
 
@@ -14,7 +10,6 @@ import type {
   ShinkaOnRequest,
   ShinkaOnDataEvent,
   ManageEventListener,
-  SerializerRoot,
   InternalHandlerThisArg,
   TransportServer,
   TransportFactory,
@@ -22,11 +17,10 @@ import type {
   ShinkaOn,
   ServerEventType,
   ManageEventListenerPair,
-  TransportRF,
-  SerializerRF,
   InternalHandlerRegistries,
   IBus,
-  CompleteFn,
+  BusProps,
+  ServerOptions,
 } from "./types";
 
 import { baseListenerFactory } from "./factory/base-listener-factory";
@@ -44,23 +38,12 @@ const createServerEventListeners = baseListenerFactory(
 );
 
 const connectFn = <SO, TO, TC>(
-  connect: (props: HubConnectProps<SO, TO, TC>) => Promise<Bus<SO, TO, TC>>,
+  connect: (props: BusProps<SO, TO, TC>) => Promise<Bus<SO, TO, TC>>,
   transportHandlers: InternalHandlerRegistries<SO, TO, any>,
-  serializer: SerializerRF<SO, TO, any>,
-  complete: CompleteFn<SO, TO, TC> | undefined,
+  baseProps: Omit<BusProps<SO, TO, TC>, "transport">,
   transportFactory: TransportFactory<SO, TO, any, TC>,
-) => {
-  const transport: TransportRF<SO, TO, any, TC> = [
-    transportHandlers,
-    transportFactory,
-  ];
-  const props: HubConnectProps<SO, TO, TC> = {
-    transport,
-    serializer,
-    complete,
-  };
-  connect(props);
-};
+) =>
+  connect({ ...baseProps, transport: [transportHandlers, transportFactory] });
 
 const transportHelper = <SO, TO, TC>(
   transportServer: TransportServer<SO, TO, any, TC>,
@@ -81,12 +64,6 @@ const enum ServerState {
 
 type ServerVars = {
   state: ServerState;
-};
-
-export type ServerOptions<SO, TO, TC> = HubOptions<SO, TO> & {
-  transport: TransportServer<SO, TO, any, TC>;
-  serializer?: SerializerRoot<SO, TO, any>;
-  complete?: CompleteFn<SO, TO, TC>;
 };
 
 export class Server<SO, TO, TC> {
@@ -112,7 +89,7 @@ export class Server<SO, TO, TC> {
     lock = defaultExclusiveLock,
     complete,
   }: ServerOptions<SO, TO, TC>) {
-    this.#hub = new Hub({ outscope, responseTimeout, limon, lock });
+    this.#hub = new Hub();
     this.#vars = { state: ServerState.STOPPED };
     const { 0: listeners, 1: callEvent } = createEventListenerPair(
       createServerEventListeners,
@@ -130,14 +107,20 @@ export class Server<SO, TO, TC> {
       ),
     );
 
-    const serializerRF = setupHandlerRegistries(serializerRoot);
+    const baseProps: Omit<BusProps<SO, TO, TC>, "transport"> = {
+      outscope,
+      serializer: setupHandlerRegistries(serializerRoot),
+      complete,
+      limon: limon && setupHandlerRegistries(limon),
+      lock,
+      responseTimeout,
+    };
 
     this.#connectFn = (connectFn<SO, TO, TC>).bind(
       0,
       this.#hub.connect,
       transportRegistries,
-      serializerRF,
-      complete,
+      baseProps,
     );
 
     this.onDataEvent = this.#hub.onDataEvent;

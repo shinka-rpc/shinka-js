@@ -153,7 +153,7 @@ export class Bus<SO, TO, TC> implements IBus<SO, TO> {
     };
     this.#dispatchMap = new Map();
     this.#lastDataAt = objectSeal({ sent: 0, received: 0 });
-    this.#vars = objectSeal({ state: BusState.STOPPED, bye: 0 });
+    this.#vars = objectSeal({ state: BusState.STOPPED, bye: 0, closed: 0 });
     this.#resetBye = byeReset.bind(this.#vars);
     this.#sendDelegate = delegate(transportNotInitialized as SendFn<any, any>);
     this.#transportCloseDelegate = delegate(
@@ -497,12 +497,14 @@ export class Bus<SO, TO, TC> implements IBus<SO, TO> {
 
     this.#vars.state = BusState.STOPPING;
 
-    if (this.#vars.bye) busEvents.terminate(this.#sta.bus.shinka.dataEvent);
+    if (!this.#vars.closed) {
+      if (this.#vars.bye) busEvents.terminate(this.#sta.bus.shinka.dataEvent);
 
-    try {
-      await this.#transportCloseDelegate.call();
-    } catch (e) {
-      this.#callEventListeners("error", e);
+      try {
+        await this.#transportCloseDelegate.call();
+      } catch (e) {
+        this.#callEventListeners("error", e);
+      }
     }
 
     this.#serializerStopDelegate.call();

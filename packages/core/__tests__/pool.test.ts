@@ -29,13 +29,16 @@ type Token = {
   busKeyFn: () => string;
 };
 
-const connectMap = new WeakMap<Token, TransportConnectFn<any, any, any>>();
+const connectMap = new WeakMap<
+  Token,
+  TransportConnectFn<any, any, any, null>
+>();
 
 const fakeTransportServer =
   (token: Token) =>
   (
     shinkaOn: ShinkaOn<any, any, any>,
-    connect: TransportConnectFn<any, any, any>,
+    connect: TransportConnectFn<any, any, any, null>,
   ) =>
     connectMap.set(token, connect);
 
@@ -56,8 +59,8 @@ const serverConnectFn = (
       send_(value);
     };
     dispatch(onRawData);
-    return { send, close, instruction: { hi: true, bye: true } };
-  }) as TransportFactory<any, any, any>;
+    return { send, close, instruction: { hi: true, bye: true }, context: null };
+  }) as TransportFactory<any, any, any, null>;
 
 const serverGoConnect = (
   token: Token,
@@ -90,8 +93,18 @@ const fakeTransportClient = <SO>(
       };
       dispatch(onRawData);
       serverGoConnect(token, results, p2);
-      return { send, close, instruction: { hi: true, bye: true } };
-    }) as TransportFactory<any, any, any>) as TransportClient<SO, any, any>;
+      return {
+        send,
+        close,
+        instruction: { hi: true, bye: true },
+        context: null,
+      };
+    }) as TransportFactory<any, any, any, null>) as TransportClient<
+    SO,
+    any,
+    any,
+    null
+  >;
 
 test("pool", async () => {
   const results: Record<string, any>[] = [];

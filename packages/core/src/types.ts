@@ -511,10 +511,27 @@ export type CompleteFn<SO, TO, TC> = (ctx: TC, thisArg: IBus<SO, TO>) => void;
 // Synthetic
 export type BusProps<SO, TO, TC> = {
   outscope: OutScope;
-  transport: TransportSubscribe<SO, TO, any, TC>;
+  transport: TransportRF<SO, TO, any, TC>;
+  lock?: ExclusiveLock<SO, TO, any>;
+  serializer: SerializerRF<SO, TO, any>;
+  limon?: LiMonRF<SO, TO, any> | null;
+  responseTimeout?: number;
+  complete?: CompleteFn<SO, TO, TC>;
+};
+
+export type BaseAggregatorProps<SO, TO, TC> = {
+  outscope: OutScope;
   lock?: ExclusiveLock<SO, TO, any>;
   serializer?: SerializerRoot<SO, TO, any>;
   limon?: LiMon<SO, TO, any> | null;
   responseTimeout?: number;
   complete?: CompleteFn<SO, TO, TC>;
+};
+
+export type ClientProps<SO, TO, TC> = BaseAggregatorProps<SO, TO, TC> & {
+  transport: TransportSubscribe<SO, TO, any, TC>;
+};
+
+export type ServerOptions<SO, TO, TC> = BaseAggregatorProps<SO, TO, TC> & {
+  transport: TransportServer<SO, TO, any, TC>;
 };
