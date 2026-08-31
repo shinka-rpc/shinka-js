@@ -1,5 +1,5 @@
 {
-  "name": "@shinka-rpc/outscope",
+  "name": "@shinka-rpc/react",
   "version": "0.1.0-alpha.0",
   "description": "",
   "main": "./src/index.ts",
@@ -19,7 +19,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/shinka-rpc/shinka-js.git",
-    "directory": "packages/outscope"
+    "directory": "packages/react"
   },
   "author": "AI Kavalevich",
   "license": "MIT",
@@ -30,8 +30,8 @@
   "exports": {
     "default": "./src/index.ts"
   },
-  "devDependencies": {
+  "dependencies": {
     "@shinka-rpc/core": "^0.1.0-alpha.0",
-    "@types/node": "*"
+    "react": ">=16"
   }
 }
