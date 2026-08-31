@@ -1,6 +1,10 @@
 {
   "name": "@shinka-rpc/serializer-json",
   "version": "0.1.0-alpha.0",
+  "publishConfig": {
+    "access": "public",
+    "tag": "alpha"
+  },
   "description": "",
   "main": "./src/index.ts",
   "scripts": {

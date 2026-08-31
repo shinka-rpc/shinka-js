@@ -19,7 +19,7 @@ const publish = async (path) => {
     env: process.env,
     stdio: [process.stdin, process.stdout, process.stderr],
   };
-  const args = ["publish", "--access", "public"];
+  const args = ["publish"];
   const publishProcess = spawn("npm", args, options);
   await new Promise((resolve, reject) => publishProcess.on("exit", resolve));
 };
