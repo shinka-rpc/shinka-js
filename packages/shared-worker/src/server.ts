@@ -14,10 +14,10 @@ export const sharedWorkerServer = ((shinkaOn, connect, eventListeners) => {
       return { send, close, instruction: {}, context: port };
     });
   };
-  eventListeners.add("connect", () =>
+  eventListeners.add("started", () =>
     addEventListener("connect", swEventHandler),
   );
-  eventListeners.add("predisconnect", () =>
+  eventListeners.add("stopping", () =>
     removeEventListener("connect", swEventHandler),
   );
 }) as TransportServer<any, any, any, MessagePort>;

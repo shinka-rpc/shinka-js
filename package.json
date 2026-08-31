@@ -45,10 +45,11 @@
   "devDependencies": {
     "@jest/globals": "^29",
     "@swc/jest": "^0.2.39",
-    "typescript": "^7",
     "compare-versions": "^6",
     "jest": "^30",
     "mermaid": "^11",
+    "nx": "^23.1.2",
+    "typescript": "^7",
     "vitepress": "next",
     "vitepress-plugin-mermaid": "^2"
   },
@@ -56,5 +57,11 @@
     "vitepress-plugin-mermaid": {
       "vitepress": "$vitepress"
     }
+  },
+  "allowScripts": {
+    "nx@23.1.2": true,
+    "@parcel/watcher@2.6.0": true,
+    "@swc/core@1.16.1": true,
+    "unrs-resolver@1.12.2": true
   }
 }

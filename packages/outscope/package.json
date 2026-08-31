@@ -31,6 +31,7 @@
     "default": "./src/index.ts"
   },
   "devDependencies": {
+    "@shinka-rpc/core": "^0.1.0-alpha.0",
     "@types/node": "*"
   }
 }

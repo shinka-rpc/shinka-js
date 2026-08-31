@@ -25,11 +25,11 @@ export const messagePortTransport: TransportServer<
       };
     });
 
-  eventListeners.add("connect", () =>
+  eventListeners.add("started", () =>
     chrome.runtime.onConnect.addListener(listener),
   );
 
-  eventListeners.add("predisconnect", () =>
+  eventListeners.add("stopping", () =>
     chrome.runtime.onConnect.removeListener(listener),
   );
 };

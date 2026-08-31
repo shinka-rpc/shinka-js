@@ -1,5 +1,4 @@
 import type { DisposeContext, AsyncDisposeContext } from "@shinka-rpc/util";
-import type { OutScope } from "@shinka-rpc/outscope";
 import type { Semaphore } from "@shinka-rpc/concurrency";
 
 import type { Context } from "./factory/context";
@@ -99,6 +98,12 @@ export type IBus<SO, TO> = ShinkaDo<SO, TO> & {
   removeEventListener: ManageEventListener<IBus<SO, TO>>;
   extra: Record<string | symbol, any>;
   exclusiveLock: (timeout: number) => Promise<AsyncDisposeContext>;
+};
+
+export type IBusAgg<SO, TO> = {
+  addEventListener: ManageEventListener<IBus<SO, TO>>;
+  removeEventListener: ManageEventListener<IBus<SO, TO>>;
+  extra: Record<string | symbol, any>;
 };
 
 export type Shinka<SO, TO, TA> = ShinkaOn<SO, TO, TA> & ShinkaDo<SO, TO>;
@@ -304,7 +309,7 @@ export type TransportConnectFn<SO, TO, TS, TC> = (
   transport: TransportFactory<SO, TO, TS, TC>,
 ) => void;
 
-export type ServerEventType = "connect" | "predisconnect" | "postdisconnect";
+export type ServerEventType = "started" | "stopping" | "stopped";
 
 export type ServerManageEventListener = BaseManageEventListener<
   ServerEventType,
@@ -534,4 +539,11 @@ export type ClientProps<SO, TO, TC> = BaseAggregatorProps<SO, TO, TC> & {
 
 export type ServerOptions<SO, TO, TC> = BaseAggregatorProps<SO, TO, TC> & {
   transport: TransportServer<SO, TO, any, TC>;
+};
+
+export type OutScopeEventListener = () => void;
+export type OutScopeListenerManager = (target: OutScopeEventListener) => void;
+export type OutScope = {
+  add: OutScopeListenerManager;
+  remove: OutScopeListenerManager;
 };

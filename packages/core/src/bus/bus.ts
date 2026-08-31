@@ -23,8 +23,6 @@ import {
   messageTypeNB,
 } from "../factory/message-type";
 
-import type { OutScope } from "@shinka-rpc/outscope";
-
 import type {
   IBus,
   SendFn,
@@ -50,6 +48,7 @@ import type {
   NBThisArgSetVars,
   BusHandlerThisArg,
   CompleteFn,
+  OutScope,
 } from "../types";
 
 import { defaultRequestTimeout, defaultExclusiveLock } from "../defaults";

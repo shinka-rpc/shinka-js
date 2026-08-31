@@ -15,8 +15,6 @@ export const webSocketServer = (wss: WebSocketServer) =>
         return { send, close, instruction: {}, context: ws };
       });
     };
-    eventListeners.add("connect", () => wss.on("connection", wsEventHandler));
-    eventListeners.add("predisconnect", () =>
-      wss.off("connection", wsEventHandler),
-    );
+    eventListeners.add("started", () => wss.on("connection", wsEventHandler));
+    eventListeners.add("stopping", () => wss.off("connection", wsEventHandler));
   }) satisfies TransportServer<any, any, any, WebSocket>;

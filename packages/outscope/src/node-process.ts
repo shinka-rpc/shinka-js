@@ -1,6 +1,6 @@
 /// <reference types="node" />
 
-import type { OutScope, OutScopeEventListener } from "./types";
+import type { OutScope, OutScopeEventListener } from "@shinka-rpc/core";
 
 const shutdownCallbacks = new Set<OutScopeEventListener>();
 

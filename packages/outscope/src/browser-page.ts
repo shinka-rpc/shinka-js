@@ -1,4 +1,4 @@
-import type { OutScope } from "./types";
+import type { OutScope } from "@shinka-rpc/core";
 
 export default {
   add: (target) => self.addEventListener("beforeunload", target),

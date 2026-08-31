@@ -26,11 +26,7 @@ import type {
 import { baseListenerFactory } from "./factory/base-listener-factory";
 import { createEventListenerPair } from "./factory/event-listener-pair";
 
-const serverEventTypes: ServerEventType[] = [
-  "connect",
-  "predisconnect",
-  "postdisconnect",
-];
+const serverEventTypes: ServerEventType[] = ["started", "stopping", "stopped"];
 
 const createServerEventListeners = baseListenerFactory(
   serverEventTypes,
@@ -136,7 +132,7 @@ export class Server<SO, TO, TC> {
     if (this.#vars.state !== ServerState.STOPPED)
       return console.error("Server is not in `STOPPED` state");
     this.#connectDelegate.set(this.#connectFn);
-    this.#callEvent("connect");
+    this.#callEvent("started");
     this.#vars.state = ServerState.STARTED;
   };
 
@@ -144,14 +140,14 @@ export class Server<SO, TO, TC> {
     if (this.#vars.state !== ServerState.STARTED)
       return console.error("Server is not in `STARTED` state");
     this.#vars.state = ServerState.STOPPING;
-    this.#callEvent("predisconnect");
+    this.#callEvent("stopping");
     this.#connectDelegate.reset();
     try {
       await this.#hub.dispose();
     } catch (e) {
       console.trace(e);
     }
-    this.#callEvent("postdisconnect");
+    this.#callEvent("stopped");
     this.#vars.state = ServerState.STOPPED;
   };
 
