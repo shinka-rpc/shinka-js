@@ -72,6 +72,7 @@ const config = defineConfig({
         {
           items: [
             { text: "Core", link: "/core/" },
+            { text: "Basic principles", link: "/core/basic-principles" },
             { text: "Usage Example", link: "/core/usage-example" },
             { text: "Shinka", link: "/core/shinka" },
             { text: "Bus", link: "/core/bus" },

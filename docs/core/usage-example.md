@@ -92,3 +92,8 @@ client.onDataEvent(
 client.onRequest("get-stuff", () => Math.random().toString().slice(2));
 ```
 :::
+
+Also please check demo app [[front](https://github.com/shinka-rpc/demo-js-front), [back](https://github.com/shinka-rpc/demo-js-back)]:
+1) [Front-end: React integration](https://github.com/shinka-rpc/demo-js-front/blob/73b5d01ae6ea2566037b2a8a28caf6175b751fef/src/app.tsx#L47-L71)
+2) [Front-end: Shared Worker](https://github.com/shinka-rpc/demo-js-front/blob/main/src/shared-worker.ts)
+3) [Back-end](https://github.com/shinka-rpc/demo-js-back/blob/1e3cde235d2e7db29f3c90f6e7f84ab1d3e2a532/src/index.ts#L35-L55)
