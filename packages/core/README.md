@@ -3,7 +3,7 @@
 Symmetric RPC bus. This page explains basic concepts only.
 [Documentation is here](https://shinka-rpc-js.readthedocs.io/latest/core/)
 
-![diagram](./how-shinka-rpc-works.svg "How `@shinka-rpc` works")
+![diagram](https://raw.githubusercontent.com/shinka-rpc/shinka-js/66e1552e57d63c30b2122387f06c4bb354c7e87f/docs/img/shinka-structure.svg "How `@shinka-rpc` works")
 
 This package implements the main functionality of `@shinka-rpc`. Ironically the
 `core` know how to do everything but it is made so abstract that as is unable to
@@ -36,6 +36,8 @@ Also there are some default serializers available:
 - [@shinka-rpc/serializer-msgspec](https://www.npmjs.com/package/@shinka-rpc/serializer-msgspec)
 
 - [@shinka-rpc/serializer-gzip](https://www.npmjs.com/package/@shinka-rpc/serializer-gzip)
+
+- [@shinka-rpc/serializer-base64](https://www.npmjs.com/package/@shinka-rpc/serializer-base64)
 
 The main advantage of `@shinka-rpc` is in re-using of the same `core` with all
 transports. And when you decided to build many RPC communication buses, your

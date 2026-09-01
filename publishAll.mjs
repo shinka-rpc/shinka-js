@@ -8,7 +8,6 @@ import {
   readFile,
 } from "fs/promises";
 import { Buffer } from "node:buffer";
-import { compareVersions } from "compare-versions";
 
 const __dirname = new URL(import.meta.url + "/..").pathname;
 const distDir = join(__dirname, "dist");
@@ -45,8 +44,8 @@ const getPackageJSONVersion = async (path) => {
   }
 };
 
-const getNPMVersion = async (name) => {
-  const process = spawn("npm", ["info", name, "version"]);
+const getNPMVersions = async (name) => {
+  const process = spawn("npm", ["info", "--json", name, "versions"]);
   try {
     let readingStderr = false;
     const buffer = await new Promise((resolve, reject) => {
@@ -72,7 +71,7 @@ const getNPMVersion = async (name) => {
       });
     });
     const data = buffer.toString();
-    return data.trim();
+    return JSON.parse(data);
   } catch (e) {
     console.error(e);
   }
@@ -82,14 +81,9 @@ const handlePackageJSON = async (path) => {
   const ourData = await getPackageJSONVersion(path);
   if (ourData === undefined) return;
   try {
-    const npmVersion = await getNPMVersion(ourData.name);
-    // console.log({
-    //   name: ourData.name,
-    //   npmVersion,
-    //   ourVersion: ourData.version,
-    // });
-    if (npmVersion === undefined) return path;
-    if (compareVersions(ourData.version, npmVersion) > 0) return path;
+    const npmVersions = await getNPMVersions(ourData.name);
+    if (npmVersions === undefined) return path;
+    if (!new Set(npmVersions).has(ourData.version)) return path;
   } catch (e) {
     console.error(e);
   }
