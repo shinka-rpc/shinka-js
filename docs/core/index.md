@@ -1,4 +1,4 @@
-## What is RPC?
+# What is RPC?
 
 When two parts of an application need to communicate, the usual approach is to
 exchange messages:
@@ -35,7 +35,7 @@ The important part is that
 The other endpoint may be a backend server, a Web Worker, another browser
 context, or any other environment capable of communicating with the caller.
 
-## What does `@shinka-rpc/core` do?
+# What does `@shinka-rpc/core` do?
 
 `@shinka-rpc/core` provides the communication primitives needed to build such
 RPC systems.
@@ -55,7 +55,7 @@ communication mechanism.
 For example, the transport may be a WebSocket in one application and a
 `MessagePort` in another, while the RPC layer remains conceptually the same.
 
-## Communication, not just "client and server"
+# Communication, not just "client and server"
 
 A key idea behind Shinka-RPC is that an RPC endpoint is not inherently a
 **client** or a **server**.
@@ -83,7 +83,7 @@ flowchart LR
 The transport determines **how endpoints communicate**; RPC determines
 **what that communication means**.
 
-## Why use RPC?
+# Why use RPC?
 
 Without an RPC layer, every application tends to develop its own communication
 protocol:
