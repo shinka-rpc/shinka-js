@@ -461,6 +461,8 @@ export class Bus<SO, TO, TC> implements IBus<SO, TO> {
         busEvents.heartbeat(this.#sta.bus.shinka.dataEvent);
 
       if (instruction.bye) this.#vars.bye = 1;
+      this.#vars.closed = 0;
+
       const onOutScope = instruction.bye
         ? gracefulShutdown.bind(
             0,
