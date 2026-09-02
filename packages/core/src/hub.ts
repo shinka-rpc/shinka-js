@@ -17,14 +17,14 @@ import type {
 const { freeze: objectFreeze } = Object;
 
 export class Hub<SO, TO, TC> {
-  #userRegistries!: HandlerRegistries<SO, TO, IBus<SO, TO>>;
-  #eventListeners!: ShinkaEventListeners<IBus<SO, TO>>;
-  #clients!: Set<Bus<SO, TO, TC>>;
-  #disposing!: ReusablePromise<void>;
+  #userRegistries: HandlerRegistries<SO, TO, IBus<SO, TO>>;
+  #eventListeners: ShinkaEventListeners<IBus<SO, TO>>;
+  #clients: Set<Bus<SO, TO, TC>>;
+  #disposing: ReusablePromise<void>;
 
-  public onRequest!: ShinkaOnRequest<SO, TO, IBus<SO, TO>>;
-  public onDataEvent!: ShinkaOnDataEvent<IBus<SO, TO>>;
-  public extra!: Record<string | symbol, any>;
+  public onRequest: ShinkaOnRequest<SO, TO, IBus<SO, TO>>;
+  public onDataEvent: ShinkaOnDataEvent<IBus<SO, TO>>;
+  public extra: Record<string | symbol, any>;
 
   constructor() {
     this.#eventListeners = createEventListeners();

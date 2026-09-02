@@ -40,18 +40,18 @@ const makePair = <SO, TO>(
 };
 
 export class Pool<SO, TO, TC> implements ShinkaOn<SO, TO, IBus<SO, TO>> {
-  #hub!: Hub<SO, TO, TC>;
-  #connectProps!: BusProps<SO, TO, TC>;
-  #scheduler!: IScheduler<[IBus<SO, TO>, () => void]>;
-  #acquired!: Set<IBus<SO, TO>>;
-  #vars!: PoolVars;
+  #hub: Hub<SO, TO, TC>;
+  #connectProps: BusProps<SO, TO, TC>;
+  #scheduler: IScheduler<[IBus<SO, TO>, () => void]>;
+  #acquired: Set<IBus<SO, TO>>;
+  #vars: PoolVars;
 
-  public onRequest!: ShinkaOnRequest<SO, TO, IBus<SO, TO>>;
-  public onDataEvent!: ShinkaOnDataEvent<IBus<SO, TO>>;
-  public addEventListener!: ManageEventListener<IBus<SO, TO>>;
-  public removeEventListener!: ManageEventListener<IBus<SO, TO>>;
+  public onRequest: ShinkaOnRequest<SO, TO, IBus<SO, TO>>;
+  public onDataEvent: ShinkaOnDataEvent<IBus<SO, TO>>;
+  public addEventListener: ManageEventListener<IBus<SO, TO>>;
+  public removeEventListener: ManageEventListener<IBus<SO, TO>>;
 
-  public extra!: Record<string | symbol, any>;
+  public extra: Record<string | symbol, any>;
 
   constructor({
     outscope,

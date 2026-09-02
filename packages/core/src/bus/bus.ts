@@ -107,27 +107,27 @@ const defaultSerializerOpts: SerializerInitOpts = objectFreeze({
 // ===
 
 export class Bus<SO, TO, TC> implements IBus<SO, TO> {
-  #outscope!: OutScope;
-  #sta!: ShinkaAndThisArgAll<SO, TO, any>;
-  #dispatchMap!: DispatchMap;
-  #sendDelegate!: DelegateType<SendFn<SO, TO>>;
-  #transportCloseDelegate!: DelegateType<() => Promise<void>>;
-  #serializerStopDelegate!: DelegateType<() => void>;
-  #limonStopDelegate!: DelegateType<() => void>;
-  #onOutScopeDelegate!: DelegateType<() => void>;
-  #eventListeners!: ShinkaListenerLayers<typeof this>;
-  #lastDataAt!: LastDataAt;
-  #vars!: BusVars;
-  #dispatchErrors!: DispatchErrors;
-  #onTerminated!: () => void;
-  #resetStatesQueue!: IQueue<() => void>;
-  #resetBye!: () => void;
-  #complete!: CompleteFn<SO, TO, TC>;
+  #outscope: OutScope;
+  #sta: ShinkaAndThisArgAll<SO, TO, any>;
+  #dispatchMap: DispatchMap;
+  #sendDelegate: DelegateType<SendFn<SO, TO>>;
+  #transportCloseDelegate: DelegateType<() => Promise<void>>;
+  #serializerStopDelegate: DelegateType<() => void>;
+  #limonStopDelegate: DelegateType<() => void>;
+  #onOutScopeDelegate: DelegateType<() => void>;
+  #eventListeners: ShinkaListenerLayers<typeof this>;
+  #lastDataAt: LastDataAt;
+  #vars: BusVars;
+  #dispatchErrors: DispatchErrors;
+  #onTerminated: () => void;
+  #resetStatesQueue: IQueue<() => void>;
+  #resetBye: () => void;
+  #complete: CompleteFn<SO, TO, TC>;
 
-  public request!: ShinkaRequest<SO, TO>;
-  public dataEvent!: ShinkaDataEvent<SO, TO>;
-  public extra!: Record<string | symbol, any>;
-  public exclusiveLock!: (timeout: number) => Promise<AsyncDisposeContext>;
+  public request: ShinkaRequest<SO, TO>;
+  public dataEvent: ShinkaDataEvent<SO, TO>;
+  public extra: Record<string | symbol, any>;
+  public exclusiveLock: (timeout: number) => Promise<AsyncDisposeContext>;
 
   constructor(
     outscope: OutScope,

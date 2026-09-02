@@ -5,8 +5,8 @@ import { createEventListeners } from "./factory/event-listeners-bus";
 import type { ShinkaOnDataEvent, ShinkaOnRequest, ClientProps } from "./types";
 
 export class Client<SO, TO, TC> extends Bus<SO, TO, TC> {
-  public onRequest!: ShinkaOnRequest<SO, TO, this>;
-  public onDataEvent!: ShinkaOnDataEvent<this>;
+  public onRequest: ShinkaOnRequest<SO, TO, this>;
+  public onDataEvent: ShinkaOnDataEvent<this>;
 
   constructor({
     outscope,

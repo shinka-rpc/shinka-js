@@ -6,9 +6,9 @@ import type { TransportServer } from "@shinka-rpc/core";
 export type ExtensionTransportContext = chrome.runtime.Port;
 
 export const messagePortTransport: TransportServer<
-  any,
-  any,
-  any,
+  unknown,
+  undefined,
+  void,
   ExtensionTransportContext
 > = (shinkaOn, connect, eventListeners) => {
   const listener = (port: chrome.runtime.Port) =>

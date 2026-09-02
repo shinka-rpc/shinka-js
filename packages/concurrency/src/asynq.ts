@@ -12,8 +12,8 @@ export type AsynqProps<T> = {
 };
 
 export class Asynq<T> {
-  #items!: IQueue<T>;
-  #waiters!: IQueue<ResolveReject<T>>;
+  #items: IQueue<T>;
+  #waiters: IQueue<ResolveReject<T>>;
 
   constructor({ items, waiters }: AsynqProps<T>) {
     this.#items = createOrUse(items);

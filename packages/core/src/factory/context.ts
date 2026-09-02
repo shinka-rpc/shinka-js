@@ -2,11 +2,11 @@ import type { Message, MessageResponse, ShinkaMeta } from "../types";
 import type { MessageTypeAllResponse } from "./message-type";
 
 export class Context<SO, TO> {
-  #reqID!: number;
-  #messageTypes!: [MessageTypeAllResponse, MessageTypeAllResponse];
-  #sendMessage!: (message: Message<any>, opts?: any) => void;
+  #reqID: number;
+  #messageTypes: [MessageTypeAllResponse, MessageTypeAllResponse];
+  #sendMessage: (message: Message<any>, opts?: any) => void;
 
-  #answerGeneric!: (
+  #answerGeneric: (
     messageType: MessageTypeAllResponse,
     data: any,
     metadata?: ShinkaMeta<SO, TO>,

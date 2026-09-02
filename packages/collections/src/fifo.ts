@@ -27,7 +27,7 @@ const restoreInitialFIFOState = (restoreInitialState<FIFOState<any>>).bind(
 );
 
 export class FIFO<T> implements IQueue<T> {
-  #state!: FIFOState<T>;
+  #state: FIFOState<T>;
 
   constructor() {
     this.#state = objectSeal({ ...initialState });

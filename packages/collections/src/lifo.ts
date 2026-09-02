@@ -22,7 +22,7 @@ const restoreInitialLIFOState = (restoreInitialState<LIFOState<any>>).bind(
 );
 
 export class LIFO<T> implements IQueue<T> {
-  #state!: LIFOState<T>;
+  #state: LIFOState<T>;
 
   constructor() {
     this.#state = objectSeal({ ...initialState });

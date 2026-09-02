@@ -15,4 +15,4 @@ export const sharedWorkerClient = (create: () => SharedWorker) =>
       instruction: { hi: true, bye: true },
       context: instance,
     };
-  }) as TransportClient<any, any, any, SharedWorker>;
+  }) satisfies TransportClient<unknown, undefined, void, SharedWorker>;

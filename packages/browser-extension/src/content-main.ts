@@ -16,4 +16,4 @@ export const content2mainTransport = (
     const send = async (data: unknown) =>
       window.postMessage([TAG_SEND, data], "*");
     return { send, close, instruction: {}, context: null };
-  }) as TransportClient<any, any, any, null>;
+  }) satisfies TransportClient<unknown, undefined, void, null>;

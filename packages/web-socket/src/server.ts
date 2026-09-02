@@ -17,4 +17,4 @@ export const webSocketServer = (wss: WebSocketServer) =>
     };
     eventListeners.add("started", () => wss.on("connection", wsEventHandler));
     eventListeners.add("stopping", () => wss.off("connection", wsEventHandler));
-  }) satisfies TransportServer<any, any, any, WebSocket>;
+  }) satisfies TransportServer<unknown, undefined, void, WebSocket>;

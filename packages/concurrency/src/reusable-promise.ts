@@ -39,11 +39,11 @@ const toResolver =
   };
 
 export class ReusablePromise<P> {
-  #state!: State<P>;
-  #renewExecutor!: PromiseExecutor<P>;
+  #state: State<P>;
+  #renewExecutor: PromiseExecutor<P>;
 
-  public resolve!: ResolveFn<P>;
-  public reject!: ResolveFn<P>;
+  public resolve: ResolveFn<P>;
+  public reject: ResolveFn<P>;
 
   constructor() {
     const state: Partial<State<P>> = {};

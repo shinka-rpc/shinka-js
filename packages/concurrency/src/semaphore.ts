@@ -41,8 +41,8 @@ export type SemaphoreProps = {
 };
 
 export class Semaphore {
-  #waiters!: ISemaphoreQueue<ResolveReject<DisposeContext>>;
-  #state!: SemaphoreState;
+  #waiters: ISemaphoreQueue<ResolveReject<DisposeContext>>;
+  #state: SemaphoreState;
 
   constructor({ waiters, capacity }: SemaphoreProps) {
     validateCapacity(capacity);

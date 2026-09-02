@@ -63,18 +63,18 @@ type ServerVars = {
 };
 
 export class Server<SO, TO, TC> {
-  #hub!: Hub<SO, TO, TC>;
-  #connectDelegate!: DelegateType<TransportConnectFn<SO, TO, any, TC>>;
-  #vars!: ServerVars;
-  #connectFn!: TransportConnectFn<SO, TO, any, TC>;
-  #callEvent!: (type: ServerEventType, ...args: any) => void;
+  #hub: Hub<SO, TO, TC>;
+  #connectDelegate: DelegateType<TransportConnectFn<SO, TO, any, TC>>;
+  #vars: ServerVars;
+  #connectFn: TransportConnectFn<SO, TO, any, TC>;
+  #callEvent: (type: ServerEventType, ...args: any) => void;
 
-  public onRequest!: ShinkaOnRequest<SO, TO, IBus<SO, TO>>;
-  public onDataEvent!: ShinkaOnDataEvent<IBus<SO, TO>>;
-  public addEventListener!: ManageEventListener<IBus<SO, TO>>;
-  public removeEventListener!: ManageEventListener<IBus<SO, TO>>;
+  public onRequest: ShinkaOnRequest<SO, TO, IBus<SO, TO>>;
+  public onDataEvent: ShinkaOnDataEvent<IBus<SO, TO>>;
+  public addEventListener: ManageEventListener<IBus<SO, TO>>;
+  public removeEventListener: ManageEventListener<IBus<SO, TO>>;
 
-  public extra!: Record<string | symbol, any>;
+  public extra: Record<string | symbol, any>;
 
   constructor({
     outscope,

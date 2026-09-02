@@ -6,4 +6,4 @@ export default ((shinkaOn) => (thisArg, opts) => ({
   deserialize: decode as DeserializerFn<any, Uint8Array>,
   transportInitOpts: { mode: "binary", contentType: "application/vnd.msgpack" },
   typeHints: { serialize: "Function", deserialize: "Function" },
-})) satisfies SerializerRoot<EncoderOptions, any, any>;
+})) satisfies SerializerRoot<EncoderOptions, unknown, unknown>;

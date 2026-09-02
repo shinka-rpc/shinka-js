@@ -15,4 +15,4 @@ export const clientWebSocketTransport = (create: () => WebSocket) =>
       instance.addEventListener("error", reject);
     });
     return { send, close, instruction: {}, context: instance };
-  }) as TransportClient<any, any, any, WebSocket>;
+  }) satisfies TransportClient<unknown, undefined, void, WebSocket>;
