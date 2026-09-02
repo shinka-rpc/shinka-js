@@ -62,7 +62,7 @@ type ServerVars = {
   state: ServerState;
 };
 
-export class Server<SO, TO, TC> {
+export class Server<SO = any, TO = any, TC = any> {
   #hub: Hub<SO, TO, TC>;
   #connectDelegate: DelegateType<TransportConnectFn<SO, TO, any, TC>>;
   #vars: ServerVars;

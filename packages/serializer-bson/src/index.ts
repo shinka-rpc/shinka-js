@@ -15,4 +15,4 @@ export default ((shinkaOn) => (thisArg, opts) => ({
   deserialize: deserializers[opts.root],
   transportInitOpts: { mode: "binary", contentType: "application/bson" },
   typeHints: { serialize: "Function", deserialize: "Function" },
-})) satisfies SerializerRoot<void, unknown, unknown>;
+})) satisfies SerializerRoot<void, any, any>;

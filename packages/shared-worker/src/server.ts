@@ -20,4 +20,4 @@ export const sharedWorkerServer = ((shinkaOn, connect, eventListeners) => {
   eventListeners.add("stopping", () =>
     removeEventListener("connect", swEventHandler),
   );
-}) satisfies TransportServer<unknown, undefined, void, MessagePort>;
+}) satisfies TransportServer<any, undefined, any, MessagePort>;

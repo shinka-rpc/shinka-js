@@ -15,4 +15,4 @@ export const dedicatedWorkerClient = (create: () => Worker) =>
       instruction: { hi: true, bye: true },
       context: instance,
     };
-  }) satisfies TransportClient<unknown, undefined, void, Worker>;
+  }) satisfies TransportClient<any, undefined, void, Worker>;

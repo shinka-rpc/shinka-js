@@ -39,7 +39,11 @@ const makePair = <SO, TO>(
   return pair;
 };
 
-export class Pool<SO, TO, TC> implements ShinkaOn<SO, TO, IBus<SO, TO>> {
+export class Pool<SO = any, TO = any, TC = any> implements ShinkaOn<
+  SO,
+  TO,
+  IBus<SO, TO>
+> {
   #hub: Hub<SO, TO, TC>;
   #connectProps: BusProps<SO, TO, TC>;
   #scheduler: IScheduler<[IBus<SO, TO>, () => void]>;

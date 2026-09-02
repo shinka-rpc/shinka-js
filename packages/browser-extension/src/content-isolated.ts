@@ -19,7 +19,7 @@ export const extensionTransport = ((shinkaOn) =>
     };
     return { send, close, instruction: { hi: true, bye: true }, context: port };
   }) satisfies TransportClient<
-  unknown,
+  any,
   undefined,
   void,
   IsolatedExtensionTransportContext

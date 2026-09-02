@@ -16,7 +16,7 @@ import type {
 
 const { freeze: objectFreeze } = Object;
 
-export class Hub<SO, TO, TC> {
+export class Hub<SO = any, TO = any, TC = any> {
   #userRegistries: HandlerRegistries<SO, TO, IBus<SO, TO>>;
   #eventListeners: ShinkaEventListeners<IBus<SO, TO>>;
   #clients: Set<Bus<SO, TO, TC>>;

@@ -11,4 +11,4 @@ export default ((shinkaOn) => (thisArg, opts) => ({
   deserialize: JSON.parse,
   transportInitOpts: { mode: "text", contentType: "application/json" },
   typeHints: { serialize: "Function", deserialize: "Function" },
-})) satisfies SerializerRoot<JSONSerializerOptions, unknown, unknown>;
+})) satisfies SerializerRoot<JSONSerializerOptions, any, any>;

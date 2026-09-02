@@ -33,7 +33,7 @@ const disposedVars: BusProxyVars<any, any> = objectFreeze({
 
 export type DisposableIBus<SO, TO> = IBus<SO, TO> & DisposeContext;
 
-export class BusProxy<SO, TO> implements DisposableIBus<SO, TO> {
+export class BusProxy<SO = any, TO = any> implements DisposableIBus<SO, TO> {
   #vars: BusProxyVars<SO, TO>;
   extra: any;
 
