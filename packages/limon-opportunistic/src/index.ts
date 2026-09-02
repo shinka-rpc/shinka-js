@@ -76,7 +76,7 @@ export const schedulerCore = (
 export default ({
   timeout = 15_000,
   threshold = null,
-}: LiMonOpportunisticProps) =>
+}: LiMonOpportunisticProps = {}) =>
   ((shinkaOn) => {
     shinkaOn.onDataEvent(
       OpportunisticLiMonEventKeys.EXTERNAL,
