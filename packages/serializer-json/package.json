@@ -10,7 +10,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "postbuild": "node ../../packagePostBuild.mjs",
-    "test": "echo \"No test specified\""
+    "test": "jest"
   },
   "keywords": [
     "rpc",
