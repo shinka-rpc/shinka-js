@@ -1,177 +1,157 @@
-import {
-  defaultSerializer,
-  LazyInitKey,
-  RegistryKey,
-  defaultRequestTimeout,
-  HelloKey,
-} from "./constants";
+import { delegate, type DelegateType } from "@shinka-rpc/util";
 
-import { CommonBus } from "./common";
+import { Hub } from "./hub";
 
-import {
-  createEventHandler,
-  createRequestHandler,
-  createReqRegistry,
-  createEventRegistry,
-  asOnRequest,
-} from "./factory/registry";
+import { defaultSerializerRoot, defaultExclusiveLock } from "./defaults";
+import { setupHandlerRegistries } from "./shinka";
+import type { Bus } from "./bus";
 
 import type {
-  DataEventKey,
-  Serializer,
-  StrictRegistry,
-  Registry,
-  RequestHandler,
-  CompleteFN,
-  ShinkaMeta,
-  ServerBusConnectProps,
+  ShinkaOnRequest,
+  ShinkaOnDataEvent,
+  ManageEventListener,
+  InternalHandlerThisArg,
+  TransportServer,
+  TransportFactory,
+  TransportConnectFn,
+  ShinkaOn,
+  ServerEventType,
+  ManageEventListenerPair,
+  InternalHandlerRegistries,
+  IBus,
+  BusProps,
+  ServerOptions,
 } from "./types";
 
-export type ServerOptions = {
-  registry?: Registry<CommonBus>;
-  serializer?: Serializer;
-  timeout?: number;
-  sayHello?: boolean;
+import { baseListenerFactory } from "./factory/base-listener-factory";
+import { createEventListenerPair } from "./factory/event-listener-pair";
+
+const serverEventTypes: ServerEventType[] = ["started", "stopping", "stopped"];
+
+const createServerEventListeners = baseListenerFactory(
+  serverEventTypes,
+  Set<() => void>,
+);
+
+const connectFn = <SO, TO, TC>(
+  connect: (props: BusProps<SO, TO, TC>) => Promise<Bus<SO, TO, TC>>,
+  transportHandlers: InternalHandlerRegistries<SO, TO, any>,
+  baseProps: Omit<BusProps<SO, TO, TC>, "transport">,
+  transportFactory: TransportFactory<SO, TO, any, TC>,
+) =>
+  connect({ ...baseProps, transport: [transportHandlers, transportFactory] });
+
+const transportHelper = <SO, TO, TC>(
+  transportServer: TransportServer<SO, TO, any, TC>,
+  connect: TransportConnectFn<SO, TO, any, TC>,
+  listeners: ManageEventListenerPair<ServerEventType>,
+  shinkaOn: ShinkaOn<SO, TO, InternalHandlerThisArg<SO, TO, any>>,
+) => transportServer(shinkaOn, connect, listeners);
+
+const connectDefault = () => {
+  throw new Error("Server is not started!");
 };
 
-const composeServerRegistry = (
-  serverCB: (bus: CommonBus) => void,
-  externalCB: ((bus: CommonBus) => void) | undefined,
-) => {
-  if (!externalCB) return serverCB;
-  return (bus: CommonBus) => {
-    serverCB(bus);
-    try {
-      externalCB(bus);
-    } catch {
-      console.trace();
-    }
-  };
+const enum ServerState {
+  STOPPED = 0,
+  STARTED = 1,
+  STOPPING = 2,
+}
+
+type ServerVars = {
+  state: ServerState;
 };
 
-const createServerStrictRedistry = (
-  registry: Registry<CommonBus> | undefined,
-  clients: Set<CommonBus>,
-) => {
-  const { register, unregister } = registry || {};
-  return {
-    register: composeServerRegistry(clients.add.bind(clients), register),
-    unregister: composeServerRegistry(clients.delete.bind(clients), unregister),
-  } as StrictRegistry<CommonBus>;
-};
+export class Server<SO = any, TO = any, TC = any> {
+  #hub: Hub<SO, TO, TC>;
+  #connectDelegate: DelegateType<TransportConnectFn<SO, TO, any, TC>>;
+  #vars: ServerVars;
+  #connectFn: TransportConnectFn<SO, TO, any, TC>;
+  #callEvent: (type: ServerEventType, ...args: any) => void;
 
-/**
- * ServerBus is a class that manages server-side communication buses.
- * It handles multiple client connections, request/event routing, and provides a centralized
- * way to manage communication between the server and its clients.
- *
- * @class ServerBus
- */
-export class ServerBus {
-  [RegistryKey]!: StrictRegistry<CommonBus>;
-  #serializer!: Serializer;
-  #timeout!: number;
-  #sayHello: boolean;
+  public onRequest: ShinkaOnRequest<SO, TO, IBus<SO, TO>>;
+  public onDataEvent: ShinkaOnDataEvent<IBus<SO, TO>>;
+  public addEventListener: ManageEventListener<IBus<SO, TO>>;
+  public removeEventListener: ManageEventListener<IBus<SO, TO>>;
 
-  /**
-   * Registers a request handler for a specific event key.
-   * @param key - The event key to handle requests for
-   * @param fn - The callback function to handle the request
-   */
-  onRequest!: (
-    key: DataEventKey,
-    fn: (data: any, thisArg: CommonBus) => any,
-    metadata?: ShinkaMeta,
-  ) => void;
+  public extra: Record<string | symbol, any>;
 
-  /**
-   * Registers an event handler for a specific event key.
-   * @param key - The event key to handle events for
-   * @param fn - The callback function to handle the event
-   */
-  onDataEvent!: (
-    key: DataEventKey,
-    fn: (data: any, thisArg: CommonBus) => void,
-  ) => void;
-
-  #requestHandler!: RequestHandler<CommonBus, any>;
-  #eventHandler!: (key: DataEventKey, body: any, thisArg: CommonBus) => void;
-  #clients!: Set<CommonBus>;
-
-  /**
-   * Additional data storage for the server instance
-   */
-  extra!: Record<string | symbol, any>;
-
-  /**
-   * Creates a new instance of ServerBus.
-   *
-   * @param options - Configuration options for the ServerBus
-   * @param options.registry - Optional registry for request and event handlers
-   * @param options.sayHello - Optional flag to send hello message on client connect (defaults to false)
-   * @param options.serializer - Optional custom serializer (defaults to defaultSerializer)
-   * @param options.timeout - Optional timeout for request responses in milliseconds (defaults to defaultRequestTimeout)
-   */
   constructor({
-    registry,
-    sayHello = false,
-    serializer = defaultSerializer,
-    timeout = defaultRequestTimeout,
-  }: ServerOptions) {
-    const clients = new Set<CommonBus>();
-    this[RegistryKey] = createServerStrictRedistry(registry, clients);
-    this.#serializer = serializer;
-    this.#timeout = timeout;
-    this.#sayHello = sayHello;
-    this.#clients = clients;
-    this.extra = {};
-    //===
-    const [reqGet, reqSet] = createReqRegistry<CommonBus, any, any>();
-    const [evGet, evSet] = createEventRegistry<CommonBus, any>();
+    outscope,
+    transport: transportServerFactory,
+    serializer: serializerRoot = defaultSerializerRoot,
+    limon = null,
+    responseTimeout,
+    lock = defaultExclusiveLock,
+    complete,
+  }: ServerOptions<SO, TO, TC>) {
+    this.#hub = new Hub();
+    this.#vars = { state: ServerState.STOPPED };
+    const { 0: listeners, 1: callEvent } = createEventListenerPair(
+      createServerEventListeners,
+    );
+    this.#callEvent = callEvent;
+    this.#connectDelegate = delegate(
+      connectDefault as TransportConnectFn<SO, TO, any, TC>,
+    );
+    const { 0: transportRegistries } = setupHandlerRegistries(
+      (transportHelper<SO, TO, TC>).bind(
+        0,
+        transportServerFactory,
+        this.#connectDelegate.call,
+        listeners,
+      ),
+    );
 
-    this.onRequest = asOnRequest(reqSet);
-    this.onDataEvent = evSet;
-    this.#requestHandler = createRequestHandler(reqGet);
-    this.#eventHandler = createEventHandler(evGet);
+    const baseProps: Omit<BusProps<SO, TO, TC>, "transport"> = {
+      outscope,
+      serializer: setupHandlerRegistries(serializerRoot),
+      complete,
+      limon: limon && setupHandlerRegistries(limon),
+      lock,
+      responseTimeout,
+    };
+
+    this.#connectFn = (connectFn<SO, TO, TC>).bind(
+      0,
+      this.#hub.connect,
+      transportRegistries,
+      baseProps,
+    );
+
+    this.onDataEvent = this.#hub.onDataEvent;
+    this.onRequest = this.#hub.onRequest;
+    this.addEventListener = this.#hub.addEventListener;
+    this.removeEventListener = this.#hub.removeEventListener;
+    this.extra = this.#hub.extra;
+
+    Object.freeze(this);
   }
 
-  /**
-   * Handles a new client connection.
-   * Creates a new bus instance for the client and initializes the connection.
-   *
-   * @param factory - Factory function that creates message handlers for the client
-   * @param complete - Optional callback function that is called just before
-   * client representation bus is started. Accepts created CommonBus instance
-   * @returns Promise that resolves with the created bus instance
-   */
-  connect = async ({
-    factory,
-    serializer = this.#serializer,
-    responseTimeout = this.#timeout,
-    sayHello = this.#sayHello,
-    complete = () => {},
-  }: ServerBusConnectProps<CommonBus>) => {
-    const bus = new CommonBus();
-    bus[LazyInitKey](
-      factory,
-      serializer,
-      this[RegistryKey],
-      this.#requestHandler,
-      this.#eventHandler,
-      responseTimeout,
-    );
-    complete(bus);
-    await bus.start();
-    if (sayHello) bus[HelloKey]();
-    this.#clients.add(bus);
-    return bus;
+  start = () => {
+    if (this.#vars.state !== ServerState.STOPPED)
+      return console.error("Server is not in `STOPPED` state");
+    this.#connectDelegate.set(this.#connectFn);
+    this.#callEvent("started");
+    this.#vars.state = ServerState.STARTED;
   };
 
-  /**
-   * Notifies all connected clients that the server will be terminated.
-   * This should be called before shutting down the server to ensure proper cleanup.
-   */
-  willDie = () => {
-    for (const client of this.#clients) client.willDie();
+  stop = async () => {
+    if (this.#vars.state !== ServerState.STARTED)
+      return console.error("Server is not in `STARTED` state");
+    this.#vars.state = ServerState.STOPPING;
+    this.#callEvent("stopping");
+    this.#connectDelegate.reset();
+    try {
+      await this.#hub.dispose();
+    } catch (e) {
+      console.trace(e);
+    }
+    this.#callEvent("stopped");
+    this.#vars.state = ServerState.STOPPED;
   };
+
+  public get size() {
+    return this.#hub.size;
+  }
 }

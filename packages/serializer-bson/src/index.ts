@@ -1,9 +1,21 @@
-import type { Serializer } from "@shinka-rpc/core";
+import type { SerializerRoot, Message } from "@shinka-rpc/core";
 import { BSON } from "@kai3341/bsonfy";
 
-const { deserialize: bson_deserialize } = BSON;
+const { serialize, deserialize: bsonDeserialize } = BSON;
 
-export default {
-  serialize: BSON.serialize,
-  deserialize: (data: any) => bson_deserialize(data, true, undefined, true),
-} as Serializer;
+const deserializers = {
+  array: (data: any) =>
+    bsonDeserialize(data, true, undefined, true) as Message<any>,
+  object: (data: any) =>
+    bsonDeserialize(data, true, undefined, false) as Message<any>,
+};
+
+export default ((shinkaOn) => (thisArg, opts) => ({
+  serialize,
+  deserialize: deserializers[opts.root],
+  transportInitOpts: {
+    mode: "binary",
+    mime: { type: "application", subtype: "bson" },
+  },
+  typeHints: { serialize: "Function", deserialize: "Function" },
+})) satisfies SerializerRoot<void, any, any>;

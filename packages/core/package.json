@@ -1,6 +1,10 @@
 {
   "name": "@shinka-rpc/core",
-  "version": "0.0.2",
+  "version": "0.1.0-alpha.5",
+  "publishConfig": {
+    "access": "public",
+    "tag": "alpha"
+  },
   "description": "",
   "main": "./src/index.ts",
   "scripts": {
@@ -27,21 +31,13 @@
     "url": "https://github.com/shinka-rpc/shinka-js/issues"
   },
   "homepage": "https://github.com/shinka-rpc/shinka-js",
-  "devDependencies": {
-    "@types/node": "^20.11.17",
-    "babel-jest": "^30.0.2",
-    "jest": "^30.0.2",
-    "ts-jest": "^29.4.0",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.3.3"
-  },
   "exports": {
-    "default": "./src/index.ts",
-    "require": "./src/index.ts",
-    "import": "./src/index.ts",
-    "types": "./src/index.ts"
+    "default": "./src/index.ts"
   },
   "dependencies": {
-    "@shinka-rpc/util": "^0.0.1"
+    "@shinka-rpc/util": "^0.0.3-alpha.0",
+    "@shinka-rpc/collections": "^0.0.1-alpha.0",
+    "@shinka-rpc/concurrency": "^0.0.1-alpha.0",
+    "@shinka-rpc/consensus": "^0.0.1-alpha.0"
   }
 }

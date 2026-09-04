@@ -8,7 +8,6 @@ import {
   readFile,
 } from "fs/promises";
 import { Buffer } from "node:buffer";
-import { compareVersions } from "compare-versions";
 
 const __dirname = new URL(import.meta.url + "/..").pathname;
 const distDir = join(__dirname, "dist");
@@ -19,7 +18,7 @@ const publish = async (path) => {
     env: process.env,
     stdio: [process.stdin, process.stdout, process.stderr],
   };
-  const args = ["publish", "--access", "public"];
+  const args = ["publish"];
   const publishProcess = spawn("npm", args, options);
   await new Promise((resolve, reject) => publishProcess.on("exit", resolve));
 };
@@ -45,8 +44,8 @@ const getPackageJSONVersion = async (path) => {
   }
 };
 
-const getNPMVersion = async (name) => {
-  const process = spawn("npm", ["info", name, "version"]);
+const getNPMVersions = async (name) => {
+  const process = spawn("npm", ["info", "--json", name, "versions"]);
   try {
     let readingStderr = false;
     const buffer = await new Promise((resolve, reject) => {
@@ -72,7 +71,9 @@ const getNPMVersion = async (name) => {
       });
     });
     const data = buffer.toString();
-    return data.trim();
+    if (!data) return;
+    if (data[0] !== "[") return; // if not published, data === `"0.0.0"`
+    return JSON.parse(data);
   } catch (e) {
     console.error(e);
   }
@@ -82,14 +83,9 @@ const handlePackageJSON = async (path) => {
   const ourData = await getPackageJSONVersion(path);
   if (ourData === undefined) return;
   try {
-    const npmVersion = await getNPMVersion(ourData.name);
-    // console.log({
-    //   name: ourData.name,
-    //   npmVersion,
-    //   ourVersion: ourData.version,
-    // });
-    if (npmVersion === undefined) return path;
-    if (compareVersions(ourData.version, npmVersion) > 0) return path;
+    const npmVersions = await getNPMVersions(ourData.name);
+    if (npmVersions === undefined) return path;
+    if (!new Set(npmVersions).has(ourData.version)) return path;
   } catch (e) {
     console.error(e);
   }
@@ -109,14 +105,14 @@ const handlePackageName = async (name) => {
 
 (async () => {
   const results = [];
-  // const dirHandlerPromices = [];
+  // const dirHandlerPromises = [];
   for (const name of await readdir(distDir)) {
-    // const promice = handlePackageName(name);
-    // dirHandlerPromices.push(promice);
+    // const promise = handlePackageName(name);
+    // dirHandlerPromises.push(promise);
     results.push(await handlePackageName(name));
   }
 
-  // const results = await Promise.all(dirHandlerPromices);
+  // const results = await Promise.all(dirHandlerPromises);
   const toPublishPaths = results.filter(Boolean);
   // console.log(toPublishPaths);
   for (const toPublish of toPublishPaths) await publish(toPublish);

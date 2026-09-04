@@ -1,114 +1,40 @@
-import { sleep } from "@shinka-rpc/util";
+import { defaultSerializerRoot, defaultExclusiveLock } from "./defaults";
+import { Bus } from "./bus";
+import { setupHandlerRegistries, createHandlerRegistries } from "./shinka";
+import { createEventListeners } from "./factory/event-listeners-bus";
+import type { ShinkaOnDataEvent, ShinkaOnRequest, ClientProps } from "./types";
 
-import {
-  LazyInitKey,
-  defaultRequestTimeout,
-  HelloKey,
-  StoppedKey,
-  StartInnerKey,
-  defaultSerializer,
-  emptyRegistry,
-} from "./constants";
+export class Client<SO = any, TO = any, TC = any> extends Bus<SO, TO, TC> {
+  public onRequest: ShinkaOnRequest<SO, TO, this>;
+  public onDataEvent: ShinkaOnDataEvent<this>;
 
-import {
-  createEventHandler,
-  createRequestHandler,
-  createReqRegistry,
-  createEventRegistry,
-  asOnRequest,
-} from "./factory/registry";
-
-import { CommonBus } from "./common";
-
-import type { DataEventKey, ShinkaMeta, ClientBusProps } from "./types";
-
-/**
- * ClientBus is a class that extends CommonBus to provide client-side event handling and request functionality.
- * It manages event subscriptions, request handling, and provides automatic restart capabilities.
- *
- * @class ClientBus
- * @extends CommonBus
- */
-export class ClientBus extends CommonBus {
-  /**
-   * Registers a request handler for a specific event key.
-   * @param key - The event key to handle requests for
-   * @param fn - The callback function to handle the request
-   */
-  onRequest!: (
-    key: DataEventKey,
-    fn: (data: any, thisArg: this) => void,
-    metadata?: ShinkaMeta,
-  ) => void;
-
-  /**
-   * Registers an event handler for a specific event key.
-   * @param key - The event key to handle events for
-   * @param fn - The callback function to handle the event
-   */
-  onDataEvent!: (
-    key: DataEventKey,
-    fn: (data: any, thisArg: this) => void,
-  ) => void;
-
-  #sayHello!: boolean;
-  #restartTimeout!: number;
-
-  /**
-   * Creates a new instance of ClientBus.
-   *
-   * @param props - Configuration options for the ClientBus
-   * @param props.factory - The factory client instance
-   * @param props.serializer - Optional custom serializer (defaults to defaultSerializer)
-   * @param props.registry - Optional registry for request and event handlers
-   * @param props.responseTimeout - Optional timeout for request responses in milliseconds (defaults to defaultRequestTimeout)
-   * @param props.sayHello - Optional flag to send hello message on start (defaults to false)
-   * @param props.restartTimeout - Optional timeout in milliseconds before attempting restart (defaults to 0)
-   */
   constructor({
-    factory,
-    serializer = defaultSerializer,
-    registry,
-    responseTimeout = defaultRequestTimeout,
-    sayHello = false,
-    restartTimeout = 0,
-  }: ClientBusProps<ClientBus>) {
-    super();
-    const [reqGet, reqSet] = createReqRegistry<typeof this, any, any>();
-    const [evGet, evSet] = createEventRegistry<typeof this, any>();
-    super[LazyInitKey](
-      factory,
-      serializer,
-      { ...emptyRegistry, ...registry },
-      createRequestHandler(reqGet),
-      createEventHandler(evGet),
+    outscope,
+    transport,
+    serializer = defaultSerializerRoot,
+    lock = defaultExclusiveLock,
+    limon = null,
+    responseTimeout,
+    complete,
+  }: ClientProps<SO, TO, TC>) {
+    const transportRF = setupHandlerRegistries(transport);
+    const serializerRF = setupHandlerRegistries(serializer);
+    const limonRF = limon && setupHandlerRegistries(limon);
+    const userRegistries = createHandlerRegistries<SO, TO, this>();
+    const eventListeners = createEventListeners();
+    super(
+      outscope,
+      transportRF,
+      serializerRF,
+      limonRF,
+      userRegistries as any,
+      eventListeners,
+      lock,
       responseTimeout,
+      complete,
     );
-    this.onRequest = asOnRequest(reqSet);
-    this.onDataEvent = evSet;
-    this.#sayHello = sayHello;
-    this.#restartTimeout = restartTimeout;
+    this.onRequest = userRegistries.onRequest;
+    this.onDataEvent = userRegistries.onDataEvent;
+    Object.freeze(this);
   }
-
-  /**
-   * Internal method to start the bus and optionally send hello message.
-   * @private
-   */
-  async [StartInnerKey]() {
-    await super[StartInnerKey]();
-    if (this.#sayHello) this[HelloKey]();
-  }
-
-  /**
-   * Attempts to restart the bus after the configured restart timeout if the bus is not stopped.
-   * This method is useful for implementing automatic reconnection logic.
-   *
-   * @returns Promise that resolves when the restart attempt is complete
-   */
-  maybeRestart = async () => {
-    const timeout = this.#restartTimeout;
-    if (!timeout || this[StoppedKey]) return;
-    await sleep(timeout);
-    await this.restart();
-  };
 }

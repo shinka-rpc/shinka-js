@@ -1,144 +1,553 @@
-import type { Context } from "./context";
-import type { MessageType } from "./constants";
-import type { CommonBus } from "./common";
+import type {
+  DisposeContext,
+  AsyncDisposeContext,
+  StructuredMimeType,
+} from "@shinka-rpc/util";
+import type { Semaphore } from "@shinka-rpc/concurrency";
+
+import type { Context } from "./factory/context";
+import type {
+  MessageType,
+  MessageTypeAllRequest,
+  MessageTypeAllResponse,
+  MessageTypeAllEvent,
+} from "./factory/message-type";
+import type { HandlerRegistries } from "./shinka";
+import type { NBAcquire } from "./bus/const-enums";
+
+export type LastDataAt = {
+  received: number;
+  sent: number;
+};
+
+export type FnConstructorName = "Function" | "AsyncFunction";
 
 export type REQID = number;
-
-/**
- * Type representing serialized data that can be sent over the bus.
- * This can be either a string or a Uint8Array.
- */
-export type SerializedData = string | Uint8Array;
-
 export type DataEventKey = string | number | boolean;
-export type Request<B> = [REQID, B];
-export type ResponseType<B> = [boolean, REQID, B];
-export type DataEvent<B> = [DataEventKey, B];
+export type Request<B> = [REQID, DataEventKey, B];
+export type ResponseType<B> = [REQID, B];
+export type DataEvent<B> = [B, DataEventKey];
+
+export type MessageRequestBase<M extends MessageType, B> = [M, ...Request<B>];
+
+export type MessageRequest<B> = MessageRequestBase<MessageTypeAllRequest, B>;
+export type MessageResponseBase<M extends MessageType, B> = [
+  M,
+  ...ResponseType<B>,
+];
+
+export type MessageResponse<B> = MessageResponseBase<MessageTypeAllResponse, B>;
+
+export type MessageDataEventBase<M extends MessageType, B> = [
+  M,
+  ...DataEvent<B>,
+];
+
+export type MessageDataEvent<B> = MessageDataEventBase<MessageTypeAllEvent, B>;
+
+export type Message<B> =
+  | MessageRequest<B>
+  | MessageResponse<B>
+  | MessageDataEvent<B>;
+
+export type ShinkaVars<SO, TO, TA> = {
+  thisArg: TA;
+  send: SendFn<SO, TO>;
+  dispatchError: DispatchError;
+};
+
+export type ShinkaVarsSetter<SO, TO, TA> = (
+  vars: Partial<ShinkaVars<SO, TO, TA>>,
+) => void;
+
+export type ShinkaOnRequest<SO, TO, TA> = (
+  key: DataEventKey,
+  cb: (data: any, thisArg: TA) => any,
+  metadataWithHint?: MetadataWithHint<SO, TO>,
+) => void;
+
+export type ShinkaRequest<SO, TO> = <T>(
+  key: DataEventKey,
+  data: any,
+  metadata?: ShinkaMeta<SO, TO>,
+) => Promise<T>;
+
+export type ShinkaOnDataEvent<TA> = (
+  key: DataEventKey,
+  val: (data: any, thisArg: TA) => void,
+) => void;
+
+export type ShinkaDataEvent<SO, TO> = (
+  event: DataEventKey,
+  data: any,
+  metadata?: ShinkaMeta<SO, TO>,
+) => void;
+
+export type ShinkaOn<SO, TO, TA> = {
+  onRequest: ShinkaOnRequest<SO, TO, TA>;
+  onDataEvent: ShinkaOnDataEvent<TA>;
+};
+
+export type ShinkaDo<SO, TO> = {
+  request: ShinkaRequest<SO, TO>;
+  dataEvent: ShinkaDataEvent<SO, TO>;
+};
+
+export type IBus<SO, TO> = ShinkaDo<SO, TO> & {
+  start: () => Promise<void>;
+  stop: () => Promise<void>;
+  restart: () => Promise<void>;
+  ping: () => Promise<number>;
+  addEventListener: ManageEventListener<IBus<SO, TO>>;
+  removeEventListener: ManageEventListener<IBus<SO, TO>>;
+  extra: Record<string | symbol, any>;
+  exclusiveLock: (timeout: number) => Promise<AsyncDisposeContext>;
+};
+
+export type IBusAgg<SO, TO> = {
+  addEventListener: ManageEventListener<IBus<SO, TO>>;
+  removeEventListener: ManageEventListener<IBus<SO, TO>>;
+  extra: Record<string | symbol, any>;
+};
+
+export type Shinka<SO, TO, TA> = ShinkaOn<SO, TO, TA> & ShinkaDo<SO, TO>;
+
+export type MetadataWithHint<SO, TO> = ShinkaMeta<SO, TO> & {
+  hint?: FnConstructorName;
+};
+
+export type MessageDispatchHandler<M> = (message: M) => void;
+
+export type DispatchMap = Map<
+  MessageType,
+  | MessageDispatchHandler<MessageRequest<any>>
+  | MessageDispatchHandler<MessageResponse<any>>
+  | MessageDispatchHandler<MessageDataEvent<any>>
+>;
+
+export type InternalHandlerThisArg<SO, TO, STATE> = {
+  bus: IBus<SO, TO>;
+  shinka: Shinka<SO, TO, InternalHandlerThisArg<SO, TO, STATE>>;
+  state: STATE;
+  dispatchError: (error: any) => void;
+  exclusiveLock: (timeout: number) => Promise<AsyncDisposeContext>;
+};
+
+export type BusHandlerThisArg<SO, TO, STATE> = {
+  bus: IBus<SO, TO>;
+  shinka: Shinka<SO, TO, BusHandlerThisArg<SO, TO, STATE>>;
+  state: STATE;
+  dispatchError: (error: any) => void;
+  exclusiveLock: (timeout: number) => Promise<AsyncDisposeContext>;
+  byeReset: () => void;
+};
+
+export type UserHandlerRegistries<SO, TO, B> = HandlerRegistries<SO, TO, B>;
+
+export type InternalHandlerRegistries<SO, TO, STATE> = HandlerRegistries<
+  SO,
+  TO,
+  InternalHandlerThisArg<SO, TO, STATE>
+>;
+
+export type BusHandlerRegistries<SO, TO, STATE> = HandlerRegistries<
+  SO,
+  TO,
+  BusHandlerThisArg<SO, TO, STATE>
+>;
+
+// In some cases serialization is not required
+export type SerializedData = string | Uint8Array | Message<any>;
+
 export type ProcessData<B> = [DataEventKey, B];
-export type DataEventHandler<TA extends CommonBus, B> = (
+export type DataEventHandler<TA, B> = (
   key: DataEventKey,
   data: B,
   thisArg: TA,
 ) => void;
 
-export type RequestHandler<TA extends CommonBus, B> = (
+export type RequestHandler<SO, TO, TA, B> = (
   key: DataEventKey,
   body: B,
-  context: Context<TA>,
+  context: Context<SO, TO>,
+  thisArg: TA,
+  dispatchError: DispatchError,
 ) => void;
 
-export type MessageRequestBase<T, B> = [T, Request<B>];
-export type MessageRequest<B> = MessageRequestBase<
-  MessageType.REQUEST_OUTER | MessageType.REQUEST_INNER,
-  B
->;
-export type MessageResponseBase<T, B> = [T, ResponseType<B>];
-export type MessageResponse<B> = MessageResponseBase<
-  MessageType.RESPONSE_OUTER | MessageType.RESPONSE_INNER,
-  B
->;
+export type SerializerInitOpts = {
+  root: "object" | "array";
+};
 
-export type MessageEventBase<T, B> = [T, DataEvent<B>];
-export type MessageEvent<B> = MessageEventBase<
-  MessageType.EVENT_OUTER | MessageType.EVENT_INNER,
-  B
->;
+export type SerializationMode = "text" | "binary";
+export type NotSerialized = "not-serialized";
+export type TransportInitOptsMode = SerializationMode | NotSerialized;
 
-export type Message<B> =
-  | MessageRequest<B>
-  | MessageResponse<B>
-  | MessageEvent<B>;
+export type TransportInitOpts =
+  | {
+      mode: SerializationMode;
+      mime: StructuredMimeType;
+    }
+  | { mode: NotSerialized };
 
-/**
- * Generic serializer interface for converting between
- * message types and serialized data.
- *
- * @template I - The input message type
- * @template O - The output serialized data type
- * @template SO - Serializer options
- */
+export type SerializerTypeHints = {
+  serialize: FnConstructorName;
+  deserialize: FnConstructorName;
+};
+
+export type SerializerFnSync<I, O extends SerializedData, SO> = (
+  data: I,
+  opts?: SO,
+) => O;
+
+export type SerializerFnAsync<I, O extends SerializedData, SO> = (
+  data: I,
+  opts?: SO,
+) => Promise<O>;
+
+export type SerializerFn<I, O extends SerializedData, SO> =
+  | SerializerFnSync<I, O, SO>
+  | SerializerFnAsync<I, O, SO>;
+
+export type DeserializerFnSync<
+  I extends Message<any>,
+  O extends SerializedData,
+> = (data: O) => I;
+
+export type DeserializerFnAsync<
+  I extends Message<any>,
+  O extends SerializedData,
+> = (data: O) => Promise<I>;
+
+export type DeserializerFn<I extends Message<any>, O extends SerializedData> =
+  | DeserializerFnSync<I, O>
+  | DeserializerFnAsync<I, O>;
+
+export type OnReadyFn = () => void | Promise<void>;
+
 export type GenericSerializer<
   I extends Message<any>,
   O extends SerializedData,
   SO,
 > = {
-  /** Converts a message to serialized data */
-  serialize: (data: I, opts?: SO) => O;
-  /** Converts serialized data back to a message */
-  deserialize: (data: O) => I;
+  serialize: SerializerFn<I, O, SO>;
+  deserialize: DeserializerFn<I, O>;
+  onReady?: OnReadyFn;
+  stop?: () => void;
+  typeHints: SerializerTypeHints;
+  transportInitOpts: TransportInitOpts;
 };
 
-export type Serializer = GenericSerializer<Message<any>, any, any>;
+export type SerializerInstance<SO> = GenericSerializer<Message<any>, any, SO>;
+export type SerializerFactory<SO, TO, SS> = (
+  thisArg: InternalHandlerThisArg<SO, TO, SS>,
+  opts: SerializerInitOpts,
+) => SerializerInstance<SO> | Promise<SerializerInstance<SO>>;
 
-/**
- * Strict registry interface that requires both register and unregister functions.
- * This is used for managing bus registration and lifecycle.
- *
- * @template C - The type of object being registered
- */
-export type StrictRegistry<C> = {
-  /** Registers an object with the registry */
-  register: (target: C) => void;
-  /** Unregisters an object from the registry */
-  unregister: (target: C) => void;
+export type SerializerRoot<SO, TO, SS> = (
+  shinkaOn: ShinkaOn<SO, TO, InternalHandlerThisArg<SO, TO, SS>>,
+) => SerializerFactory<SO, TO, SS>;
+
+export type ShinkaEventListener<B> = (bus: B, payload: any) => void;
+export type ShinkaEventListenerSet<B> = Set<ShinkaEventListener<B>>;
+export type ShinkaEventListenerWeakSet<B> = WeakSet<ShinkaEventListener<B>>;
+
+export type EventListenerType = "connect" | "disconnect" | "error";
+
+export type DispatchError = (error: any) => void;
+
+export type BaseShinkaEventListeners<S> = Record<EventListenerType, S>;
+
+export type ShinkaEventListeners<B> = BaseShinkaEventListeners<
+  ShinkaEventListenerSet<B>
+>;
+
+export type ShinkaEventListenersBanned<B> = BaseShinkaEventListeners<
+  ShinkaEventListenerWeakSet<B>
+>;
+
+export type ShinkaListenerLayers<B> = {
+  own: ShinkaEventListeners<B>;
+  parent: ShinkaEventListeners<B>; // modification is restricted
+  banned: ShinkaEventListenersBanned<B>;
 };
 
-/**
- * Optional registry interface where register and unregister functions are optional.
- * This is used when a registry implementation might not need both functions.
- *
- * @template C - The type of object being registered
- */
-export type Registry<C> = {
-  /** Optional function to register an object */
-  register?: (target: C) => void;
-  /** Optional function to unregister an object */
-  unregister?: (target: C) => void;
-};
+export type BaseManageEventListener<TYPE, TARGET> = (
+  type: TYPE,
+  target: TARGET,
+) => void;
 
-/**
- * Factory data interface for bus communication.
- * This defines the basic functions needed for sending messages and closing connections.
- */
-export type FactoryData = {
-  /** Function to send data through the bus */
-  send: (data: any, opts?: any) => void;
-  /** Function to close the connection */
+export type ManageEventListener<B> = BaseManageEventListener<
+  EventListenerType,
+  ShinkaEventListener<B>
+>;
+
+export type TransportAPI = { hi: () => void; bye: () => void };
+
+export type TransportInstance<TO, TC> = {
+  send: (data: any, opts?: TO) => void;
   close: () => Promise<void>;
+  onReady?: OnReadyFn;
+  instruction: { hi?: boolean; bye?: boolean };
+  context: TC;
 };
 
-// export type OnMessageSerialized = (data: SerializedData) => void;
+export type TransportFactory<SO, TO, TS, TC> = (
+  thisArg: InternalHandlerThisArg<SO, TO, TS>,
+  onRawData: (data: SerializedData) => void,
+  onClosed: () => void,
+  opts: TransportInitOpts,
+) => Promise<TransportInstance<TO, TC>> | TransportInstance<TO, TC>;
 
-export type FactoryClient<B> = (bus: B) => Promise<FactoryData>;
+export type TransportSubscribe<SO, TO, TS, TC> = (
+  shinkaOn: ShinkaOn<SO, TO, InternalHandlerThisArg<SO, TO, TS>>,
+) => TransportFactory<SO, TO, TS, TC>;
 
-export type CompleteFN<B> = (bus: B) => void;
+export type TransportClient<SO, TO, TS, TC> = TransportSubscribe<
+  SO,
+  TO,
+  InternalHandlerThisArg<SO, TO, TS>,
+  TC
+>;
 
-/**
- * Type representing a tuple of reject and resolve functions for a Promise.
- * This is used internally for managing request/response pairs.
- */
+export type TransportConnectFn<SO, TO, TS, TC> = (
+  transport: TransportFactory<SO, TO, TS, TC>,
+) => void;
+
+export type ServerEventType = "started" | "stopping" | "stopped";
+
+export type ServerManageEventListener = BaseManageEventListener<
+  ServerEventType,
+  () => void
+>;
+
+export type ManageEventListenerPair<TYPE> = {
+  add: BaseManageEventListener<TYPE, () => void>;
+  remove: BaseManageEventListener<TYPE, () => void>;
+};
+
+export type TransportServer<SO, TO, TS, TC> = (
+  shinkaOn: ShinkaOn<SO, TO, InternalHandlerThisArg<SO, TO, TS>>,
+  connect: TransportConnectFn<SO, TO, TS, TC>,
+  eventListeners: ManageEventListenerPair<ServerEventType>,
+) => void;
+
 export type RejectResolve = [(reason?: any) => void, (value: any) => void];
 
-export type ShinkaMetaGeneric<SO, TO> = {
+export type ShinkaMeta<SO, TO> = {
   transport?: TO;
   serialize?: SO;
 };
 
-export type ShinkaMeta = ShinkaMetaGeneric<any, any>;
+export type SendFn<SO, TO> = (
+  message: Message<any>,
+  metadata?: ShinkaMeta<SO, TO>,
+) => void;
+
+export type LiMonThisArg<SO, TO, LS> = InternalHandlerThisArg<SO, TO, LS> & {
+  last: LastDataAt;
+  heartbeat: LiMonHeartbeatFn;
+};
+export type LiMonHeartbeatFn = () => void;
+export type LiMonInstance = {
+  start: () => void;
+  stop: () => void;
+};
+export type LiMonFactory<SO, TO, LS> = (
+  thisArg: LiMonThisArg<SO, TO, LS>,
+) => LiMonInstance;
+export type LiMon<SO, TO, LS> = (
+  shinkaOn: ShinkaOn<SO, TO, LiMonThisArg<SO, TO, LS>>,
+) => LiMonFactory<SO, TO, LS>;
+
+export type TransportRF<SO, TO, TS, TC> = [
+  HandlerRegistries<SO, TO, InternalHandlerThisArg<SO, TO, TS>> | undefined,
+  TransportFactory<SO, TO, TS, TC>,
+];
+
+export type SerializerRF<SO, TO, SS> = [
+  HandlerRegistries<SO, TO, InternalHandlerThisArg<SO, TO, SS>>,
+  SerializerFactory<SO, TO, SS>,
+];
+
+export type LiMonRF<SO, TO, LS> = [
+  HandlerRegistries<SO, TO, LiMonThisArg<SO, TO, LS>>,
+  LiMonFactory<SO, TO, LS>,
+];
+
+export type ShinkaAndTA<SO, TO, TA> = {
+  shinka: Shinka<SO, TO, TA>;
+  TA: TA;
+};
+
+export type InternalShinkaAndTA<SO, TO> = ShinkaAndTA<
+  SO,
+  TO,
+  InternalHandlerThisArg<SO, TO, any>
+>;
+
+export type BusShinkaAndTA<SO, TO> = ShinkaAndTA<
+  SO,
+  TO,
+  BusHandlerThisArg<SO, TO, any>
+>;
+
+export type LimonShinkaAndTA<SO, TO> = ShinkaAndTA<
+  SO,
+  TO,
+  LiMonThisArg<SO, TO, any>
+>;
+
+export type NB_FIFOEntry<SO, TO> = [Message<any>, ShinkaMeta<SO, TO>?];
+
+export type NBThisArgSetVars<SO, TO, NBS> = {
+  user: ShinkaVarsSetter<SO, TO, any>;
+  bus: ShinkaVarsSetter<SO, TO, InternalHandlerThisArg<SO, TO, any>>;
+  transport: ShinkaVarsSetter<SO, TO, InternalHandlerThisArg<SO, TO, any>>;
+  serializer: ShinkaVarsSetter<SO, TO, InternalHandlerThisArg<SO, TO, any>>;
+  limon: ShinkaVarsSetter<SO, TO, LimonShinkaAndTA<SO, TO>> | null;
+  nb: ShinkaVarsSetter<SO, TO, NBThisArg<SO, TO, NBS>>;
+};
+
+export type NBSetSendFn<SO, TO> = { send: SendFn<SO, TO> };
+export type NBVarsValues<SO, TO> = {
+  lock: NBSetSendFn<SO, TO>;
+  release: NBSetSendFn<SO, TO>;
+};
+
+export type NBVars<SO, TO, NBS> = {
+  set: NBThisArgSetVars<SO, TO, NBS>;
+  val: NBVarsValues<SO, TO>;
+};
+
+export type nbAPIRequest = {};
+
+export type nbAPIEvent = {
+  acquire: (target: NBAcquire, timeout: number, nonces: number[]) => void;
+  accept: () => void;
+  release: () => void;
+};
+
+// due exclusive-lock is external it's better to provide him API via thisArg
+export type nbAPI = {
+  r: nbAPIRequest;
+  e: nbAPIEvent;
+};
+
+export type nbQ = {
+  drain: () => void;
+  clear: () => void;
+};
+
+export type NBThisArg<SO, TO, NBS> = InternalHandlerThisArg<SO, TO, NBS> & {
+  q: nbQ;
+  // concurrent: NBConcurrent;
+  semaphore: Semaphore;
+  vars: NBVars<SO, TO, NBS>;
+  lock: ExclusiveLock<SO, TO, NBS>;
+  api: nbAPI;
+  responseTimeout: number;
+};
+
+export type NBHandlerRegistries<SO, TO, STATE> = HandlerRegistries<
+  SO,
+  TO,
+  NBThisArg<SO, TO, STATE>
+>;
+
+export type NBShinka<SO, TO, STATE> = Shinka<SO, TO, NBThisArg<SO, TO, STATE>>;
+
+export type NBShinkaAndTA<SO, TO, STATE> = {
+  shinka: NBShinka<SO, TO, STATE>;
+  TA: NBThisArg<SO, TO, STATE>;
+};
+
+export type ExclusiveLockAcquire<SO, TO, STATE> = (
+  thisArg: NBThisArg<SO, TO, STATE>,
+  nbAcquire: NBAcquire,
+  timeout: number,
+) => Promise<Readonly<AsyncDisposeContext>>;
+
+export type ExclusiveLockOnAcquire<SO, TO, STATE> = (
+  thisArg: NBThisArg<SO, TO, STATE>,
+  target: NBAcquire,
+  timeout: number,
+  nonces: number[],
+) => void;
+
+export type ExclusiveLockOnAccept<SO, TO, STATE> = (
+  thisArg: NBThisArg<SO, TO, STATE>,
+) => void;
+
+export type ExclusiveLockReleaseMe<SO, TO, STATE> = (
+  thisArg: NBThisArg<SO, TO, STATE>,
+  semaphoreCTX: DisposeContext,
+) => void;
+
+export type ExclusiveLockOnRelease<SO, TO, STATE> = (
+  thisArg: NBThisArg<SO, TO, STATE>,
+) => void;
+
+export type ExclusiveLockOn<SO, TO, STATE> = {
+  acquire: ExclusiveLockOnAcquire<SO, TO, STATE>;
+  accept: ExclusiveLockOnAccept<SO, TO, STATE>;
+  release: ExclusiveLockOnRelease<SO, TO, STATE>;
+};
+
+export type ExclusiveLock<SO, TO, STATE> = {
+  on: ExclusiveLockOn<SO, TO, STATE>;
+  acquire: ExclusiveLockAcquire<SO, TO, STATE>;
+  start: (thisArg: NBThisArg<SO, TO, STATE>) => void;
+  stop: (thisArg: NBThisArg<SO, TO, STATE>) => void;
+};
+
+export type ShinkaAndThisArgAll<SO, TO, NBS> = {
+  user: Shinka<SO, TO, IBus<SO, TO>>;
+  transport: InternalShinkaAndTA<SO, TO> & {
+    factory: TransportFactory<SO, TO, any, any>;
+  };
+  serializer: InternalShinkaAndTA<SO, TO> & {
+    factory: SerializerFactory<SO, TO, any>;
+  };
+  bus: BusShinkaAndTA<SO, TO>;
+  nb: NBShinkaAndTA<SO, TO, NBS>;
+  limon:
+    | (LimonShinkaAndTA<SO, TO> & { factory: LiMonFactory<SO, TO, any> })
+    | null;
+};
+
+export type CompleteFn<SO, TO, TC> = (ctx: TC, thisArg: IBus<SO, TO>) => void;
 
 // Synthetic
-export type CommonBusProps<B> = {
-  factory: FactoryClient<B>;
-  serializer?: Serializer;
+export type BusProps<SO, TO, TC> = {
+  outscope: OutScope;
+  transport: TransportRF<SO, TO, any, TC>;
+  lock?: ExclusiveLock<SO, TO, any>;
+  serializer: SerializerRF<SO, TO, any>;
+  limon?: LiMonRF<SO, TO, any> | null;
   responseTimeout?: number;
-  sayHello?: boolean;
+  complete?: CompleteFn<SO, TO, TC>;
 };
 
-export type ClientBusProps<B> = CommonBusProps<B> & {
-  restartTimeout?: number;
-  registry?: Registry<B>;
+export type BaseAggregatorProps<SO, TO, TC> = {
+  outscope: OutScope;
+  lock?: ExclusiveLock<SO, TO, any>;
+  serializer?: SerializerRoot<SO, TO, any>;
+  limon?: LiMon<SO, TO, any> | null;
+  responseTimeout?: number;
+  complete?: CompleteFn<SO, TO, TC>;
 };
 
-export type ServerBusConnectProps<B> = CommonBusProps<B> & {
-  complete?: CompleteFN<B>;
+export type ClientProps<SO, TO, TC> = BaseAggregatorProps<SO, TO, TC> & {
+  transport: TransportSubscribe<SO, TO, any, TC>;
+};
+
+export type ServerOptions<SO, TO, TC> = BaseAggregatorProps<SO, TO, TC> & {
+  transport: TransportServer<SO, TO, any, TC>;
+};
+
+export type OutScopeEventListener = () => void;
+export type OutScopeListenerManager = (target: OutScopeEventListener) => void;
+export type OutScope = {
+  add: OutScopeListenerManager;
+  remove: OutScopeListenerManager;
 };

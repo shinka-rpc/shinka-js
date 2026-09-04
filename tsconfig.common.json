@@ -1,26 +1,30 @@
 {
   "compilerOptions": {
-    "baseUrl": "./",
-    "target": "ES2015",
-    "module": "ES2015",
-    "lib": ["DOM", "DOM.Iterable", "ES2017"],
+    "target": "es2025",
+    "module": "es2022",
+    "lib": [
+      "DOM",
+      "DOM.Iterable",
+      "ES2021",
+      "ES2022",
+      "ES2025",
+      "ESNext.Disposable"
+    ],
     "declaration": true,
-    // "allowJs": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "strict": true,
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true,
-    "moduleResolution": "node",
-    "resolveJsonModule": true,
-    "isolatedModules": false
-    // "noEmit": true,
+    "resolveJsonModule": true
   },
   "exclude": [
     // "**/*.test.ts",
     // "**/*.stub.ts",
     "node_modules/",
-    "dist/"
+    "dist/",
+    "**/__tests__/",
+    "**/jest.config.ts"
   ]
 }

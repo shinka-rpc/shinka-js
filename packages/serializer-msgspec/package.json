@@ -1,12 +1,16 @@
 {
   "name": "@shinka-rpc/serializer-msgspec",
-  "version": "0.0.1",
+  "version": "0.1.0-alpha.3",
+  "publishConfig": {
+    "access": "public",
+    "tag": "alpha"
+  },
   "description": "",
   "main": "./src/index.ts",
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "postbuild": "node ../../packagePostBuild.mjs",
-    "test": "echo \"No test specified\""
+    "test": "jest"
   },
   "keywords": [
     "rpc",
@@ -19,7 +23,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/shinka-rpc/shinka-js.git",
-    "directory": "packages/util"
+    "directory": "packages/serializer-msgspec"
   },
   "author": "AI Kavalevich",
   "license": "MIT",
@@ -27,17 +31,13 @@
     "url": "https://github.com/shinka-rpc/shinka-js/issues"
   },
   "homepage": "https://github.com/shinka-rpc/shinka-js",
-  "devDependencies": {
-    "@types/node": "^20.11.17",
-    "typescript": "^5.3.3"
-  },
   "exports": {
-    "default": "./src/index.ts",
-    "require": "./src/index.ts",
-    "import": "./src/index.ts",
-    "types": "./src/index.ts"
+    "default": "./src/index.ts"
   },
   "dependencies": {
     "@msgpack/msgpack": "^3.1.2"
+  },
+  "devDependencies": {
+    "@shinka-rpc/core": "^0.1.0-alpha.5"
   }
 }

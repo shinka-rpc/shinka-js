@@ -1,0 +1,37 @@
+{
+  "name": "@shinka-rpc/consensus",
+  "version": "0.0.1-alpha.0",
+  "publishConfig": {
+    "access": "public",
+    "tag": "alpha"
+  },
+  "description": "",
+  "main": "./src/index.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "postbuild": "node ../../packagePostBuild.mjs",
+    "test": "NODE_PATH=../../node_modules/ node ../../node_modules/.bin/jest"
+  },
+  "keywords": [
+    "rpc",
+    "background",
+    "worker",
+    "websocket",
+    "communication",
+    "remote"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shinka-rpc/shinka-js.git",
+    "directory": "packages/consensus"
+  },
+  "author": "AI Kavalevich",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/shinka-rpc/shinka-js/issues"
+  },
+  "homepage": "https://github.com/shinka-rpc/shinka-js",
+  "exports": {
+    "default": "./src/index.ts"
+  }
+}
