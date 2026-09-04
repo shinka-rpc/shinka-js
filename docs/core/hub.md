@@ -1,315 +1,358 @@
-# Hub
+# `Hub`
 
-`Hub` is a low-level one-to-many connection manager in `@shinka-rpc/core`.
+`Hub` is a low-level container for multiple [`Bus`](./bus.md) instances.
 
-Unlike [`Client`](./client.md), which represents a one-to-one communication
-relationship, a `Hub` manages multiple independent connections. Each connection
-is represented by a [`Bus`](./bus.md) instance.
+A `Hub` does not represent a connection itself. Instead, it groups multiple
+connections and provides shared request handlers, data-event handlers, event
+listeners, and lifecycle management for all connections it owns.
+
+It is primarily intended as a building block for higher-level abstractions such
+as [`Server`](./server.md) and [`Pool`](./pool.md), or for advanced users
+implementing their own connection manager.
+
+## Connection model
+
+A `Bus` represents exactly one connection:
 
 ```mermaid
-flowchart LR
+flowchart TD
     HUB([Hub])
-    B1([Bus]) --- P1([Peer])
-    B2([Bus]) --- P2([Peer])
-    B3([Bus]) --- P3([Peer])
+    B1([Bus A]) --- P1([Peer A])
+    B2([Bus B]) --- P2([Peer B])
+    B3([Bus C]) --- P3([Peer C])
     
     HUB --- B1
     HUB --- B2
     HUB --- B3
 ```
 
-`Hub` is primarily an internal building block used by higher-level abstractions
-such as [`Server`](./server.md) and [`Pool`](./pool.md). Most applications
-should use those abstractions instead of creating a `Hub` directly.
+The `Hub` does not replace these `Bus` instances. Each connection remains an
+independent `Bus`.
 
-Advanced users can use `Hub` when they need direct control over how connections
-are created and managed.
-
-## Installation
-
-```bash
-npm install @shinka-rpc/core
-```
-
-## Creating a Hub
-
-A `Hub` requires an `OutScope` and can optionally be configured with a liveness
-monitor, exclusive lock, and request timeout.
-
-```ts
-import { Hub } from "@shinka-rpc/core";
-
-const hub = new Hub({ outscope });
-```
-
-See [`@shinka-rpc/outscope`](../other/outscope.md) for `OutScope`.
-
-See [LiMon documentation](../limons/) for liveness monitoring.
-
-See [Exclusive Lock documentation](../other/exclusive-lock.md) for exclusive
-locking.
-
-## Connecting peers
-
-Unlike `Client`, a `Hub` does not receive a transport and serializer in its
-constructor.
-
-They are supplied for each connection through `connect()`:
-
-```ts
-const bus = await hub.connect({ transport, serializer });
-```
-
-Each call to `connect()` creates a new [`Bus`](./bus.md).
-
-The returned `Bus` represents exactly one connection and can be used to
-communicate with its corresponding peer:
-
-```ts
-const bus = await hub.connect({ transport, serializer });
-
-await bus.request("get-data", {});
-```
-
-Multiple connections can be created from the same `Hub`:
-
-```ts
-const first = await hub.connect({ transport: firstTransport, serializer });
-const second = await hub.connect({ transport: secondTransport, serializer });
-```
-
-The hub keeps track of all active connections.
+::: tip This distinction is important:
+`Bus` represents a connection. `Hub` represents a group of connections.
+:::
 
 ## Shared handlers
 
-Handlers registered on a `Hub` are shared by all connections created by that hub.
+A `Hub` provides a single set of request and data-event handlers shared by all
+connections belonging to it.
+
+Register a request handler with `onRequest()`:
 
 ```ts
-hub.onRequest("get-meta", async () => {
-  return await loadMetadata();
-});
-```
-
-The handler can be invoked by any connected peer.
-
-Similarly, data-event handlers are shared:
-
-```ts
-hub.onDataEvent("message", (data, bus) => {
-  console.log("Received from peer:", data);
-});
-```
-
-The handler receives the `Bus` representing the connection from which the event
-originated.
-
-This makes it possible to distinguish between multiple peers without registering
-separate handlers for every connection.
-
-## Requests
-
-A request handler can be registered with `onRequest()`:
-
-```ts
-hub.onRequest("get-user", async (data, bus) => {
+hub.onRequest("user", async (data, bus) => {
   return await getUser(data.id);
 });
 ```
 
-The callback receives:
+The handler receives the `Bus` associated with the request as `thisArg`.
 
-1. the request data;
-2. the `Bus` associated with the connection;
-3. the request context as provided by the handler API.
-
-The `Bus` can be used to send a response-independent event or make another
-request to the same peer.
+This allows the same handler to serve multiple connections while still providing
+access to the connection that initiated the request.
 
 For example:
 
 ```ts
-hub.onRequest("subscribe", async (data, bus) => {
-  await subscribe(data.id);
+hub.onRequest("user", async (data, bus) => {
+  console.log("Request received from:", bus);
 
-  bus.dataEvent("subscribed", { id: data.id });
+  return await getUser(data.id);
 });
 ```
 
-## Data events
+The handler registry is shared between all buses created by the hub.
 
-`Hub` can also register handlers for incoming data events:
+### Data events
+
+Data-event handlers are shared in the same way:
 
 ```ts
 hub.onDataEvent("message", (data, bus) => {
-  console.log("Message from peer:", data);
+  console.log("Message received:", data);
 });
 ```
 
-The `Bus` argument identifies the connection that produced the event.
+The `bus` argument identifies the connection that delivered the event.
 
-## Connection events
+This makes it possible to implement connection-independent application logic
+while still allowing handlers to distinguish between individual peers when
+necessary.
 
-A `Hub` can observe lifecycle events from all connections it manages.
+## Connecting a `Bus`
+
+Use `connect()` to create a new connection owned by the hub.
 
 ```ts
-hub.addEventListener("connect", (bus) => console.log("Connected:", bus));
-hub.addEventListener("disconnect", (bus) => console.log("Disconnected:", bus));
-hub.addEventListener("error", console.error);
+const bus = await hub.connect({
+  outscope,
+  transport,
+  serializer,
+  lock,
+});
 ```
 
-Unlike `Client`, these listeners operate at the hub level and therefore apply to
-all connections created by the hub.
+Unlike a [`Client`](./client.md), the `Hub` does not define connection
+configuration itself.
 
-## Disposing the Hub
+All properties required to construct the `Bus` are provided to `connect()`.
 
-`dispose()` stops all currently connected `Bus` instances.
+This allows every connection to have its own:
+
+* execution scope;
+* transport;
+* serializer;
+* liveness monitor;
+* exclusive-lock implementation;
+* response timeout;
+* other connection-specific configuration.
+
+The resulting `Bus` is automatically registered with the hub and started before
+`connect()` resolves.
+
+```ts
+const bus = await hub.connect(props);
+
+console.log(bus);
+```
+
+Once connected, the returned `Bus` can be used directly:
+
+```ts
+await bus.request("user", { id: 42 });
+
+bus.dataEvent("notification", {
+  message: "Hello",
+});
+```
+
+## Connection ownership
+
+A `Bus` created by `Hub.connect()` is owned by that hub.
+
+The hub keeps track of all connected buses and automatically removes a bus from
+its collection when the bus disconnects.
+
+```ts
+const bus = await hub.connect(props);
+
+console.log(hub.size); // 1
+
+await bus.stop();
+
+console.log(hub.size); // 0
+```
+
+This also means that `Hub` does not require the caller to manually unregister
+connections.
+
+## Disposing the hub
+
+Use `dispose()` to stop all connections currently owned by the hub:
 
 ```ts
 await hub.dispose();
 ```
 
-Connections that are already disconnected are removed from the hub automatically.
+All active buses are stopped and the `dispose()` promise resolves after they
+have finished stopping.
 
-`dispose()` is also used to synchronize connection creation with disposal. A
-connection attempt that overlaps with disposal waits until disposal has
-completed before creating its `Bus`.
+While disposal is in progress, new connections are not started until disposal
+has completed.
 
-After disposal completes, the hub can be used again:
+This makes `dispose()` suitable for shutting down a whole group of connections
+as a single lifecycle unit.
 
 ```ts
 await hub.dispose();
 
-const bus = await hub.connect({ transport, serializer });
+console.log(hub.size); // 0
+```
+
+A hub can be reused after disposal:
+
+```ts
+await hub.dispose();
+
+const bus = await hub.connect(props);
 ```
 
 ## Connection count
 
-The `size` property returns the number of currently managed connections:
+The `size` property returns the number of connections currently owned by the
+hub.
 
 ```ts
 console.log(hub.size);
 ```
 
+The value changes automatically when buses are connected or disconnected.
+
 ## Disposal state
 
 The `isDisposing` property indicates whether the hub is currently disposing its
-connections:
+connections.
 
 ```ts
 if (hub.isDisposing) {
-  // The hub is currently shutting down its connections.
+  // Hub is shutting down its connections
 }
 ```
 
-## Configuration
+It becomes `true` while `dispose()` is in progress and returns to `false` when
+disposal completes.
+
+## Events
+
+A `Hub` provides event listeners that are shared by all buses it owns.
 
 ```ts
-type HubOptions<SO, TO> = Partial<{
-  responseTimeout: number;
-  limon: LiMonRF<SO, TO, any> | null;
-  lock: ExclusiveLock<SO, TO, any>;
-}> & {
-  outscope: OutScope;
-};
+hub.addEventListener("connect", (bus) => {
+  console.log("Connection established", bus);
+});
+
+hub.addEventListener("disconnect", (bus) => {
+  console.log("Connection closed", bus);
+});
+
+hub.addEventListener("error", (bus, error) => {
+  console.error("Connection error", bus, error);
+});
 ```
 
-### `outscope`
+The listener receives the affected `Bus` as its first argument.
 
-Defines the lifetime of the execution scope in which the hub operates.
+The same listener can therefore observe the lifecycle of every connection
+managed by the hub.
 
-See [`@shinka-rpc/outscope`](../other/outscope.md).
-
-### `responseTimeout`
-
-Specifies the default timeout for requests made through connections managed by
-the hub.
-
-If omitted, the package default is used.
-
-### `limon`
-
-Configures the optional Liveness Monitor for connections created by the hub.
-
-See [LiMon documentation](../limons/).
-
-### `lock`
-
-Configures the exclusive-lock implementation shared by connections created by
-the hub.
-
-See [Exclusive Lock documentation](../other/exclusive-lock.md).
-
-## `connect()`
-
-Creates and starts a new connection.
+Remove a listener with `removeEventListener()`:
 
 ```ts
-hub.connect({ transport, serializer }): Promise<Bus<SO, TO>>
+hub.removeEventListener("disconnect", onDisconnect);
 ```
 
-The `transport` and `serializer` are provided for the individual connection.
+See the [`Bus` event documentation](./bus.md) for the available event types and
+their semantics.
 
-The returned `Bus` is automatically registered in the hub and removed when it
-disconnects.
+## `extra`
 
-## `dispose()`
-
-Stops all currently managed connections.
+The `extra` property provides application-defined storage associated with the
+hub:
 
 ```ts
-hub.dispose(): Promise<void>
+hub.extra.someValue = value;
 ```
 
-## `addEventListener()`
+`@shinka-rpc/core` does not assign any semantics to its contents.
 
-Registers a listener for events produced by connections managed by the hub.
+Unlike `Bus.extra`, which belongs to an individual connection, `Hub.extra`
+belongs to the hub itself and can be used for state shared by the connection
+manager.
+
+## Hub and Bus
+
+The distinction between the two is fundamental:
+
+|                     | `Bus`             | `Hub`                       |
+| ------------------- | ----------------- | --------------------------- |
+| Represents          | One connection    | A group of connections      |
+| Request handlers    | Connection-facing | Shared by all buses         |
+| Data-event handlers | Connection-facing | Shared by all buses         |
+| Event listeners     | One connection    | All owned connections       |
+| Lifecycle           | One connection    | All owned connections       |
+| `extra`             | Per connection    | Per hub                     |
+| `size`              | —                 | Number of owned connections |
+
+A `Hub` does not proxy or abstract away the `Bus` API. `connect()` returns the
+actual `Bus` representing the newly created connection.
+
+## Why `Hub` exists
+
+Without a `Hub`, an application managing multiple connections would have to
+duplicate connection-level configuration and handler registration:
+
+```mermaid
+flowchart TD
+    A([Application])
+    B1([Bus A]) --- H1[(Handlers A)]
+    B2([Bus B]) --- H2[(Handlers B)]
+    B3([Bus C]) --- H3[(Handlers C)]
+    
+    A --- B1
+    A --- B2
+    A --- B3
+```
+
+A `Hub` allows those connections to share the same application-level handlers
+and event listeners:
+
+```mermaid
+flowchart TD
+    HUB([Hub])
+    H[(Shared handlers)]
+    B1([Bus A]) --- H
+    B2([Bus B]) --- H
+    B3([Bus C]) --- H
+    HUB --- B1
+    HUB --- B2
+    HUB --- B3
+```
+
+Each connection remains independent, while the logic responsible for handling
+connections can be defined once.
+
+## Typical use
+
+`Hub` is particularly useful when implementing abstractions where multiple
+independent connections belong to the same logical component.
+
+For example, a connection manager can create buses dynamically:
 
 ```ts
-hub.addEventListener(type, listener)
+const hub = new Hub();
+
+hub.onRequest("meta", async () => {
+  return await getMetadata();
+});
+
+const busA = await hub.connect({
+  outscope,
+  transport: transportA,
+  serializer,
+});
+
+const busB = await hub.connect({
+  outscope,
+  transport: transportB,
+  serializer,
+});
 ```
 
-Supported event types are:
+Both connections now use the same request handlers, while each `Bus` retains
+its own connection-specific configuration and state.
 
-* `connect`
-* `disconnect`
-* `error`
+## Advanced API
 
-## `removeEventListener()`
+`Hub` is intentionally a relatively low-level abstraction.
 
-Removes a previously registered event listener.
+Most applications should use [`Client`](./client.md), [`Server`](./server.md),
+or [`Pool`](./pool.md) instead of constructing a `Hub` directly.
 
-```ts
-hub.removeEventListener(type, listener)
+`Hub` is useful when the application needs to define its own
+connection-management semantics while retaining the common `@shinka-rpc/core`
+primitives.
+
+The library itself uses `Hub` as a building block:
+
+```mermaid
+flowchart LR
+  S([Server]) --> H([Hub]) --> B([Bus])
+```
+```mermaid
+flowchart LR
+  P([Pool]) --> H([Hub]) --> B([Bus])
 ```
 
-## `size`
-
-Returns the number of currently managed connections.
-
-```ts
-hub.size: number
-```
-
-## `isDisposing`
-
-Returns `true` while the hub is disposing its connections.
-
-```ts
-hub.isDisposing: boolean
-```
-
-## When to use Hub
-
-`Hub` is useful when an application needs to manage multiple independent
-connections while sharing handlers and configuration between them.
-
-Typical use cases include:
-
-* implementing a server;
-* implementing a connection pool;
-* building a custom connection manager;
-* integrating `@shinka-rpc/core` with a custom transport layer;
-* implementing advanced connection lifecycle policies.
-
-For normal application code, prefer [`Client`](./client.md) or higher-level
-abstractions such as [`Server`](./server.md) and [`Pool`](./pool.md).
+In these abstractions, `Hub` is responsible for the common mechanics of owning
+multiple connections, while the higher-level object defines how those
+connections are created and used.
