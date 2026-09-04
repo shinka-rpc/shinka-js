@@ -1,1 +1,1 @@
-declare module "high-order-sync";
+declare module "high-order";

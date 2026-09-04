@@ -1,6 +1,6 @@
 {
   "name": "@shinka-rpc/serializer-yaml",
-  "version": "0.1.0-alpha.0",
+  "version": "0.1.0-alpha.1",
   "publishConfig": {
     "access": "public",
     "tag": "alpha"
@@ -35,6 +35,10 @@
     "default": "./src/index.ts"
   },
   "dependencies": {
-    "@shinka-rpc/core": "^0.1.0-alpha.0"
+    "js-yaml": "^5"
+  },
+  "devDependencies": {
+    "@shinka-rpc/core": "^0.1.0-alpha.5",
+    "@types/js-yaml": ">=4"
   }
 }

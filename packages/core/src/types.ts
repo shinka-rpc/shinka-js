@@ -1,4 +1,8 @@
-import type { DisposeContext, AsyncDisposeContext } from "@shinka-rpc/util";
+import type {
+  DisposeContext,
+  AsyncDisposeContext,
+  StructuredMimeType,
+} from "@shinka-rpc/util";
 import type { Semaphore } from "@shinka-rpc/concurrency";
 
 import type { Context } from "./factory/context";
@@ -181,7 +185,7 @@ export type TransportInitOptsMode = SerializationMode | NotSerialized;
 export type TransportInitOpts =
   | {
       mode: SerializationMode;
-      contentType: string;
+      mime: StructuredMimeType;
     }
   | { mode: NotSerialized };
 

@@ -9,6 +9,9 @@ export default ((shinkaOn) => (thisArg, opts) => ({
   serialize: (data: any, { replacer, space }: JSONSerializerOptions = {}) =>
     JSON.stringify(data, replacer, space),
   deserialize: JSON.parse,
-  transportInitOpts: { mode: "text", contentType: "application/json" },
+  transportInitOpts: {
+    mode: "text",
+    mime: { type: "application", subtype: "json" },
+  },
   typeHints: { serialize: "Function", deserialize: "Function" },
 })) satisfies SerializerRoot<JSONSerializerOptions, any, any>;

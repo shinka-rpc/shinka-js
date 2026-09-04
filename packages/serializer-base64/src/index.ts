@@ -1,13 +1,13 @@
 /// <reference lib="esnext.typedarrays">
 
-import createHighOrderSync from "@shinka-rpc/libserializer/high-order-sync";
+import createHighOrder from "@shinka-rpc/libserializer/high-order";
 
-export default createHighOrderSync({
+export default createHighOrder({
   mode: "text",
   bin: {
-    serialize: (data) => data.toBase64(),
-    deserialize: Uint8Array.fromBase64,
+    serialize: [(data) => data.toBase64(), "Function"],
+    deserialize: [Uint8Array.fromBase64, "Function"],
   },
-  text: { serialize: btoa, deserialize: atob },
-  updateContentType: (contentType) => contentType + "base64",
+  text: { serialize: [btoa, "Function"], deserialize: [atob, "Function"] },
+  mimeSubType: "base64",
 });

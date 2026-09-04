@@ -36,7 +36,7 @@
     "@kai3341/bsonfy": "^1",
     "@msgpack/msgpack": "^3",
     "@types/chrome": "*",
-    "@types/js-yaml": "*",
+    "@types/js-yaml": ">=4",
     "@types/node": "*",
     "@types/pako": "*",
     "@types/react": "^19.2.18",

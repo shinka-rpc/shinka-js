@@ -71,6 +71,8 @@ const getNPMVersions = async (name) => {
       });
     });
     const data = buffer.toString();
+    if (!data) return;
+    if (data[0] !== "[") return; // if not published, data === `"0.0.0"`
     return JSON.parse(data);
   } catch (e) {
     console.error(e);

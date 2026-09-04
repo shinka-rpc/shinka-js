@@ -1,6 +1,6 @@
 {
   "name": "@shinka-rpc/serializer-json",
-  "version": "0.1.0-alpha.2",
+  "version": "0.1.0-alpha.3",
   "publishConfig": {
     "access": "public",
     "tag": "alpha"
@@ -34,7 +34,7 @@
   "exports": {
     "default": "./src/index.ts"
   },
-  "dependencies": {
-    "@shinka-rpc/core": "^0.1.0-alpha.0"
+  "devDependencies": {
+    "@shinka-rpc/core": "^0.1.0-alpha.5"
   }
 }

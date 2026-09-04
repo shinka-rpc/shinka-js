@@ -1,16 +1,18 @@
 import { inflate, deflate } from "pako";
+import createHighOrder from "@shinka-rpc/libserializer/high-order";
 
 const textDecoder = new TextDecoder();
 const textEncoder = new TextEncoder();
 
-import createHighOrderSync from "@shinka-rpc/libserializer/high-order-sync";
-
-export const simpleGzip = createHighOrderSync({
+export const simpleGzip = createHighOrder({
   mode: "text",
-  bin: { serialize: deflate, deserialize: inflate },
+  bin: { serialize: [deflate, "Function"], deserialize: [inflate, "Function"] },
   text: {
-    serialize: (data) => deflate(textEncoder.encode(data)),
-    deserialize: (data) => textDecoder.decode(inflate(data)),
+    serialize: [
+      (data, opts) => deflate(textEncoder.encode(data), opts),
+      "Function",
+    ],
+    deserialize: [(data) => textDecoder.decode(inflate(data)), "Function"],
   },
-  updateContentType: (contentType) => contentType + "gzip",
+  mimeSubType: "gzip",
 });

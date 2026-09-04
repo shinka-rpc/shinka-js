@@ -6,6 +6,9 @@ export type SerializerMSGPackOpts = NonNullable<Parameters<typeof encode>[1]>;
 export default ((shinkaOn) => (thisArg, opts) => ({
   serialize: encode,
   deserialize: decode as DeserializerFn<any, Uint8Array>,
-  transportInitOpts: { mode: "binary", contentType: "application/vnd.msgpack" },
+  transportInitOpts: {
+    mode: "binary",
+    mime: { type: "application", subtype: "vnd.msgpack" },
+  },
   typeHints: { serialize: "Function", deserialize: "Function" },
 })) satisfies SerializerRoot<SerializerMSGPackOpts, any, any>;

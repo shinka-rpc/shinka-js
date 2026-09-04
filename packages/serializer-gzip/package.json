@@ -1,6 +1,6 @@
 {
   "name": "@shinka-rpc/serializer-gzip",
-  "version": "0.1.0-alpha.0",
+  "version": "0.1.0-alpha.1",
   "publishConfig": {
     "access": "public",
     "tag": "alpha"
@@ -36,8 +36,10 @@
   },
   "dependencies": {
     "pako": "^2.1.0",
+    "@shinka-rpc/libserializer": "^0.1.0-alpha.1"
+  },
+  "devDependencies": {
     "@types/pako": "^2.0.4",
-    "@shinka-rpc/core": "^0.1.0-alpha.0",
-    "@shinka-rpc/libserializer": "^0.1.0-alpha.0"
+    "@shinka-rpc/core": "^0.1.0-alpha.5"
   }
 }

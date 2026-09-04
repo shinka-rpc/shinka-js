@@ -13,6 +13,9 @@ const deserializers = {
 export default ((shinkaOn) => (thisArg, opts) => ({
   serialize,
   deserialize: deserializers[opts.root],
-  transportInitOpts: { mode: "binary", contentType: "application/bson" },
+  transportInitOpts: {
+    mode: "binary",
+    mime: { type: "application", subtype: "bson" },
+  },
   typeHints: { serialize: "Function", deserialize: "Function" },
 })) satisfies SerializerRoot<void, any, any>;

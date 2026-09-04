@@ -1,6 +1,6 @@
 {
   "name": "@shinka-rpc/serializer-bson",
-  "version": "0.1.0-alpha.2",
+  "version": "0.1.0-alpha.3",
   "publishConfig": {
     "access": "public",
     "tag": "alpha"
@@ -35,7 +35,9 @@
     "default": "./src/index.ts"
   },
   "dependencies": {
-    "@kai3341/bsonfy": "^1.0.2",
-    "@shinka-rpc/core": "^0.1.0-alpha.0"
+    "@kai3341/bsonfy": "^1.0.2"
+  },
+  "devDependencies": {
+    "@shinka-rpc/core": "^0.1.0-alpha.5"
   }
 }
