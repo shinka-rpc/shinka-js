@@ -107,7 +107,7 @@ communication.
 In other words, instead of building application logic around messages:
 
 ```ts
-sendMessage(
+socket.send(
     JSON.stringify({
     type: "getUser",
     requestId,
