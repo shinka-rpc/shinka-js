@@ -9,7 +9,9 @@ const { freeze: objectFreeze } = Object;
 
 const dummy = <I, O>(v: I) => v as any as O;
 
-export const defaultSerializer: SerializerFactory<any, any, any> = () => ({
+export const defaultSerializer: SerializerFactory<any, any, any> = (
+  thisArg,
+) => ({
   serialize: dummy,
   deserialize: dummy,
   transportInitOpts: { mode: "not-serialized" },

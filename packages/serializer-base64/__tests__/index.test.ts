@@ -15,7 +15,7 @@ const makeSerializer = async (parent: SerializerRoot<any, any, any>) => {
   const serializer = base64Serializer(parent);
   const serializerFactory = serializer(reg as any);
   const serializerInstance: SerializerInstance<any> = await serializerFactory(
-    {} as any,
+    { state: {} } as any,
     { root: "array" },
   );
   return serializerInstance;

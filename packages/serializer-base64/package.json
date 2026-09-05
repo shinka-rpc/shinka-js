@@ -1,6 +1,6 @@
 {
   "name": "@shinka-rpc/serializer-base64",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0-alpha.2",
   "publishConfig": {
     "access": "public",
     "tag": "alpha"
@@ -35,7 +35,7 @@
     "default": "./src/index.ts"
   },
   "dependencies": {
-    "@shinka-rpc/libserializer": "^0.1.0-alpha.1"
+    "@shinka-rpc/libserializer": "^0.1.0-alpha.2"
   },
   "devDependencies": {
     "@shinka-rpc/core": "^0.1.0-alpha.5"
