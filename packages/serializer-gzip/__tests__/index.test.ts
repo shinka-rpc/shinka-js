@@ -15,12 +15,12 @@ const serializersBin = [serializerMsgPack, serializerBson];
 
 const data: any = [0, 1, "2345", true, { for: "test" }];
 
-const makeSerializer = async (
-  highOrder: HighOrder,
-  parent: SerializerRoot<any, any, any>,
+const makeSerializer = async <SO1, SO2, SS extends {}, ISP>(
+  highOrder: HighOrder<SO1, SO2, SS, ISP>,
+  parent: SerializerRoot<SO1, any, any>,
 ) => {
   const reg = createHandlerRegistries();
-  const serializer = highOrder(parent);
+  const serializer = highOrder(parent, {});
   const serializerFactory = serializer(reg as any);
   const serializerInstance: SerializerInstance<any> = await serializerFactory(
     { state: {}, dispatchError: console.error } as any,

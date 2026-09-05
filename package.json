@@ -10,6 +10,7 @@
     "packall": "D=\"$PWD\"; mkdir -p pack && rm -f pack/*; for d in dist/*; do cd \"$d\"; npm pack --pack-destination \"$D\"/pack; cd \"$D\"; done",
     "prepublishall": "npm run build",
     "publishall": "node publishAll.mjs",
+    "check:ts": "tsc --noEmit",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
     "docs:preview": "vitepress preview docs"

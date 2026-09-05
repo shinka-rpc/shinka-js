@@ -1,5 +1,13 @@
 {
   "compilerOptions": {
     "paths": { "@shinka-rpc/*": ["./dist/*"] }
-  }
+  },
+  "exclude": [
+    // "**/*.test.ts",
+    // "**/*.stub.ts",
+    "node_modules/",
+    "dist/",
+    "**/__tests__/",
+    "**/jest.config.ts"
+  ]
 }

@@ -26,30 +26,25 @@ export const mkPipePair = (delay1: number, delay2: number) => {
   ] as [ReturnType<typeof mkPipe>, ReturnType<typeof mkPipe>];
 };
 
-export const fakeTransportClient = <SO>(
+export const fakeTransportClient = (
   pipe: ReturnType<typeof mkPipe>,
   key: string,
   results: Record<string, any>[],
   setThisArg: (TA: InternalHandlerThisArg<any, any, any>) => void = () => {},
-) => {
-  const tf: TransportFactory<any, any, any> = async (
-    thisArg,
-    onRawData,
-    onClosed,
-    opts,
-  ) => {
-    setThisArg(thisArg);
-    const { 0: send_, 1: dispatch } = pipe;
-    const close = async () => {};
-    const send = (value: unknown, opts: any) => {
-      results.push({ key: `${key}-transport`, opts });
-      send_(value);
+) =>
+  ((shinkaOn) => {
+    return async (thisArg, onRawData, onClosed, opts) => {
+      setThisArg(thisArg);
+      const { 0: send_, 1: dispatch } = pipe;
+      const close = async () => {};
+      const send = (value: unknown, opts: any) => {
+        results.push({ key: `${key}-transport`, opts });
+        send_(value);
+      };
+      dispatch(onRawData);
+      return { send, close, instruction: {}, context: null };
     };
-    dispatch(onRawData);
-    return { send, close, instruction: {} };
-  };
-  return (() => tf) as TransportClient<SO, any, any>;
-};
+  }) satisfies TransportClient<any, any, any, any>;
 
 export const createMockSerializerAsync = <TO, B>(
   key: string,

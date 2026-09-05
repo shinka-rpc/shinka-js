@@ -301,7 +301,7 @@ const composeStop = (
   };
 };
 
-const highOrder = <CURR, SS extends {} = {}, ISP = undefined>({
+const highOrder = <CURR, NEXT, SS extends {} = {}, ISP = undefined>({
   mode: nextMode,
   text,
   bin,
@@ -312,10 +312,7 @@ const highOrder = <CURR, SS extends {} = {}, ISP = undefined>({
   const serializers = makeSerializers(text.serialize, bin.serialize);
   const deserializers = makeDeserializers(text.deserialize, bin.deserialize);
 
-  return <NEXT>(
-    parent: SerializerRoot<NestedSerializerOpts<CURR, NEXT>, any, any>,
-    initStateProps: ISP,
-  ) =>
+  return (parent: SerializerRoot<CURR, any, any>, initStateProps: ISP) =>
     ((shinkaOn) => {
       const parentSerializerFactory = parent(shinkaOn);
 
@@ -364,4 +361,9 @@ const highOrder = <CURR, SS extends {} = {}, ISP = undefined>({
 
 export default highOrder;
 
-export type HighOrder = ReturnType<typeof highOrder>;
+export type HighOrder<
+  CURR,
+  NEXT,
+  SS extends {} = {},
+  ISP = undefined,
+> = ReturnType<typeof highOrder<CURR, NEXT, SS, ISP>>;
