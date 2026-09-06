@@ -5,7 +5,7 @@ export const clientWebSocketTransport = (create: () => WebSocket) =>
     // WebSocket *REQUIRE* serialization
     if (opts.mode === "not-serialized") throw new Error("Invalid mode");
     const instance = create();
-    if (opts.mode === "binary") instance.binaryType = "arraybuffer";
+    instance.binaryType = "arraybuffer";
     instance.addEventListener("message", (e) => onRawData(e.data));
     instance.addEventListener("close", onClosed);
     const close = async () => instance.close();

@@ -16,7 +16,7 @@ export type StreamGzipInitOpts = {
 const onEnd = () => {};
 
 export const streamGzip = createHighOrder({
-  mode: "text",
+  modeMap: { binary: "binary", text: "binary" },
   bin: {
     serialize: [
       (data, { state: { deflate } }, opts?: void) => deflate(data),
@@ -40,8 +40,8 @@ export const streamGzip = createHighOrder({
     props: StreamGzipInitOpts = {},
     { dispatchError }: ThisArgType,
   ) => {
-    const deflator = new Deflate(props.deflate),
-      inflator = new Inflate(props.inflate);
+    const deflator = new Deflate(props.deflate);
+    const inflator = new Inflate(props.inflate);
 
     const deflateContainer: [any] = [,];
     const inflateContainer: [any] = [,];
@@ -58,12 +58,12 @@ export const streamGzip = createHighOrder({
     inflator.onEnd = onEnd;
 
     const deflate = (data: Uint8Array) => {
-      if (!deflator.push(data, 1)) dispatchError("Deflate error");
+      if (!deflator.push(data, 2)) dispatchError("Deflate error");
       return deflateContainer[0];
     };
 
     const inflate = (data: Uint8Array) => {
-      if (!inflator.push(data, 1)) dispatchError("Inflate error");
+      if (!inflator.push(data, 2)) dispatchError("Inflate error");
       return inflateContainer[0];
     };
 

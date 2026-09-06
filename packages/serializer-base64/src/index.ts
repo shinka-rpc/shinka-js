@@ -3,7 +3,7 @@
 import createHighOrder from "@shinka-rpc/libserializer/high-order";
 
 export default createHighOrder({
-  mode: "text",
+  modeMap: { binary: "text", text: "text" },
   bin: {
     serialize: [(data, thisArg, opts) => data.toBase64(), "Function"],
     deserialize: [(data, thisArg) => Uint8Array.fromBase64(data), "Function"],

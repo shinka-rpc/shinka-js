@@ -51,18 +51,6 @@ export type SerializationRecords<T> = Record<
   Record<FnConstructorName, T>
 >;
 
-export type HighOrderSerializerProps<SO, SS, ISP> = {
-  mode: SerializationMode;
-  mimeSubType: string;
-  text: SerializationPair<SO, string, SS>;
-  bin: SerializationPair<SO, Uint8Array, SS>;
-  stop?: (thisArg: InternalHandlerThisArg<any, any, SS>) => void;
-  initState?: (
-    props: ISP,
-    thisArg: InternalHandlerThisArg<any, any, SS>,
-  ) => SS | void;
-};
-
 export type NestedSerializerOpts<CURR, NEXT> = {
   curr: CURR;
   next: NEXT;

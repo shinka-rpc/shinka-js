@@ -2,7 +2,7 @@ import { inflate, deflate, type DeflateFunctionOptions } from "pako";
 import createHighOrder from "@shinka-rpc/libserializer/high-order";
 
 export const simpleGzip = createHighOrder({
-  mode: "text",
+  modeMap: { binary: "binary", text: "binary" },
   bin: {
     serialize: [
       (data, thisArg, opts?: DeflateFunctionOptions) => deflate(data, opts),

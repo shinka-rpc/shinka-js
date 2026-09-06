@@ -4,8 +4,6 @@ import type { WebSocketServer, WebSocket } from "ws";
 export const webSocketServer = (wss: WebSocketServer) =>
   ((shinkaOn, connect, eventListeners) => {
     const wsEventHandler = (ws: WebSocket) => {
-      // const port = (connectEvent as any as MessageEvent)
-      //   .source as any as MessagePort;
       const close = async () => ws.close();
       const send = ws.send.bind(ws);
       connect((thisArg, onRawData, onClosed, opts) => {
