@@ -7,12 +7,14 @@ export type CreateProtocolProps = {
   resolver: Resolver;
 };
 
+const { freeze: objectFreeze } = Object;
+
 export const createProtocol = ({
   nonceLength,
   randInt32,
   resolver,
 }: CreateProtocolProps) => {
-  const emptyNonces = Object.freeze(Array(nonceLength).fill(undefined));
+  const emptyNonces = objectFreeze(Array(nonceLength).fill(undefined));
   const createNonces = () => emptyNonces.map(randInt32);
   const consensusAll = (a: number[], b: number[]) => {
     for (let i = 0; i < nonceLength; i++) {

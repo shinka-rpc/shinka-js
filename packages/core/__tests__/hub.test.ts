@@ -65,7 +65,7 @@ const setupClientHub = async (
     await client.start();
     return await hub.connect({
       outscope,
-      transport: [undefined, tf],
+      transport: [, tf],
       serializer: [serializerHandlers, serializer],
     });
   };

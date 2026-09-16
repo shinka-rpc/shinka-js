@@ -1,15 +1,9 @@
-import type {
-  IBus,
-  ShinkaOn,
-  ShinkaOnRequest,
-  ShinkaOnDataEvent,
-  ManageEventListener,
-  ClientProps,
-  BusProps,
-} from "./types";
+import type { IBus, ClientProps, BusProps } from "./types";
+import type { ManageEventListener } from "./listeners/types";
 import { Hub } from "./hub";
 import { defaultSerializerRoot } from "./defaults";
 import { setupHandlerRegistries } from "./shinka";
+import type { ShinkaOn, ShinkaOnRequest, ShinkaOnDataEvent } from "./shinka";
 import { BusProxy } from "./bus-proxy";
 
 export type IScheduler<T> = {
@@ -24,6 +18,8 @@ export type PoolProps<SO, TO, TC> = ClientProps<SO, TO, TC> & {
 type PoolVars = {
   size: number;
 };
+
+const { freeze: objectFreeze } = Object;
 
 const makePair = <SO, TO>(
   scheduler: IScheduler<[IBus<SO, TO>, () => void]>,
@@ -88,7 +84,7 @@ export class Pool<SO = any, TO = any, TC = any> implements ShinkaOn<
     this.removeEventListener = this.#hub.removeEventListener;
     this.extra = this.#hub.extra;
 
-    Object.freeze(this);
+    objectFreeze(this);
   }
 
   #grow = async (diff: number) => {

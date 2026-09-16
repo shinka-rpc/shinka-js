@@ -11,6 +11,8 @@ export type AsynqProps<T> = {
   waiters: MaybeConstructor<IQueue<ResolveReject<T>>>;
 };
 
+const { freeze: objectFreeze } = Object;
+
 export class Asynq<T> {
   #items: IQueue<T>;
   #waiters: IQueue<ResolveReject<T>>;
@@ -18,7 +20,7 @@ export class Asynq<T> {
   constructor({ items, waiters }: AsynqProps<T>) {
     this.#items = createOrUse(items);
     this.#waiters = createOrUse(waiters);
-    Object.freeze(this);
+    objectFreeze(this);
   }
 
   push = (value: T) => {

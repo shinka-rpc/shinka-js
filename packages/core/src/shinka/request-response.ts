@@ -12,7 +12,7 @@ import type {
   ShinkaMeta,
   DispatchError,
   ShinkaVars,
-} from "../types";
+} from "./types";
 import type {
   MessageTypeAllRequest,
   MessageTypeAllError,
@@ -23,12 +23,14 @@ import type {
 type PendingMap = Map<REQID, RejectResolve>;
 type TimeoutMap = Map<REQID, ReturnType<typeof setTimeout>>;
 
+const { assign: objectAssign } = Object;
+
 const createOnResponse =
-  <TA>(
+  <SO, TO, TA>(
     pending: PendingMap,
     timeouts: TimeoutMap,
     OK: 0 | 1,
-    vars: { thisArg: TA; dispatchError: DispatchError },
+    vars: ShinkaVars<SO, TO, TA>, // late init
   ) =>
   (message: MessageResponse<any>) => {
     const { 1: reqID, 2: body } = message;
@@ -63,15 +65,15 @@ export const reqrsp = <SO, TO, TA>(
   const pending: PendingMap = new Map();
   const timeouts: TimeoutMap = new Map();
 
-  const vars: Partial<ShinkaVars<SO, TO, TA>> = {};
+  const vars = {} as any as ShinkaVars<SO, TO, TA>;
 
   const setVars = (newVars: Partial<ShinkaVars<SO, TO, TA>>) =>
-    Object.assign(vars, newVars);
+    objectAssign(vars, newVars);
 
-  const seq = sequence() as () => REQID;
+  const seq = sequence() satisfies () => REQID;
 
-  const onSuccess = createOnResponse(pending, timeouts, 1, vars as any);
-  const onError = createOnResponse(pending, timeouts, 0, vars as any);
+  const onSuccess = createOnResponse(pending, timeouts, 1, vars);
+  const onError = createOnResponse(pending, timeouts, 0, vars);
 
   const onTimeout = (reqID: REQID) => {
     const message: MessageResponse<any> = [

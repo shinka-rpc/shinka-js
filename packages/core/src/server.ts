@@ -7,24 +7,26 @@ import { setupHandlerRegistries } from "./shinka";
 import type { Bus } from "./bus";
 
 import type {
-  ShinkaOnRequest,
-  ShinkaOnDataEvent,
-  ManageEventListener,
   InternalHandlerThisArg,
   TransportServer,
   TransportFactory,
   TransportConnectFn,
-  ShinkaOn,
   ServerEventType,
-  ManageEventListenerPair,
   InternalHandlerRegistries,
   IBus,
   BusProps,
   ServerOptions,
 } from "./types";
+import type {
+  ManageEventListener,
+  ManageEventListenerPair,
+} from "./listeners/types";
+import type { ShinkaOnRequest, ShinkaOnDataEvent, ShinkaOn } from "./shinka";
 
-import { baseListenerFactory } from "./factory/base-listener-factory";
-import { createEventListenerPair } from "./factory/event-listener-pair";
+import { baseListenerFactory } from "./listeners/base-listener-factory";
+import { createEventListenerPair } from "./listeners/event-listener-pair";
+
+const { freeze: objectFreeze } = Object;
 
 const serverEventTypes: ServerEventType[] = ["started", "stopping", "stopped"];
 
@@ -125,7 +127,7 @@ export class Server<SO = any, TO = any, TC = any> {
     this.removeEventListener = this.#hub.removeEventListener;
     this.extra = this.#hub.extra;
 
-    Object.freeze(this);
+    objectFreeze(this);
   }
 
   start = () => {

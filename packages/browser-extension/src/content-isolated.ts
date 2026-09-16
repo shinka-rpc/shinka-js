@@ -1,7 +1,7 @@
 /// <reference types="chrome" />
 import { TransportClient } from "@shinka-rpc/core";
 
-// @ts-expect-error: 2304
+// @ts-ignore
 if (!self.chrome) self.chrome = browser;
 
 export type IsolatedExtensionTransportContext = chrome.runtime.Port;

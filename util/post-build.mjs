@@ -1,12 +1,11 @@
 import { join, sep } from "path";
 import { copyFile, readFile, writeFile } from "fs/promises";
-
-const __dirname = new URL(import.meta.url + "/..").pathname;
+import { distDir, rootDir } from "./lib/paths.mjs";
 
 const srcDir = process.cwd();
 const srcPathArray = srcDir.split(sep);
 const pkgName = srcPathArray.at(-1);
-const descDir = join(__dirname, "dist", pkgName);
+const descDir = join(distDir, pkgName);
 
 const handlePackageJSON = async () => {
   const package_json = "package.json";
@@ -18,17 +17,15 @@ const handlePackageJSON = async () => {
   // packageJSON.exports = { types: "./index.d.ts" };
 
   await writeFile(
-    join(descDir, package_json),
+    join(distDir, package_json),
     JSON.stringify(packageJSON, null, 2),
   );
 };
 
-const main = async () => {
+(async () => {
   await Promise.all([
-    copyFile(join(__dirname, "LICENSE"), join(descDir, "LICENSE")),
+    copyFile(join(rootDir, "LICENSE"), join(descDir, "LICENSE")),
     copyFile(join(".", "README.md"), join(descDir, "README.md")),
     handlePackageJSON(),
   ]);
-};
-
-main();
+})();

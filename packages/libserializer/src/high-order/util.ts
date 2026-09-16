@@ -8,17 +8,24 @@ import type {
 import type {
   HighOrderDeserialize,
   HighOrderSerialize,
+  NestedSerializerOpts,
   SerializationRecords,
 } from "./types";
 
 import { joinMimeSubtype } from "@shinka-rpc/util";
 
-export const construct = <T extends HighOrderSerialize | HighOrderDeserialize>(
+export const construct = <
+  HOSO,
+  NEXT,
+  T extends
+    | HighOrderSerialize<NestedSerializerOpts<HOSO, NEXT>>
+    | HighOrderDeserialize,
+>(
   records: SerializationRecords<T>,
   mode: SerializationMode,
-  instance: SerializerInstance<any>,
+  instance: SerializerInstance<NEXT>,
   key: "serialize" | "deserialize",
-  thisArg: InternalHandlerThisArg<any, any, any>,
+  thisArg: InternalHandlerThisArg<NEXT, any, any>,
 ) => {
   const {
     [key]: prevFn,

@@ -1,21 +1,10 @@
 import type { IQueue } from "@shinka-rpc/collections";
-import type {
-  Message,
-  NB_FIFOEntry,
-  ShinkaMeta,
-  SendFn,
-  NBThisArg,
-  ShinkaDataEvent,
-  NBShinka,
-  ShinkaEventListener,
-} from "../types";
+import type { NB_FIFOEntry, NBThisArg, NBShinka } from "../types";
+import type { ShinkaEventListener } from "../listeners/types";
+import type { Message, ShinkaMeta, SendFn, ShinkaDoDataEvent } from "../shinka";
 import { NBAcquire } from "./const-enums";
 import { busEvents } from "./handlers/bus";
 import { nbEvent } from "./handlers/non-blocking";
-
-export const clearState = (state: any) => () => {
-  for (const k of Object.keys(state)) delete state[k];
-};
 
 export function FIFOPush<SO, TO>(
   this: IQueue<NB_FIFOEntry<SO, TO>>,
@@ -43,7 +32,7 @@ export const acquireMe = <SO, TO>(
 ) => nbThisArg.lock.acquire(nbThisArg, nbAcquire, timeout);
 
 export const gracefulShutdown = (
-  dataEvent: ShinkaDataEvent<any, any>,
+  dataEvent: ShinkaDoDataEvent<any, any>,
   varsReset: () => void,
   busStop: () => Promise<void>,
 ) => {

@@ -1,5 +1,3 @@
-import { join } from "path";
-import { spawn } from "child_process";
 import {
   readdir,
   stat,
@@ -7,21 +5,9 @@ import {
   constants as fsConstants,
   readFile,
 } from "fs/promises";
-import { Buffer } from "node:buffer";
-
-const __dirname = new URL(import.meta.url + "/..").pathname;
-const distDir = join(__dirname, "dist");
-
-const publish = async (path) => {
-  const options = {
-    cwd: path,
-    env: process.env,
-    stdio: [process.stdin, process.stdout, process.stderr],
-  };
-  const args = ["publish"];
-  const publishProcess = spawn("npm", args, options);
-  await new Promise((resolve, reject) => publishProcess.on("exit", resolve));
-};
+import { spawn } from "child_process";
+import { join } from "path";
+import { packagesDir } from "./paths.mjs";
 
 const getPackageJSONVersion = async (path) => {
   const packageJSONPath = join(path, "package.json");
@@ -71,8 +57,8 @@ const getNPMVersions = async (name) => {
       });
     });
     const data = buffer.toString();
-    if (!data) return;
-    if (data[0] !== "[") return; // if not published, data === `"0.0.0"`
+    if (!data) return [];
+    if (data[0] !== "[") return []; // if not published, data === `"0.0.0"`
     return JSON.parse(data);
   } catch (e) {
     console.error(e);
@@ -82,38 +68,30 @@ const getNPMVersions = async (name) => {
 const handlePackageJSON = async (path) => {
   const ourData = await getPackageJSONVersion(path);
   if (ourData === undefined) return;
+  const { name, version } = ourData;
   try {
-    const npmVersions = await getNPMVersions(ourData.name);
-    if (npmVersions === undefined) return path;
-    if (!new Set(npmVersions).has(ourData.version)) return path;
+    const versions = await getNPMVersions(ourData.name);
+    const publish =
+      versions === undefined ? true : !new Set(versions).has(version);
+    return { name, path, version, versions, publish };
   } catch (e) {
     console.error(e);
   }
 };
 
-const handlePackageName = async (name) => {
+const handlePackageName = async (root, name) => {
   try {
-    const packagePath = join(distDir, name);
+    const packagePath = join(root, name);
     const packageStats = await stat(packagePath);
-    if (packageStats.isDirectory()) {
-      return await handlePackageJSON(packagePath);
-    }
+    if (packageStats.isDirectory()) return await handlePackageJSON(packagePath);
   } catch (e) {
     return console.error(e);
   }
 };
 
-(async () => {
-  const results = [];
-  // const dirHandlerPromises = [];
-  for (const name of await readdir(distDir)) {
-    // const promise = handlePackageName(name);
-    // dirHandlerPromises.push(promise);
-    results.push(await handlePackageName(name));
-  }
-
-  // const results = await Promise.all(dirHandlerPromises);
-  const toPublishPaths = results.filter(Boolean);
-  // console.log(toPublishPaths);
-  for (const toPublish of toPublishPaths) await publish(toPublish);
-})();
+export const publishPlan = async () => {
+  const dirNames = await readdir(packagesDir);
+  for (let i = 0; i < dirNames.length; i++)
+    dirNames[i] = await handlePackageName(packagesDir, dirNames[i]);
+  return dirNames;
+};

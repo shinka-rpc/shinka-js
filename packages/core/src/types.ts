@@ -5,92 +5,31 @@ import type {
 } from "@shinka-rpc/util";
 import type { Semaphore } from "@shinka-rpc/concurrency";
 
-import type { Context } from "./factory/context";
 import type {
-  MessageType,
-  MessageTypeAllRequest,
-  MessageTypeAllResponse,
-  MessageTypeAllEvent,
-} from "./factory/message-type";
-import type { HandlerRegistries } from "./shinka";
+  FnConstructorName,
+  HandlerRegistries,
+  Shinka,
+  ShinkaDo,
+  Message,
+  DataEventKey,
+  ShinkaOn,
+  ShinkaVarsSetter,
+  ShinkaMeta,
+  SendFn,
+} from "./shinka";
+import type {
+  EventListenerType,
+  BaseManageEventListener,
+  ManageEventListenerPair,
+  ShinkaEventListenerSet,
+  ShinkaEventListenerWeakSet,
+  ManageEventListener,
+} from "./listeners/types";
 import type { NBAcquire } from "./bus/const-enums";
 
 export type LastDataAt = {
   received: number;
   sent: number;
-};
-
-export type FnConstructorName = "Function" | "AsyncFunction";
-
-export type REQID = number;
-export type DataEventKey = string | number | boolean;
-export type Request<B> = [REQID, DataEventKey, B];
-export type ResponseType<B> = [REQID, B];
-export type DataEvent<B> = [B, DataEventKey];
-
-export type MessageRequestBase<M extends MessageType, B> = [M, ...Request<B>];
-
-export type MessageRequest<B> = MessageRequestBase<MessageTypeAllRequest, B>;
-export type MessageResponseBase<M extends MessageType, B> = [
-  M,
-  ...ResponseType<B>,
-];
-
-export type MessageResponse<B> = MessageResponseBase<MessageTypeAllResponse, B>;
-
-export type MessageDataEventBase<M extends MessageType, B> = [
-  M,
-  ...DataEvent<B>,
-];
-
-export type MessageDataEvent<B> = MessageDataEventBase<MessageTypeAllEvent, B>;
-
-export type Message<B> =
-  | MessageRequest<B>
-  | MessageResponse<B>
-  | MessageDataEvent<B>;
-
-export type ShinkaVars<SO, TO, TA> = {
-  thisArg: TA;
-  send: SendFn<SO, TO>;
-  dispatchError: DispatchError;
-};
-
-export type ShinkaVarsSetter<SO, TO, TA> = (
-  vars: Partial<ShinkaVars<SO, TO, TA>>,
-) => void;
-
-export type ShinkaOnRequest<SO, TO, TA> = (
-  key: DataEventKey,
-  cb: (data: any, thisArg: TA) => any,
-  metadataWithHint?: MetadataWithHint<SO, TO>,
-) => void;
-
-export type ShinkaRequest<SO, TO> = <T>(
-  key: DataEventKey,
-  data: any,
-  metadata?: ShinkaMeta<SO, TO>,
-) => Promise<T>;
-
-export type ShinkaOnDataEvent<TA> = (
-  key: DataEventKey,
-  val: (data: any, thisArg: TA) => void,
-) => void;
-
-export type ShinkaDataEvent<SO, TO> = (
-  event: DataEventKey,
-  data: any,
-  metadata?: ShinkaMeta<SO, TO>,
-) => void;
-
-export type ShinkaOn<SO, TO, TA> = {
-  onRequest: ShinkaOnRequest<SO, TO, TA>;
-  onDataEvent: ShinkaOnDataEvent<TA>;
-};
-
-export type ShinkaDo<SO, TO> = {
-  request: ShinkaRequest<SO, TO>;
-  dataEvent: ShinkaDataEvent<SO, TO>;
 };
 
 export type IBus<SO, TO> = ShinkaDo<SO, TO> & {
@@ -109,21 +48,6 @@ export type IBusAgg<SO, TO> = {
   removeEventListener: ManageEventListener<IBus<SO, TO>>;
   extra: Record<string | symbol, any>;
 };
-
-export type Shinka<SO, TO, TA> = ShinkaOn<SO, TO, TA> & ShinkaDo<SO, TO>;
-
-export type MetadataWithHint<SO, TO> = ShinkaMeta<SO, TO> & {
-  hint?: FnConstructorName;
-};
-
-export type MessageDispatchHandler<M> = (message: M) => void;
-
-export type DispatchMap = Map<
-  MessageType,
-  | MessageDispatchHandler<MessageRequest<any>>
-  | MessageDispatchHandler<MessageResponse<any>>
-  | MessageDispatchHandler<MessageDataEvent<any>>
->;
 
 export type InternalHandlerThisArg<SO, TO, STATE> = {
   bus: IBus<SO, TO>;
@@ -164,14 +88,6 @@ export type DataEventHandler<TA, B> = (
   key: DataEventKey,
   data: B,
   thisArg: TA,
-) => void;
-
-export type RequestHandler<SO, TO, TA, B> = (
-  key: DataEventKey,
-  body: B,
-  context: Context<SO, TO>,
-  thisArg: TA,
-  dispatchError: DispatchError,
 ) => void;
 
 export type SerializerInitOpts = {
@@ -247,14 +163,6 @@ export type SerializerRoot<SO, TO, SS> = (
   shinkaOn: ShinkaOn<SO, TO, InternalHandlerThisArg<SO, TO, SS>>,
 ) => SerializerFactory<SO, TO, SS>;
 
-export type ShinkaEventListener<B> = (bus: B, payload: any) => void;
-export type ShinkaEventListenerSet<B> = Set<ShinkaEventListener<B>>;
-export type ShinkaEventListenerWeakSet<B> = WeakSet<ShinkaEventListener<B>>;
-
-export type EventListenerType = "connect" | "disconnect" | "error";
-
-export type DispatchError = (error: any) => void;
-
 export type BaseShinkaEventListeners<S> = Record<EventListenerType, S>;
 
 export type ShinkaEventListeners<B> = BaseShinkaEventListeners<
@@ -270,16 +178,6 @@ export type ShinkaListenerLayers<B> = {
   parent: ShinkaEventListeners<B>; // modification is restricted
   banned: ShinkaEventListenersBanned<B>;
 };
-
-export type BaseManageEventListener<TYPE, TARGET> = (
-  type: TYPE,
-  target: TARGET,
-) => void;
-
-export type ManageEventListener<B> = BaseManageEventListener<
-  EventListenerType,
-  ShinkaEventListener<B>
->;
 
 export type TransportAPI = { hi: () => void; bye: () => void };
 
@@ -320,27 +218,10 @@ export type ServerManageEventListener = BaseManageEventListener<
   () => void
 >;
 
-export type ManageEventListenerPair<TYPE> = {
-  add: BaseManageEventListener<TYPE, () => void>;
-  remove: BaseManageEventListener<TYPE, () => void>;
-};
-
 export type TransportServer<SO, TO, TS, TC> = (
   shinkaOn: ShinkaOn<SO, TO, InternalHandlerThisArg<SO, TO, TS>>,
   connect: TransportConnectFn<SO, TO, TS, TC>,
   eventListeners: ManageEventListenerPair<ServerEventType>,
-) => void;
-
-export type RejectResolve = [(reason?: any) => void, (value: any) => void];
-
-export type ShinkaMeta<SO, TO> = {
-  transport?: TO;
-  serialize?: SO;
-};
-
-export type SendFn<SO, TO> = (
-  message: Message<any>,
-  metadata?: ShinkaMeta<SO, TO>,
 ) => void;
 
 export type LiMonThisArg<SO, TO, LS> = InternalHandlerThisArg<SO, TO, LS> & {

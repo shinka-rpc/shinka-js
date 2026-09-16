@@ -8,6 +8,7 @@ import type {
   HighOrderDeserializerFnAsync,
   HighOrderDeserializerFnSync,
   HighOrderSerialize,
+  NestedSerializerOpts,
   SerializationPair,
   SerializationRecords,
 } from "./types";
@@ -87,14 +88,19 @@ const deserializers = {
   },
 };
 
-export default <SO, SS>(
-  { 0: textFn, 1: textType }: SerializationPair<SO, string, SS>["deserialize"],
+export default <HOSO, NEXT, SS>(
+  {
+    0: textFn,
+    1: textType,
+  }: SerializationPair<HOSO, string, SS>["deserialize"],
   {
     0: binFn,
     1: binType,
-  }: SerializationPair<SO, Uint8Array, SS>["deserialize"],
+  }: SerializationPair<HOSO, Uint8Array, SS>["deserialize"],
 ) =>
   ({
     text: deserializers.txt[textType](textFn),
     binary: deserializers.bin[binType](binFn),
-  }) as SerializationRecords<HighOrderSerialize>;
+  }) as SerializationRecords<
+    HighOrderSerialize<NestedSerializerOpts<HOSO, NEXT>>
+  >;

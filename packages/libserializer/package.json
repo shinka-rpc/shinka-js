@@ -1,6 +1,6 @@
 {
   "name": "@shinka-rpc/libserializer",
-  "version": "0.1.0-alpha.3",
+  "version": "0.1.0-alpha.4",
   "publishConfig": {
     "access": "public",
     "tag": "alpha"
@@ -9,7 +9,7 @@
   "main": "./src/index.ts",
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "postbuild": "node ../../packagePostBuild.mjs",
+    "postbuild": "node ../../util/post-build.mjs",
     "test": "echo \"No test specified\""
   },
   "keywords": [
@@ -35,7 +35,7 @@
     "default": "./src/index.ts"
   },
   "dependencies": {
-    "@shinka-rpc/core": "^0.1.0-alpha.5",
+    "@shinka-rpc/core": "^0.1.0-alpha.6",
     "@shinka-rpc/util": "^0.0.3-alpha.1"
   }
 }

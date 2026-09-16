@@ -9,8 +9,10 @@ export type CreateExclusiveLockProps = {
   protocol: ConsensusProtocol;
 };
 
+const { freeze: objectFreeze } = Object;
+
 export const createExclusiveLock = ({ protocol }: CreateExclusiveLockProps) =>
-  Object.freeze({
+  objectFreeze({
     on,
     acquire,
     start: onStart.bind({ protocol }),

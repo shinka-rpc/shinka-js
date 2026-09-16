@@ -3,16 +3,11 @@ import { ReusablePromise } from "@shinka-rpc/concurrency";
 import { Bus } from "./bus";
 import { createHandlerRegistries, type HandlerRegistries } from "./shinka";
 
-import { createEventListeners } from "./factory/event-listeners-bus";
+import { createEventListeners } from "./listeners/event-listeners-bus";
 
-import type {
-  ShinkaEventListeners,
-  ManageEventListener,
-  ShinkaOnRequest,
-  ShinkaOnDataEvent,
-  IBus,
-  BusProps,
-} from "./types";
+import type { ShinkaEventListeners, IBus, BusProps } from "./types";
+import type { ManageEventListener } from "./listeners/types";
+import type { ShinkaOnRequest, ShinkaOnDataEvent } from "./shinka";
 
 const { freeze: objectFreeze } = Object;
 

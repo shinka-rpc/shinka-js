@@ -5,8 +5,10 @@ export type AsyncDisposeContext = AsyncDisposable & {
   aDispose: () => Promise<void>;
 };
 
+const { freeze: objectFreeze } = Object;
+
 export const asyncDisposeContext = (aDispose: () => Promise<void>) =>
-  Object.freeze({
+  objectFreeze({
     aDispose,
     [Symbol.asyncDispose]: aDispose,
   } as AsyncDisposeContext);

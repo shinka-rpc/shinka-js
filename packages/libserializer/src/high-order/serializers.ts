@@ -14,49 +14,49 @@ import type {
 } from "./types";
 
 const serializerSyncSync =
-  <T extends string | Uint8Array, CURR, NEXT, SS>(
+  <T extends string | Uint8Array, HOSO, NEXT, SS>(
     highOrderSerialize: HighOrderSerializerFnSync<any, T, NEXT, SS>,
   ) =>
   (
-    serialize: SerializerFnSync<any, T, CURR>,
+    serialize: SerializerFnSync<any, T, HOSO>,
     thisArg: InternalHandlerThisArg<NEXT, any, SS>,
   ) =>
-  (data: any, opts?: NestedSerializerOpts<CURR, NEXT>) =>
-    highOrderSerialize(serialize(data, opts?.curr), thisArg, opts?.next);
+  (data: any, opts?: NestedSerializerOpts<HOSO, NEXT>) =>
+    highOrderSerialize(serialize(data, opts?.ho), thisArg, opts?.next);
 
 const serializerSyncAsync =
-  <T extends string | Uint8Array, CURR, NEXT, SS>(
+  <T extends string | Uint8Array, HOSO, NEXT, SS>(
     highOrderSerialize: HighOrderSerializerFnSync<any, T, NEXT, SS>,
   ) =>
   (
-    serialize: SerializerFnAsync<any, T, CURR>,
+    serialize: SerializerFnAsync<any, T, HOSO>,
     thisArg: InternalHandlerThisArg<NEXT, any, SS>,
   ) =>
-  async (data: any, opts?: NestedSerializerOpts<CURR, NEXT>) =>
-    highOrderSerialize(await serialize(data, opts?.curr), thisArg, opts?.next);
+  async (data: any, opts?: NestedSerializerOpts<HOSO, NEXT>) =>
+    highOrderSerialize(await serialize(data, opts?.ho), thisArg, opts?.next);
 
 const serializerAsyncSync =
-  <T extends string | Uint8Array, CURR, NEXT, SS>(
+  <T extends string | Uint8Array, HOSO, NEXT, SS>(
     highOrderSerialize: HighOrderSerializerFnAsync<any, T, NEXT, SS>,
   ) =>
   (
-    serialize: SerializerFnSync<any, T, CURR>,
+    serialize: SerializerFnSync<any, T, HOSO>,
     thisArg: InternalHandlerThisArg<NEXT, any, SS>,
   ) =>
-  (data: any, opts?: NestedSerializerOpts<CURR, NEXT>) =>
-    highOrderSerialize(serialize(data, opts?.curr), thisArg, opts?.next);
+  (data: any, opts?: NestedSerializerOpts<HOSO, NEXT>) =>
+    highOrderSerialize(serialize(data, opts?.ho), thisArg, opts?.next);
 
 const serializerAsyncAsync =
-  <T extends string | Uint8Array, CURR, NEXT, SS>(
+  <T extends string | Uint8Array, HOSO, NEXT, SS>(
     highOrderSerialize: HighOrderSerializerFnAsync<any, T, NEXT, SS>,
   ) =>
   (
-    serialize: SerializerFnAsync<any, T, CURR>,
+    serialize: SerializerFnAsync<any, T, HOSO>,
     thisArg: InternalHandlerThisArg<NEXT, any, SS>,
   ) =>
-  async (data: any, opts?: NestedSerializerOpts<CURR, NEXT>) =>
+  async (data: any, opts?: NestedSerializerOpts<HOSO, NEXT>) =>
     await highOrderSerialize(
-      await serialize(data, opts?.curr),
+      await serialize(data, opts?.ho),
       thisArg,
       opts?.next,
     );
@@ -92,11 +92,16 @@ const serializers = {
   },
 };
 
-export default <SO, SS>(
-  { 0: textFn, 1: textType }: SerializationPair<SO, string, SS>["serialize"],
-  { 0: binFn, 1: binType }: SerializationPair<SO, Uint8Array, SS>["serialize"],
+export default <HOSO, NEXT, SS>(
+  { 0: textFn, 1: textType }: SerializationPair<HOSO, string, SS>["serialize"],
+  {
+    0: binFn,
+    1: binType,
+  }: SerializationPair<HOSO, Uint8Array, SS>["serialize"],
 ) =>
   ({
     text: serializers.txt[textType](textFn),
     binary: serializers.bin[binType](binFn),
-  }) as SerializationRecords<HighOrderSerialize>;
+  }) as SerializationRecords<
+    HighOrderSerialize<NestedSerializerOpts<HOSO, NEXT>>
+  >;

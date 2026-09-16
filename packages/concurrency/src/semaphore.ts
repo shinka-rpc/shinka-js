@@ -16,6 +16,8 @@ type ResolveReject<T> = [(value: T) => void, (reason: any) => void];
 
 type ReleasedFlagContainer = [0 | 1];
 
+const { freeze: objectFreeze } = Object;
+
 const releaseFunction = (
   rc: ReleasedFlagContainer,
   state: SemaphoreState,
@@ -48,7 +50,7 @@ export class Semaphore {
     validateCapacity(capacity);
     this.#waiters = createOrUse(waiters);
     this.#state = { value: capacity, capacity };
-    Object.freeze(this);
+    objectFreeze(this);
   }
 
   #disposeContext = () =>

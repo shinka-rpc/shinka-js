@@ -1,5 +1,4 @@
 import type { IBus } from "./types";
-import type { Bus } from "./bus";
 import type { DisposeContext } from "@shinka-rpc/util";
 
 const { freeze: objectFreeze, assign: objectAssign } = Object;

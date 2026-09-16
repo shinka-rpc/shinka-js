@@ -9,7 +9,7 @@
   "main": "./src/index.ts",
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "postbuild": "node ../../packagePostBuild.mjs",
+    "postbuild": "node ../../util/post-build.mjs",
     "test": "echo \"No test specified\""
   },
   "keywords": [

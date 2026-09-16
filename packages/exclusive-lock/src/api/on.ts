@@ -6,6 +6,8 @@ import { FSMEventType } from "../const-enums";
 
 import type { NBThisArgState, AnyNBThisArg } from "../types";
 
+const { freeze: objectFreeze } = Object;
+
 const acquire = (
   thisArg: NBThisArg<any, any, NBThisArgState>,
   target: NBAcquire,
@@ -22,7 +24,7 @@ const accept = (thisArg: NBThisArg<any, any, NBThisArgState>) => {
 const release = (thisArg: AnyNBThisArg) =>
   dispatch(thisArg, [FSMEventType.REMOTE_RELEASE, null]);
 
-export const on: ExclusiveLockOn<any, any, NBThisArgState> = Object.freeze({
+export const on: ExclusiveLockOn<any, any, NBThisArgState> = objectFreeze({
   acquire,
   accept,
   release,

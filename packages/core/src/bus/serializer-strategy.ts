@@ -6,11 +6,9 @@ import type {
   DeserializerFn,
   DeserializerFnSync,
   DeserializerFnAsync,
-  Message,
-  ShinkaMeta,
-  FnConstructorName,
   LastDataAt,
 } from "../types";
+import type { Message, ShinkaMeta, FnConstructorName } from "../shinka";
 
 const sendData = {
   AsyncFunction:

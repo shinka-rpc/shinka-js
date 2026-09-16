@@ -1,14 +1,14 @@
-import { reqrsp } from "./factory/request-response";
+import { reqrsp } from "./request-response";
 
 import {
   createDispatchRequest,
   createEventRegistry,
   createReqRegistry,
   asOnRequest,
-} from "./factory/registry";
+} from "./registry";
+import type { MessageTypeGroup } from "./message-type";
 
 import type { DispatchMap, Shinka, ShinkaOn } from "./types";
-import type { MessageTypeGroup } from "./factory/message-type";
 
 const { freeze: objectFreeze } = Object;
 
@@ -22,7 +22,7 @@ export const createHandlerRegistries = <SO, TO, TA>() => {
     dispatchRequest,
     onRequest,
     onDataEvent,
-  });
+  }) satisfies ShinkaOn<SO, TO, TA>;
 };
 
 export type HandlerRegistries<SO, TO, TA> = ReturnType<
@@ -114,6 +114,6 @@ export const setupHandlerRegistries = <SO, TO, TA, R>(
   const { onRequest, onDataEvent } = registries;
   return [registries, fn({ onRequest, onDataEvent })] as [
     HandlerRegistries<SO, TO, TA>,
-    ReturnType<typeof fn>,
+    R,
   ];
 };

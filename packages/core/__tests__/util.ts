@@ -1,6 +1,5 @@
 import {
   Response,
-  type TransportFactory,
   type TransportClient,
   type ShinkaOn,
   type ShinkaDo,

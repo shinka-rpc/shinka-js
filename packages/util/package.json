@@ -1,6 +1,6 @@
 {
   "name": "@shinka-rpc/util",
-  "version": "0.0.3-alpha.1",
+  "version": "0.0.3-alpha.2",
   "publishConfig": {
     "access": "public",
     "tag": "alpha"
@@ -9,8 +9,8 @@
   "main": "./src/index.ts",
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "postbuild": "node ../../packagePostBuild.mjs",
-    "test": "NODE_PATH=../../node_modules/ node ../../node_modules/.bin/jest"
+    "postbuild": "node ../../util/post-build.mjs",
+    "test": "jest --coverage --collectCoverageFrom='src/**'"
   },
   "keywords": [
     "rpc",

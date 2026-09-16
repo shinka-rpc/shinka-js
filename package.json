@@ -9,8 +9,10 @@
     "test": "lerna run --scope \"@shinka-rpc/*\" test",
     "packall": "D=\"$PWD\"; mkdir -p pack && rm -f pack/*; for d in dist/*; do cd \"$d\"; npm pack --pack-destination \"$D\"/pack; cd \"$D\"; done",
     "prepublishall": "npm run build",
-    "publishall": "node publishAll.mjs",
+    "publish:all": "node util/publish-all.mjs",
+    "publish:plan": "node util/publish-plan.mjs",
     "check:ts": "tsc --noEmit",
+    "check:packages": "node util/check-packages.mjs",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
     "docs:preview": "vitepress preview docs"
@@ -63,8 +65,8 @@
   },
   "allowScripts": {
     "@parcel/watcher@2.6.0": true,
-    "@swc/core@1.16.1": true,
     "unrs-resolver@1.12.2": true,
-    "nx@23.2.0": true
+    "@swc/core@1.16.2": true,
+    "nx@23.2.1": true
   }
 }

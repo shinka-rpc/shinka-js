@@ -9,8 +9,8 @@
   "main": "./src/index.ts",
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "postbuild": "node ../../packagePostBuild.mjs",
-    "test": "jest"
+    "postbuild": "node ../../util/post-build.mjs",
+    "test": "jest --coverage --collectCoverageFrom='src/**'"
   },
   "keywords": [
     "rpc",

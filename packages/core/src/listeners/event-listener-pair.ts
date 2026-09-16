@@ -2,7 +2,9 @@
  * This is like `@shinka-rpc/util:delegate`
  */
 
-import type { ManageEventListenerPair } from "../types";
+import type { ManageEventListenerPair } from "./types";
+
+const { freeze: objectFreeze } = Object;
 
 export const createEventListenerPair = <ET extends string | symbol>(
   eventListenerFactory: () => Record<ET, Set<(...args: any) => void>>,
@@ -23,7 +25,7 @@ export const createEventListenerPair = <ET extends string | symbol>(
   };
 
   // External API
-  const all: ManageEventListenerPair<ET> = Object.freeze({ add, remove });
+  const all: ManageEventListenerPair<ET> = objectFreeze({ add, remove });
 
   return [all, call] as [typeof all, typeof call];
 };

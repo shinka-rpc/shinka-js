@@ -12,6 +12,8 @@ type State<P> = {
   done: boolean;
 };
 
+const { freeze: objectFreeze } = Object;
+
 function renewExecutor<P>(
   this: Partial<State<P>>,
   resolve: ResolveFn<P>,
@@ -52,7 +54,7 @@ export class ReusablePromise<P> {
     this.resolve = toResolver(this.#state, "resolve");
     this.reject = toResolver(this.#state, "reject");
 
-    Object.freeze(this);
+    objectFreeze(this);
   }
 
   public then = (

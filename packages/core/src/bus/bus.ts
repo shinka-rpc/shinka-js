@@ -1,4 +1,5 @@
 import {
+  curryClearObject,
   delegate,
   type DelegateType,
   type AsyncDisposeContext,
@@ -6,36 +7,27 @@ import {
 import { FIFO, type IQueue } from "@shinka-rpc/collections";
 import { Semaphore } from "@shinka-rpc/concurrency";
 
-import {
-  createSendData,
-  createOnRawData,
-} from "../factory/serializer-strategy";
+import { createSendData, createOnRawData } from "./serializer-strategy";
 import {
   createEventListeners,
   createEventListenersBanned,
-} from "../factory/event-listeners-bus";
+} from "../listeners/event-listeners-bus";
 import {
+  makeCreateOrCompleteShinka,
   messageTypeTransport,
   messageTypeSerializer,
   messageTypeBus,
   messageTypeUser,
   messageTypeLimon,
   messageTypeNB,
-} from "../factory/message-type";
+} from "../shinka";
 
 import type {
   IBus,
-  SendFn,
-  DispatchMap,
-  Message,
-  ManageEventListener,
-  EventListenerType,
   ShinkaEventListeners,
   ShinkaListenerLayers,
   InternalHandlerThisArg,
   LastDataAt,
-  ShinkaDataEvent,
-  ShinkaRequest,
   LiMonThisArg,
   SerializerInitOpts,
   TransportRF,
@@ -50,9 +42,19 @@ import type {
   CompleteFn,
   OutScope,
 } from "../types";
+import type {
+  ManageEventListener,
+  EventListenerType,
+} from "../listeners/types";
+import type {
+  SendFn,
+  DispatchMap,
+  Message,
+  ShinkaDoDataEvent,
+  ShinkaDoRequest,
+} from "../shinka";
 
 import { defaultRequestTimeout, defaultExclusiveLock } from "../defaults";
-import { makeCreateOrCompleteShinka } from "../shinka";
 
 import { busEvents, busRequests, busHandlerRegistries } from "./handlers/bus";
 import {
@@ -61,7 +63,6 @@ import {
 } from "./handlers/non-blocking";
 import { NBAcquire } from "./const-enums";
 import {
-  clearState,
   FIFOPush,
   drain,
   acquireMe,
@@ -124,8 +125,8 @@ export class Bus<SO, TO, TC> implements IBus<SO, TO> {
   #resetBye: () => void;
   #complete: CompleteFn<SO, TO, TC>;
 
-  public request: ShinkaRequest<SO, TO>;
-  public dataEvent: ShinkaDataEvent<SO, TO>;
+  public request: ShinkaDoRequest<SO, TO>;
+  public dataEvent: ShinkaDoDataEvent<SO, TO>;
   public extra: Record<string | symbol, any>;
   public exclusiveLock: (timeout: number) => Promise<AsyncDisposeContext>;
 
@@ -214,7 +215,7 @@ export class Bus<SO, TO, TC> implements IBus<SO, TO> {
     this.exclusiveLock = (acquireMe<SO, TO>).bind(0, nbTA, NBAcquire.USER);
 
     const busTAState = {};
-    this.#resetStatesQueue.push(clearState(busTAState));
+    this.#resetStatesQueue.push(curryClearObject(busTAState));
 
     const busTA: BusHandlerThisArg<SO, TO, any> = objectFreeze({
       bus: this,
@@ -226,7 +227,7 @@ export class Bus<SO, TO, TC> implements IBus<SO, TO> {
     });
 
     const serializerTAState = {};
-    this.#resetStatesQueue.push(clearState(serializerTAState));
+    this.#resetStatesQueue.push(curryClearObject(serializerTAState));
 
     const serializerTA: InternalHandlerThisArg<SO, TO, any> = objectFreeze({
       bus: this,
@@ -237,7 +238,7 @@ export class Bus<SO, TO, TC> implements IBus<SO, TO> {
     });
 
     const transportTAState = {};
-    this.#resetStatesQueue.push(clearState(transportTAState));
+    this.#resetStatesQueue.push(curryClearObject(transportTAState));
 
     const transportTA: InternalHandlerThisArg<SO, TO, any> = objectFreeze({
       bus: this,
@@ -246,7 +247,7 @@ export class Bus<SO, TO, TC> implements IBus<SO, TO> {
       exclusiveLock: (acquireMe<SO, TO>).bind(0, nbTA, NBAcquire.TRANSPORT),
       dispatchError,
     });
-    this.#resetStatesQueue.push(clearState(nbTAState));
+    this.#resetStatesQueue.push(curryClearObject(nbTAState));
 
     const nbTA_FIFO = new FIFO<NB_FIFOEntry<SO, TO>>();
 
@@ -322,7 +323,7 @@ export class Bus<SO, TO, TC> implements IBus<SO, TO> {
       );
 
       const limonTAState = {};
-      this.#resetStatesQueue.push(clearState(limonTAState));
+      this.#resetStatesQueue.push(curryClearObject(limonTAState));
 
       const limonTA: LiMonThisArg<SO, TO, any> = objectFreeze({
         bus: this,

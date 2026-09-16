@@ -6,12 +6,20 @@ import serializerYAML from "../../serializer-yaml";
 import serializerMsgPack from "../../serializer-msgspec";
 import serializerBson from "../../serializer-bson";
 
-import { simpleGzip, streamGzip, type HighOrder } from "../src";
+import { simpleGzip, streamGzip } from "../src";
 
 import type { SerializerInstance, SerializerRoot } from "../../core";
 
-const serializersTxt = [serializerJSON, serializerYAML];
-const serializersBin = [serializerMsgPack, serializerBson];
+const serializersTxt = [serializerJSON, serializerYAML] as SerializerRoot<
+  any,
+  any,
+  any
+>[];
+const serializersBin = [serializerMsgPack, serializerBson] as SerializerRoot<
+  any,
+  any,
+  any
+>[];
 
 const seed: any = [
   0,
@@ -53,8 +61,8 @@ const doTest = (s1: SerializerInstance<any>, s2: SerializerInstance<any>) => {
 test("gzip-simple-txt", async () => {
   for (const serializerTxt of serializersTxt) {
     doTest(
-      await makeSerializer(simpleGzip(serializerTxt, undefined)),
-      await makeSerializer(simpleGzip(serializerTxt, undefined)),
+      await makeSerializer(simpleGzip(serializerTxt)),
+      await makeSerializer(simpleGzip(serializerTxt)),
     );
   }
 });
@@ -62,8 +70,8 @@ test("gzip-simple-txt", async () => {
 test("gzip-simple-bin", async () => {
   for (const serializerBin of serializersBin) {
     doTest(
-      await makeSerializer(simpleGzip(serializerBin, undefined)),
-      await makeSerializer(simpleGzip(serializerBin, undefined)),
+      await makeSerializer(simpleGzip(serializerBin)),
+      await makeSerializer(simpleGzip(serializerBin)),
     );
   }
 });
@@ -71,8 +79,8 @@ test("gzip-simple-bin", async () => {
 test("gzip-stream-txt", async () => {
   for (const serializerTxt of serializersTxt) {
     doTest(
-      await makeSerializer(streamGzip(serializerTxt, {})),
-      await makeSerializer(streamGzip(serializerTxt, {})),
+      await makeSerializer(streamGzip(serializerTxt)),
+      await makeSerializer(streamGzip(serializerTxt)),
     );
   }
 });
@@ -80,8 +88,8 @@ test("gzip-stream-txt", async () => {
 test("gzip-stream-bin", async () => {
   for (const serializerBin of serializersBin) {
     doTest(
-      await makeSerializer(streamGzip(serializerBin, {})),
-      await makeSerializer(streamGzip(serializerBin, {})),
+      await makeSerializer(streamGzip(serializerBin)),
+      await makeSerializer(streamGzip(serializerBin)),
     );
   }
 });

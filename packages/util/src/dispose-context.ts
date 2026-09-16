@@ -5,8 +5,10 @@ export type DisposeContext = Disposable & {
   dispose: () => void;
 };
 
+const { freeze: objectFreeze } = Object;
+
 export const disposeContext = (dispose: () => void) =>
-  Object.freeze({
+  objectFreeze({
     dispose,
     [Symbol.dispose]: dispose,
   } as DisposeContext);

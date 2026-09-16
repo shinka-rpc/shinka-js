@@ -1,8 +1,11 @@
 import { defaultSerializerRoot, defaultExclusiveLock } from "./defaults";
 import { Bus } from "./bus";
 import { setupHandlerRegistries, createHandlerRegistries } from "./shinka";
-import { createEventListeners } from "./factory/event-listeners-bus";
-import type { ShinkaOnDataEvent, ShinkaOnRequest, ClientProps } from "./types";
+import { createEventListeners } from "./listeners/event-listeners-bus";
+import type { ClientProps } from "./types";
+import type { ShinkaOnDataEvent, ShinkaOnRequest } from "./shinka";
+
+const { freeze: objectFreeze } = Object;
 
 export class Client<SO = any, TO = any, TC = any> extends Bus<SO, TO, TC> {
   public onRequest: ShinkaOnRequest<SO, TO, this>;
@@ -35,6 +38,6 @@ export class Client<SO = any, TO = any, TC = any> extends Bus<SO, TO, TC> {
     );
     this.onRequest = userRegistries.onRequest;
     this.onDataEvent = userRegistries.onDataEvent;
-    Object.freeze(this);
+    objectFreeze(this);
   }
 }

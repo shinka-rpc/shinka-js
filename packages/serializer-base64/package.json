@@ -1,6 +1,6 @@
 {
   "name": "@shinka-rpc/serializer-base64",
-  "version": "0.1.0-alpha.3",
+  "version": "0.1.0-alpha.4",
   "publishConfig": {
     "access": "public",
     "tag": "alpha"
@@ -9,8 +9,8 @@
   "main": "./src/index.ts",
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "postbuild": "node ../../packagePostBuild.mjs",
-    "test": "jest"
+    "postbuild": "node ../../util/post-build.mjs",
+    "test": "jest --coverage --collectCoverageFrom='src/**'"
   },
   "keywords": [
     "rpc",
@@ -23,7 +23,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/shinka-rpc/shinka-js.git",
-    "directory": "packages/serializer-json"
+    "directory": "packages/serializer-base64"
   },
   "author": "AI Kavalevich",
   "license": "MIT",
@@ -35,6 +35,6 @@
     "default": "./src/index.ts"
   },
   "dependencies": {
-    "@shinka-rpc/libserializer": "^0.1.0-alpha.3"
+    "@shinka-rpc/libserializer": "^0.1.0-alpha.4"
   }
 }

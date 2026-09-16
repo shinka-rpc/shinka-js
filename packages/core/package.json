@@ -1,6 +1,6 @@
 {
   "name": "@shinka-rpc/core",
-  "version": "0.1.0-alpha.5",
+  "version": "0.1.0-alpha.6",
   "publishConfig": {
     "access": "public",
     "tag": "alpha"
@@ -9,8 +9,8 @@
   "main": "./src/index.ts",
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "postbuild": "node ../../packagePostBuild.mjs",
-    "test": "jest"
+    "postbuild": "node ../../util/post-build.mjs",
+    "test": "jest --coverage --collectCoverageFrom='src/**'"
   },
   "keywords": [
     "rpc",
@@ -35,7 +35,7 @@
     "default": "./src/index.ts"
   },
   "dependencies": {
-    "@shinka-rpc/util": "^0.0.3-alpha.0",
+    "@shinka-rpc/util": "^0.0.3-alpha.2",
     "@shinka-rpc/collections": "^0.0.1-alpha.0",
     "@shinka-rpc/concurrency": "^0.0.1-alpha.0",
     "@shinka-rpc/consensus": "^0.0.1-alpha.0"

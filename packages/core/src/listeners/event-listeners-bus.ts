@@ -3,7 +3,7 @@
  */
 
 import { baseListenerFactory } from "./base-listener-factory";
-import type { ShinkaEventListener, EventListenerType } from "../types";
+import type { ShinkaEventListener, EventListenerType } from "./types";
 
 const eventListenerTypes: EventListenerType[] = [
   "connect",

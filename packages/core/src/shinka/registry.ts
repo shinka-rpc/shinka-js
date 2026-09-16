@@ -1,4 +1,4 @@
-import { Response } from "../response";
+import { Response } from "./response";
 import type { Context } from "./context";
 import type {
   DataEventKey,
@@ -6,7 +6,7 @@ import type {
   FnConstructorName,
   MetadataWithHint,
   DispatchError,
-} from "../types";
+} from "./types";
 
 const separateMetadataHint = <SO, TO>(
   metadataWithHint?: MetadataWithHint<SO, TO>,
@@ -19,7 +19,7 @@ const separateMetadataHint = <SO, TO>(
         },
         metadataWithHint.hint,
       ] as [ShinkaMeta<SO, TO>?, FnConstructorName?])
-    : [undefined, undefined];
+    : [,];
 
 const requestRegistryHookSync =
   <SO, TO, TA, B, R>(
@@ -57,7 +57,7 @@ const requestRegistryHookAsync =
     }
   };
 
-export const requestRegistryHook = <SO, TO, TA, B, R>({
+const requestRegistryHook = <SO, TO, TA, B, R>({
   cb,
   metadata,
   hint,
@@ -74,9 +74,7 @@ export const requestRegistryHook = <SO, TO, TA, B, R>({
 
 const dummy = <I, O>(v: I) => v as any as O;
 
-export const createRegistry = <K, V, H = V>(
-  valHook: (val: H) => V = dummy<H, V>,
-) => {
+const createRegistry = <K, V, H = V>(valHook: (val: H) => V = dummy<H, V>) => {
   const registry = new Map<K, V>();
   const get = registry.get.bind(registry);
   const set = (key: K, val: H) => {
