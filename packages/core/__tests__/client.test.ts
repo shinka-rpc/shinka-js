@@ -110,6 +110,8 @@ test("sync-simple-ok", async () => {
   createSyncHandler("bus1-sync", bus1, results);
   createDataEventHandler("bus1-event", bus1, results);
 
+  expect(() => bus2.dataEvent(0, 0)).toThrow();
+
   await start();
 
   bus2.dataEvent("bus1-event", "event:bus2->bus1");

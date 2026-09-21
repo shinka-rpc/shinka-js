@@ -11,6 +11,8 @@ import type { NestedSerializerOpts, SerializationPair } from "./types";
 import makeSerializers from "./serializers";
 import makeDeserializers from "./deserializers";
 import { composeStop, construct, nextMime } from "./util";
+import { HighOrderRoleRequest, HighOrderRoleEvent } from "./enums";
+import { handleThisArg } from "./this-arg";
 
 const { assign: objectAssign } = Object;
 
@@ -56,18 +58,29 @@ export default <HOSO, SS extends {} = {}, ISP = any>({
     initStateProps?: ISP,
   ) =>
     ((shinkaOn) => {
+      const taCache = handleThisArg(shinkaOn);
       const HOSh = highOrderShinka(shinkaOn);
 
-      const { 0: shinkaOnHO, 1: completeShinkaHO } = HOSh(0, 0);
+      const { 0: shinkaOnHO, 1: completeShinkaHO } = HOSh(
+        HighOrderRoleRequest.HIGH_ORDER,
+        HighOrderRoleEvent.HIGH_ORDER,
+      );
 
-      const { 0: shinkaOnNext, 1: completeShinkaOnNext } = HOSh(1, 1);
+      const completeTA_HO = taCache(completeShinkaHO);
+
+      const { 0: shinkaOnNext, 1: completeShinkaOnNext } = HOSh(
+        HighOrderRoleRequest.NESTED,
+        HighOrderRoleEvent.NESTED,
+      );
+
+      const completeTA_Next = taCache(completeShinkaOnNext);
 
       if (subscribe) subscribe(shinkaOnHO);
       const parentSerializerFactory = parent(shinkaOnNext);
 
       return async (thisArg, opts) => {
-        const taHO = completeShinkaHO(thisArg);
-        const taNext = completeShinkaOnNext(thisArg);
+        const taHO = completeTA_HO(thisArg);
+        const taNext = completeTA_Next(thisArg);
 
         objectAssign(taHO.state, initState(initStateProps, taHO));
 

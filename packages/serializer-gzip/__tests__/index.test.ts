@@ -39,7 +39,14 @@ const makeSerializer = async (serializer: SerializerRoot<any, any, any>) => {
   const reg = createHandlerRegistries();
   const serializerFactory = serializer(reg as any);
   const serializerInstance: SerializerInstance<any> = await serializerFactory(
-    { state: {}, dispatchError: console.error } as any,
+    {
+      state: {},
+      dispatchError: console.error,
+      shinka: {
+        request: console.log,
+        dataEvent: console.log,
+      },
+    } as any,
     { root: "array" },
   );
   return serializerInstance;

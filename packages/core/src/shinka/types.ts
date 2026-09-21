@@ -113,3 +113,18 @@ export type RequestHandler<SO, TO, TA, B> = (
   thisArg: TA,
   dispatchError: DispatchError,
 ) => void;
+
+export type RequestHandlerFn<SO, TO, TA, B> = (
+  body: B,
+  context: Context<SO, TO>,
+  thisArg: TA,
+  dispatchError: DispatchError,
+) => void;
+
+export type ReqRegEntryCb<TA, B, R> = (body: B, thisArg: TA) => R;
+
+export type ReqRegEntry<SO, TO, TA, B, R> = [
+  ReqRegEntryCb<TA, B, R>,
+  ShinkaMeta<SO, TO> | undefined,
+  FnConstructorName | undefined,
+];

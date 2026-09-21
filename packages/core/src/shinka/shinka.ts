@@ -1,11 +1,7 @@
 import { reqrsp } from "./request-response";
 
-import {
-  createDispatchRequest,
-  createEventRegistry,
-  createReqRegistry,
-  asOnRequest,
-} from "./registry";
+import { createEventRegistry, createReqRegistry } from "./registry";
+import { createDispatchRequest, asOnRequest } from "./util";
 import type { MessageTypeGroup } from "./message-type";
 
 import type { DispatchMap, Shinka, ShinkaOn } from "./types";

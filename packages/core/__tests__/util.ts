@@ -5,6 +5,7 @@ import {
   type ShinkaDo,
   type SerializerRoot,
   type InternalHandlerThisArg,
+  ShinkaMeta,
 } from "../src";
 
 export const mkPipe = (delay = 0) => {
