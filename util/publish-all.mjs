@@ -15,6 +15,6 @@ const publish = async (path) => {
 (async () => {
   const plan = (await publishPlan())
     .filter((i) => i.publish)
-    .map((i) => i.path);
+    .map((i) => i.dist);
   for (const path of plan) await publish(path); // AVOID `Promise.all`
 })();

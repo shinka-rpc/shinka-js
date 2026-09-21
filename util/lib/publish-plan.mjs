@@ -7,7 +7,7 @@ import {
 } from "fs/promises";
 import { spawn } from "child_process";
 import { join } from "path";
-import { packagesDir } from "./paths.mjs";
+import { packagesDir, distDir } from "./paths.mjs";
 
 const getPackageJSONVersion = async (path) => {
   const packageJSONPath = join(path, "package.json");
@@ -73,7 +73,7 @@ const handlePackageJSON = async (path) => {
     const versions = await getNPMVersions(ourData.name);
     const publish =
       versions === undefined ? true : !new Set(versions).has(version);
-    return { name, path, version, versions, publish };
+    return { name, path, dist: 0, version, versions, publish };
   } catch (e) {
     console.error(e);
   }
@@ -83,7 +83,11 @@ const handlePackageName = async (root, name) => {
   try {
     const packagePath = join(root, name);
     const packageStats = await stat(packagePath);
-    if (packageStats.isDirectory()) return await handlePackageJSON(packagePath);
+    if (packageStats.isDirectory()) {
+      const jsonContent = await handlePackageJSON(packagePath);
+      jsonContent.dist = join(distDir, name);
+      return jsonContent;
+    }
   } catch (e) {
     return console.error(e);
   }
