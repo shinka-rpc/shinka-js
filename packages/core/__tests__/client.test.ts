@@ -114,6 +114,8 @@ test("sync-simple-ok", async () => {
 
   await start();
 
+  await bus1.start();
+
   bus2.dataEvent("bus1-event", "event:bus2->bus1");
 
   // Yes, twice await 0
@@ -125,7 +127,14 @@ test("sync-simple-ok", async () => {
     out: await bus1Sync(bus2, "bus1-sync-simple-ok", true, true, true),
   });
 
+  await bus1.ping();
+
+  await bus1.restart();
+
   await stop();
+
+  await bus1.stop();
+  bus1.removeEventListener("error", console.error);
 
   expect(results).toStrictEqual([
     { key: "bus1-event", val: "connect" },
@@ -139,6 +148,12 @@ test("sync-simple-ok", async () => {
     { key: "bus1-serializer-sync", opts: "sync-serialize-default" },
     { key: "bus1-transport", opts: "sync-transport-default" },
     { key: "bus1-sync-response-got", out: "bus1-simple-response-send" },
+    { key: "bus1-serializer-sync", opts: undefined },
+    { key: "bus1-transport", opts: undefined },
+    { key: "bus2-serializer-sync", opts: undefined },
+    { key: "bus2-transport", opts: undefined },
+    { key: "bus1-event", val: "disconnect" },
+    { key: "bus1-event", val: "connect" },
     { key: "bus1-event", val: "disconnect" },
     { key: "bus2-event", val: "disconnect" },
   ]);

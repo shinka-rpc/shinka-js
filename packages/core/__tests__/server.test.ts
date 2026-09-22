@@ -126,7 +126,8 @@ test("server", async () => {
   });
 
   await client.stop();
-  await bus.stop();
+  // await bus.stop();
+  await server.stop();
 
   expect(results).toStrictEqual([
     { key: "client1-event", val: "connect" },

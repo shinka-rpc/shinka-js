@@ -93,7 +93,8 @@ test("hub-classic", async () => {
   });
 
   await client.stop();
-  await common.stop();
+  // await common.stop();
+  await hub.dispose();
 
   expect(results).toStrictEqual([
     { key: "client1-event", val: "connect" },
