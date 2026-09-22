@@ -4,13 +4,14 @@ import type {
   SerializerRoot,
   ShinkaOn,
 } from "@shinka-rpc/core";
+import { clearObject } from "@shinka-rpc/util";
 import { highOrderShinka } from "@shinka-rpc/core";
 
 import type { NestedSerializerOpts, SerializationPair } from "./types";
 
 import makeSerializers from "./serializers";
 import makeDeserializers from "./deserializers";
-import { composeStop, construct, nextMime } from "./util";
+import { compose, construct, nextMime } from "./util";
 import { HighOrderRoleRequest, HighOrderRoleEvent } from "./enums";
 import { handleThisArg } from "./this-arg";
 
@@ -119,7 +120,12 @@ export default <HOSO, SS extends {} = {}, ISP = any>({
 
         const mime = nextMime(prevTransportInitOpts.mime, mimeSubType);
         const transportInitOpts = { mode: modeMap[mode], mime };
-        const stop = composeStop(thisArg, prevStop, nextStop);
+        const callbacks = [];
+        if (prevStop) callbacks.push(prevStop);
+        if (nextStop) callbacks.push(nextStop.bind(0, thisArg));
+        callbacks.push(clearObject.bind(0, taNext.state));
+        callbacks.push(clearObject.bind(0, taHO.state));
+        const stop = compose(callbacks, thisArg.dispatchError);
         return { serialize, deserialize, transportInitOpts, typeHints, stop };
       };
     }) satisfies SerializerRoot<

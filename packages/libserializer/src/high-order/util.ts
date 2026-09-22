@@ -40,17 +40,17 @@ export const nextMime = (mime: StructuredMimeType, mimeSubType: string) =>
     subtype: joinMimeSubtype(mime.subtype, mimeSubType),
   }) satisfies StructuredMimeType;
 
-export const composeStop = (
-  thisArg: InternalHandlerThisArg<any, any, any>,
-  prevStop?: () => void,
-  nextStop?: (thisArg: InternalHandlerThisArg<any, any, any>) => void,
+export const compose = (
+  callbacks: (() => void)[],
+  dispatchError: (err: any) => void,
 ) => {
-  if (!(prevStop || nextStop)) return;
-  if (!nextStop) return prevStop;
-  const boundNext = nextStop.bind(0, thisArg);
-  if (!prevStop) return boundNext;
   return () => {
-    prevStop();
-    boundNext();
+    for (const cb of callbacks) {
+      try {
+        cb();
+      } catch (e) {
+        dispatchError(e);
+      }
+    }
   };
 };
