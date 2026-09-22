@@ -12,6 +12,7 @@ import {
   type IBus,
   type InternalHandlerThisArg,
   type TransportClient,
+  type BusProxy,
 } from "../src";
 
 import {
@@ -20,6 +21,7 @@ import {
   // createMockSerializerAsync,
   // createMockSerializerSync,
   createSyncHandler,
+  createDataEventHandler,
   createMockBusService,
   // createAsyncHandler,
 } from "./util";
@@ -123,6 +125,7 @@ test("pool", async () => {
   server.addEventListener("connect", (bus) => serverBus.push(bus));
 
   createSyncHandler("server-sync", server, results);
+  createDataEventHandler("server-event", server, results);
 
   const clientTransport = fakeTransportClient(token, results);
   const pool = new Pool({
@@ -131,9 +134,18 @@ test("pool", async () => {
     transport: clientTransport,
   });
 
+  pool.addEventListener("connect", (bus) =>
+    bus.addEventListener("error", console.error),
+  );
+
+  pool.addEventListener("disconnect", (bus) =>
+    bus.removeEventListener("error", console.error),
+  );
+
   createSyncHandler("pool-sync", pool, results);
 
   const serverSyncService = createMockBusService("server-sync");
+  const serverEventService = createMockBusService("server-event");
   const poolSyncService = createMockBusService("pool-sync");
 
   server.start();
@@ -143,14 +155,27 @@ test("pool", async () => {
 
   await sleep(0); // wait for server initialization
 
+  let busProxy: BusProxy<any, any>;
+
   {
     // use-case: pool -> server
     using bus = await pool.acquire();
+    bus.addEventListener("connect", console.info);
+    busProxy = bus;
     results.push({
       key: "pool-response",
       opts: await serverSyncService(bus, "bus-server", true, true, true),
     });
+    await bus.ping();
+    bus.dataEvent("server-event", "bus-server");
+    bus.removeEventListener("connect", console.info);
+
+    await bus.start(); // nothing
   }
+
+  expect(() =>
+    serverSyncService(busProxy, "bus-server", true, true, true),
+  ).toThrow();
 
   // use-case: server -> pool
   results.push({
@@ -162,6 +187,8 @@ test("pool", async () => {
   await pool.setSize(0);
 
   await sleep(0);
+
+  pool.removeEventListener("error", console.error);
 
   // console.dir(results, { depth: 5 });
 
@@ -192,6 +219,12 @@ test("pool", async () => {
       },
     },
     { key: "pool-response", opts: "bus1-simple-response-send" },
+    { key: "client-0", opts: { value: [4, 0, 0, 0], opts: undefined } },
+    { key: "bus-0", opts: { value: [5, 0, 1], opts: undefined } },
+    {
+      key: "client-0",
+      opts: { value: [3, "bus-server", "server-event"], opts: undefined },
+    },
     {
       key: "bus-0",
       opts: {
@@ -199,6 +232,7 @@ test("pool", async () => {
         opts: "pool-sync-req-transport",
       },
     },
+    { key: "data-event", arg: "bus-server" },
     { key: "sync-request", arg: "server-bus" },
     {
       key: "client-0",
