@@ -31,11 +31,15 @@ export const highOrderShinka = ({
   });
 
   return (requestIdentity: DataEventKey, eventIdentity: DataEventKey) => {
-    rootOnRequest(requestIdentity, async ({ 0: key, 1: data }, thisArg) => {
-      const handler = reqGet(key);
-      if (handler) return await handler(data, thisArg);
-      throw thisArg.dispatchError(`Unable to find handler ${key}`);
-    });
+    rootOnRequest(
+      requestIdentity,
+      async ({ 0: key, 1: data }, thisArg) => {
+        const handler = reqGet(key);
+        if (handler) return await handler(data, thisArg);
+        throw thisArg.dispatchError(`Unable to find handler ${key}`);
+      },
+      { hint: "AsyncFunction" },
+    );
 
     rootOnDataEvent(eventIdentity, ({ 0: key, 1: data }, thisArg) => {
       const handler = evGet(key);

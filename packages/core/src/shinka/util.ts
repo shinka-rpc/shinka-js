@@ -9,18 +9,21 @@ import type {
   ReqRegEntryCb,
 } from "./types";
 
+const splitMetadataHint = <SO, TO>(
+  metadataWithHint: MetadataWithHint<SO, TO>,
+) => {
+  const hint = metadataWithHint.hint;
+  delete metadataWithHint.hint;
+  return [metadataWithHint, hint] as [ShinkaMeta<SO, TO>?, FnConstructorName?];
+};
+
 export const separateMetadataHint = <SO, TO>(
   metadataWithHint?: MetadataWithHint<SO, TO>,
 ) =>
-  metadataWithHint
-    ? ([
-        {
-          transport: metadataWithHint.transport,
-          serialize: metadataWithHint.serialize,
-        },
-        metadataWithHint.hint,
-      ] as [ShinkaMeta<SO, TO>?, FnConstructorName?])
-    : [,];
+  (metadataWithHint ? splitMetadataHint(metadataWithHint) : [,]) as [
+    ShinkaMeta<SO, TO>?,
+    FnConstructorName?,
+  ];
 
 export const createRegistry = <K, V, H = V>(valHook?: (val: H) => V) => {
   const registry = new Map<K, V>();
