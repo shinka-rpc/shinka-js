@@ -62,17 +62,19 @@ export default <HOSO, SS extends {} = {}, ISP = any>({
       const taCache = handleThisArg(shinkaOn);
       const HOSh = highOrderShinka(shinkaOn);
 
-      const { 0: shinkaOnHO, 1: completeShinkaHO } = HOSh(
-        HighOrderRoleRequest.HIGH_ORDER,
-        HighOrderRoleEvent.HIGH_ORDER,
-      );
+      const {
+        0: shinkaOnHO,
+        1: associateThisArgHO,
+        2: completeShinkaHO,
+      } = HOSh(HighOrderRoleRequest.HIGH_ORDER, HighOrderRoleEvent.HIGH_ORDER);
 
       const completeTA_HO = taCache(completeShinkaHO);
 
-      const { 0: shinkaOnNext, 1: completeShinkaOnNext } = HOSh(
-        HighOrderRoleRequest.NESTED,
-        HighOrderRoleEvent.NESTED,
-      );
+      const {
+        0: shinkaOnNext,
+        1: associateThisArgNext,
+        2: completeShinkaOnNext,
+      } = HOSh(HighOrderRoleRequest.NESTED, HighOrderRoleEvent.NESTED);
 
       const completeTA_Next = taCache(completeShinkaOnNext);
 
@@ -82,6 +84,9 @@ export default <HOSO, SS extends {} = {}, ISP = any>({
       return async (thisArg, opts) => {
         const taHO = completeTA_HO(thisArg);
         const taNext = completeTA_Next(thisArg);
+
+        associateThisArgHO(thisArg, taHO);
+        associateThisArgNext(thisArg, taNext);
 
         objectAssign(taHO.state, initState(initStateProps, taHO));
 

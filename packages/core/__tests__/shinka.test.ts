@@ -31,11 +31,24 @@ test("high-order-shinka", async () => {
 
   const HOSh = highOrderShinka(shinkaOn);
 
-  const { 0: shinkaOnHO, 1: completeShinkaHO } = HOSh(0, 0);
+  const { 0: shinkaOn0, 1: associateThisArg0, 2: completeShinka0 } = HOSh(0, 0);
+  const { 0: shinkaOn1, 1: associateThisArg1, 2: completeShinka1 } = HOSh(1, 1);
 
-  createSyncHandler("sync", shinkaOnHO, results);
-  createAsyncHandler("async", shinkaOnHO, results);
-  createDataEventHandler("event", shinkaOnHO, results);
+  createSyncHandler("sync", shinkaOn0, results);
+  createAsyncHandler("async", shinkaOn0, results);
+  createDataEventHandler("event", shinkaOn0, results);
+
+  createSyncHandler("sync", shinkaOn1, results);
+  createAsyncHandler("async", shinkaOn1, results);
+  createDataEventHandler("event", shinkaOn1, results);
+
+  shinkaOn0.onDataEvent("my-event", (value, thisArg) => {
+    results.push(["my-event@0", value, thisArg.id]);
+  });
+
+  shinkaOn1.onDataEvent("my-event", (value, thisArg) => {
+    results.push(["my-event@1", value, thisArg.id]);
+  });
 
   const [setVars, shinka] = completeShinka(
     [0, 1, 2, 3],
@@ -48,13 +61,18 @@ test("high-order-shinka", async () => {
   const onSuccess = dispatchMap.get(1)!;
   const onDataEvent = dispatchMap.get(3)!;
 
-  setVars({
-    send: push,
-    dispatchError: push,
-    thisArg: { dispatchError: push },
-  });
+  const thisArg = { dispatchError: push };
 
-  const ho0 = completeShinkaHO(shinka);
+  associateThisArg0(thisArg, { ...thisArg, id: 0 });
+  associateThisArg1(thisArg, { ...thisArg, id: 1 });
+
+  setVars({ send: push, dispatchError: push, thisArg });
+
+  const ho0 = completeShinka0(shinka);
+  const ho1 = completeShinka1(shinka);
+
+  expect(shinkaOn0.onDataEvent).toStrictEqual(ho0.onDataEvent);
+  expect(shinkaOn0.onRequest).toStrictEqual(ho0.onRequest);
 
   ho0.dataEvent("event", [true, true, true]);
   const reqPromise = ho0.request("request", [true, true, true]);
@@ -153,6 +171,18 @@ test("high-order-shinka", async () => {
   // @ts-ignore
   onDataEvent(msgEvent2);
 
+  const msgEvent3: MessageDataEvent<any> = [3, ["event", "data"], 1];
+
+  // @ts-ignore
+  onDataEvent(msgEvent3);
+
+  for (let i = 0; i < 2; i++) {
+    const msgEvent: MessageDataEvent<any> = [3, ["my-event", "data"], i];
+
+    // @ts-ignore
+    onDataEvent(msgEvent);
+  }
+
   expect(results).toStrictEqual([
     [3, ["event", [true, true, true]], 0],
     undefined,
@@ -179,5 +209,8 @@ test("high-order-shinka", async () => {
     "Unable to find handler wrong-sync",
     { key: "data-event", arg: "data" },
     "Unable to find handler wrong-event",
+    { key: "data-event", arg: "data" },
+    ["my-event@0", "data", 0],
+    ["my-event@1", "data", 1],
   ]);
 });

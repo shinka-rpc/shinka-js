@@ -1,11 +1,18 @@
-import type { DataEventKey, ShinkaOn, Shinka, ShinkaMeta } from "./types";
+import type {
+  DataEventKey,
+  ShinkaOn,
+  Shinka,
+  ShinkaMeta,
+  ShinkaDoDataEvent,
+  ShinkaDoRequest,
+} from "./types";
 import {
   createHOReqRegistry,
   createHOEventRegistry,
 } from "./high-order-registry";
 import { asOnRequest } from "./util";
 
-const { assign: objectAssign, freeze: objectFreeze } = Object;
+const { freeze: objectFreeze } = Object;
 
 const createHOHandlerRegistries = <SO, TO, TA>() => {
   const { 0: reqGet, 1: reqSet } = createHOReqRegistry<SO, TO, TA, any, any>();
@@ -19,23 +26,48 @@ const createHOHandlerRegistries = <SO, TO, TA>() => {
   }) satisfies ShinkaOn<SO, TO, TA>;
 };
 
-export const highOrderShinka = ({
-  onDataEvent: rootOnDataEvent,
-  onRequest: rootOnRequest,
-}: ShinkaOn<any, any, any>) => {
-  const { reqGet, evGet, onDataEvent, onRequest } = createHOHandlerRegistries();
+const nestedDataEvent = (
+  eventIdentity: DataEventKey,
+  dataEvent: ShinkaDoDataEvent<any, any>,
+) =>
+  ((key: DataEventKey, data: any, metadata?: ShinkaMeta<any, any>) =>
+    dataEvent(
+      eventIdentity,
+      [key, data],
+      metadata,
+    )) satisfies ShinkaDoDataEvent<any, any>;
 
-  const childShinkaOn: ShinkaOn<any, any, any> = objectAssign({
-    onDataEvent,
-    onRequest,
-  });
+const nestedRequest = (
+  requestIdentity: DataEventKey,
+  request: ShinkaDoRequest<any, any>,
+) =>
+  ((key: DataEventKey, data: any, metadata?: ShinkaMeta<any, any>) =>
+    request(requestIdentity, [key, data], metadata)) satisfies ShinkaDoRequest<
+    any,
+    any
+  >;
 
-  return (requestIdentity: DataEventKey, eventIdentity: DataEventKey) => {
+export const highOrderShinka =
+  ({
+    onRequest: rootOnRequest,
+    onDataEvent: rootOnDataEvent,
+  }: ShinkaOn<any, any, any>) =>
+  (requestIdentity: DataEventKey, eventIdentity: DataEventKey) => {
+    const { reqGet, evGet, onDataEvent, onRequest } =
+      createHOHandlerRegistries();
+
+    const childShinkaOn: ShinkaOn<any, any, any> = objectFreeze({
+      onDataEvent,
+      onRequest,
+    });
+
+    const taMap = new WeakMap<any, any>();
+
     rootOnRequest(
       requestIdentity,
       async ({ 0: key, 1: data }, thisArg) => {
         const handler = reqGet(key);
-        if (handler) return await handler(data, thisArg);
+        if (handler) return await handler(data, taMap.get(thisArg));
         throw thisArg.dispatchError(`Unable to find handler ${key}`);
       },
       { hint: "AsyncFunction" },
@@ -44,41 +76,29 @@ export const highOrderShinka = ({
     rootOnDataEvent(eventIdentity, ({ 0: key, 1: data }, thisArg) => {
       const handler = evGet(key);
       handler
-        ? handler(data, thisArg)
+        ? handler(data, taMap.get(thisArg))
         : thisArg.dispatchError(`Unable to find handler ${key}`);
     });
 
-    const complete = ({
+    const associateThisArg = taMap.set.bind(taMap);
+
+    const wrap = ({
       dataEvent: completeDataEvent,
-      onDataEvent: completeOnDataEvent,
-      onRequest: completeOnRequest,
       request: completeRequest,
     }: Shinka<any, any, any>) => {
-      const dataEvent = (
-        key: DataEventKey,
-        data: any,
-        metadata?: ShinkaMeta<any, any>,
-        // FIXME: metadata handling looks wrong
-      ) => completeDataEvent(eventIdentity, [key, data], metadata);
-
-      const request = async (
-        key: DataEventKey,
-        data: any,
-        metadata?: ShinkaMeta<any, any>,
-        // FIXME: metadata handling looks wrong
-      ) => await completeRequest(requestIdentity, [key, data], metadata);
-
+      const dataEvent = nestedDataEvent(eventIdentity, completeDataEvent);
+      const request = nestedRequest(requestIdentity, completeRequest);
       return objectFreeze({
         dataEvent,
         request,
-        onDataEvent: completeOnDataEvent,
-        onRequest: completeOnRequest,
-      });
+        onDataEvent,
+        onRequest,
+      }) satisfies Shinka<any, any, any>;
     };
 
-    return [childShinkaOn, complete] as [
+    return [childShinkaOn, associateThisArg, wrap] as [
       ShinkaOn<any, any, any>,
+      (parentThisArg: any, childThisArg: any) => void,
       (shinka: Shinka<any, any, any>) => Shinka<any, any, any>,
     ];
   };
-};

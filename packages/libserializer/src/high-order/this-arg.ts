@@ -21,9 +21,8 @@ const handleCache = <K extends WeakKey, A, V>(
   key: K,
   ...args: A[]
 ) => {
-  let value = cache.get(key);
-  if (value) return value;
-  value = factory(key, ...args);
+  if (cache.has(key)) return cache.get(key)!;
+  const value = factory(key, ...args);
   cache.set(key, value);
   return value;
 };
