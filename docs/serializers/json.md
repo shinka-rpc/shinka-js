@@ -1,1 +1,18 @@
 # JSON Serializer
+
+```typescript
+import serializer from "@shinka-rpc/serializer-json";
+```
+
+::: details Implementation
+```typescript
+import type { SerializerRoot } from "@shinka-rpc/core";
+
+export default ((shinkaOn) => () => ({
+  serialize: JSON.stringify,
+  deserialize: JSON.parse,
+  transportInitOpts: { mode: "text", contentType: "application/json" },
+  typeHints: { serialize: "Function", deserialize: "Function" },
+})) satisfies SerializerRoot<any, any, any>;
+```
+:::
