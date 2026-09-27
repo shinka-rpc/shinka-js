@@ -1,51 +1,22 @@
-import type {
-  ShinkaOn,
-  Shinka,
-  InternalHandlerThisArg,
-} from "@shinka-rpc/core";
+import type { Shinka, InternalHandlerThisArg } from "@shinka-rpc/core";
+import { handleCache } from "@shinka-rpc/util";
 
 const { freeze: objectFreeze } = Object;
 
-const taHandlerCache = new WeakMap<
-  ShinkaOn<any, any, any>,
-  (
-    complete: (shinka: Shinka<any, any, any>) => Shinka<any, any, any>,
-  ) => (
-    thisArg: InternalHandlerThisArg<any, any, any>,
-  ) => InternalHandlerThisArg<any, any, any>
->();
-
-const handleCache = <K extends WeakKey, A, V>(
-  cache: WeakMap<K, V>,
-  factory: (key: K, ...args: A[]) => V,
-  key: K,
-  ...args: A[]
-) => {
-  if (cache.has(key)) return cache.get(key)!;
-  const value = factory(key, ...args);
-  cache.set(key, value);
-  return value;
-};
-
-const taComplete = (
+const buildTA = (
+  wrap: (shinka: Shinka<any, any, any>) => Shinka<any, any, any>,
   thisArg: InternalHandlerThisArg<any, any, any>,
-  complete: (shinka: Shinka<any, any, any>) => Shinka<any, any, any>,
 ) =>
   objectFreeze({
     ...thisArg,
-    shinka: complete(thisArg.shinka),
+    shinka: wrap(thisArg.shinka),
     state: {},
   }) as InternalHandlerThisArg<any, any, any>;
 
-const taHandler = (shinkaOn: ShinkaOn<any, any, any>) => {
-  const taCache = new WeakMap<
+export default (
+  wrap: (shinka: Shinka<any, any, any>) => Shinka<any, any, any>,
+) =>
+  (handleCache<
     InternalHandlerThisArg<any, any, any>,
     InternalHandlerThisArg<any, any, any>
-  >();
-  return (complete: (shinka: Shinka<any, any, any>) => Shinka<any, any, any>) =>
-    (thisArg: InternalHandlerThisArg<any, any, any>) =>
-      handleCache(taCache, taComplete, thisArg, complete);
-};
-
-export const handleThisArg = (shinkaOn: ShinkaOn<any, any, any>) =>
-  handleCache(taHandlerCache, taHandler, shinkaOn);
+  >).bind(0, new WeakMap(), buildTA.bind(0, wrap));

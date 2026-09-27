@@ -1,41 +1,16 @@
-import type {
-  InternalHandlerThisArg,
-  SerializationMode,
-  SerializerRoot,
-  ShinkaOn,
-} from "@shinka-rpc/core";
+import type { SerializerRoot } from "@shinka-rpc/core";
 import { clearObject } from "@shinka-rpc/util";
 import { highOrderShinka } from "@shinka-rpc/core";
 
-import type { NestedSerializerOpts, SerializationPair } from "./types";
+import type { NestedSerializerOpts, HighOrderSerializerProps } from "./types";
 
 import makeSerializers from "./serializers";
 import makeDeserializers from "./deserializers";
 import { compose, construct, nextMime } from "./util";
 import { HighOrderRoleRequest, HighOrderRoleEvent } from "./enums";
-import { handleThisArg } from "./this-arg";
+import ta from "./this-arg";
 
 const { assign: objectAssign } = Object;
-
-export type HighOrderSerializerModeMap = Record<
-  SerializationMode,
-  SerializationMode
->;
-
-export type HighOrderSerializerProps<SO, SS, ISP> = {
-  modeMap: HighOrderSerializerModeMap;
-  mimeSubType: string;
-  text: SerializationPair<SO, string, SS>;
-  bin: SerializationPair<SO, Uint8Array, SS>;
-  stop?: (thisArg: InternalHandlerThisArg<any, any, SS>) => void;
-  subscribe?: (
-    shinkaOn: ShinkaOn<SO, any, InternalHandlerThisArg<SO, any, any>>,
-  ) => void;
-  initState?: (
-    props: ISP | undefined,
-    thisArg: InternalHandlerThisArg<any, any, SS>,
-  ) => SS | void;
-};
 
 export type HighOrder<HOSO, NEXT, ISP> = (
   parent: SerializerRoot<HOSO, any, any>,
@@ -47,7 +22,7 @@ export default <HOSO, SS extends {} = {}, ISP = any>({
   text,
   bin,
   mimeSubType,
-  stop: nextStop,
+  stop: HOStop,
   subscribe,
   initState = () => {},
 }: HighOrderSerializerProps<HOSO, SS, ISP>) => {
@@ -59,31 +34,30 @@ export default <HOSO, SS extends {} = {}, ISP = any>({
     initStateProps?: ISP,
   ) =>
     ((shinkaOn) => {
-      const taCache = handleThisArg(shinkaOn);
       const HOSh = highOrderShinka(shinkaOn);
 
       const {
         0: shinkaOnHO,
         1: associateThisArgHO,
-        2: completeShinkaHO,
+        2: wrapShinkaHO,
       } = HOSh(HighOrderRoleRequest.HIGH_ORDER, HighOrderRoleEvent.HIGH_ORDER);
 
-      const completeTA_HO = taCache(completeShinkaHO);
+      const buildTA_HO = ta(wrapShinkaHO);
 
       const {
         0: shinkaOnNext,
         1: associateThisArgNext,
-        2: completeShinkaOnNext,
+        2: wrapShinkaOnNext,
       } = HOSh(HighOrderRoleRequest.NESTED, HighOrderRoleEvent.NESTED);
 
-      const completeTA_Next = taCache(completeShinkaOnNext);
+      const buildTA_Next = ta(wrapShinkaOnNext);
 
       if (subscribe) subscribe(shinkaOnHO);
       const parentSerializerFactory = parent(shinkaOnNext);
 
       return async (thisArg, opts) => {
-        const taHO = completeTA_HO(thisArg);
-        const taNext = completeTA_Next(thisArg);
+        const taHO = buildTA_HO(thisArg);
+        const taNext = buildTA_Next(thisArg);
 
         associateThisArgHO(thisArg, taHO);
         associateThisArgNext(thisArg, taNext);
@@ -100,7 +74,7 @@ export default <HOSO, SS extends {} = {}, ISP = any>({
         const {
           transportInitOpts: prevTransportInitOpts,
           typeHints,
-          stop: prevStop,
+          stop: nextStop,
         } = parentInstance;
 
         const { mode } = prevTransportInitOpts;
@@ -126,8 +100,8 @@ export default <HOSO, SS extends {} = {}, ISP = any>({
         const mime = nextMime(prevTransportInitOpts.mime, mimeSubType);
         const transportInitOpts = { mode: modeMap[mode], mime };
         const callbacks = [];
-        if (prevStop) callbacks.push(prevStop);
-        if (nextStop) callbacks.push(nextStop.bind(0, thisArg));
+        if (nextStop) callbacks.push(nextStop);
+        if (HOStop) callbacks.push(HOStop.bind(0, thisArg));
         callbacks.push(clearObject.bind(0, taNext.state));
         callbacks.push(clearObject.bind(0, taHO.state));
         const stop = compose(callbacks, thisArg.dispatchError);

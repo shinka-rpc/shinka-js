@@ -5,14 +5,14 @@ import type {
   InternalHandlerThisArg,
 } from "@shinka-rpc/core";
 
+import { joinMimeSubtype } from "@shinka-rpc/util";
+
 import type {
   HighOrderDeserialize,
   HighOrderSerialize,
   NestedSerializerOpts,
   SerializationRecords,
 } from "./types";
-
-import { joinMimeSubtype } from "@shinka-rpc/util";
 
 export const construct = <
   HOSO,

@@ -92,16 +92,30 @@ export type ShinkaPair<HOSO, NEXT> = [
   ShinkaOn<NEXT, any, InternalHandlerThisArg<NEXT, any, any>>,
 ];
 
-// export type ShinkaOnCache<HOSO, NEXT> = WeakMap<
-//   ShinkaOn<
-//     NestedSerializerOpts<HOSO, NEXT>,
-//     any,
-//     InternalHandlerThisArg<NestedSerializerOpts<HOSO, NEXT>, any, any>
-//   >,
-//   ShinkaPair<HOSO, NEXT>
-// >;
+export type HighOrderSerializerModeMap = Record<
+  SerializationMode,
+  SerializationMode
+>;
 
-// export type ThisArgCache<HOSO, NEXT> = WeakMap<
-//   InternalHandlerThisArg<NestedSerializerOpts<HOSO, NEXT>, any, any>,
-//   TAPair<HOSO, NEXT>
-// >;
+export type HighOrderStop<SS> = (
+  thisArg: InternalHandlerThisArg<any, any, SS>,
+) => void;
+
+export type HighOrderSubscribe<SO> = (
+  shinkaOn: ShinkaOn<SO, any, InternalHandlerThisArg<SO, any, any>>,
+) => void;
+
+export type HighOrderInitState<SS, ISP> = (
+  props: ISP | undefined,
+  thisArg: InternalHandlerThisArg<any, any, SS>,
+) => SS | void;
+
+export type HighOrderSerializerProps<SO, SS, ISP> = {
+  modeMap: HighOrderSerializerModeMap;
+  mimeSubType: string;
+  text: SerializationPair<SO, string, SS>;
+  bin: SerializationPair<SO, Uint8Array, SS>;
+  stop?: HighOrderStop<SS>;
+  subscribe?: HighOrderSubscribe<SO>;
+  initState?: HighOrderInitState<SS, ISP>;
+};
