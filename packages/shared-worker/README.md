@@ -8,61 +8,32 @@ This package implements the transport implementation of
 
 # Usage
 
-## `client` case
+## `client` / `page` case
 
 ```typescript
-import { ClientBus, FactoryClient } from "@shinka-rpc/core";
-import { SharedWorker2FactoryData } from "@shinka-rpc/shared-worker";
-import serializer from "@shinka-rpc/serializer-json";  // for example
+import { Client } from "@shinka-rpc/core";
+import outscope from "@shinka-rpc/outscope/browser-page";
+import { sharedWorkerClient } from "@shinka-rpc/shared-worker";
+import serializer from "@shinka-rpc/serializer-json";
 
-const factory: FactoryClient<ClientBus> = async (bus) =>
-  SharedWorker2FactoryData(
-    new SharedWorker(new URL("./worker.ts", import.meta.url)),
-    bus,
-  );
+const transport = sharedWorkerClient(
+  () => new SharedWorker(new URL("../server", import.meta.url)),
+);
 
-export const bus = new ClientBus({ factory, serializer });
-
-bus.start();
+export const client = new Client({ transport, serializer, outscope });
 ```
 
-### API Reference:
-
-**SharedWorker2FactoryData**:
-
-- **Required** instance: [SharedWorker](https://developer.mozilla.org/en-US/docs/Web/API/SharedWorker)
-
-- **Required** bus: `ClientBus`
-
-- **Optional** `binary`: `Boolean` &mdash; enable binary-specific `transfer` optimization. **Default**: `false`
-
-- **Refurning**: `FactoryData`
-
-## `server` case / `worker` side
-
-First of all: please read the docs about
-[SharedWorker](https://developer.mozilla.org/en-US/docs/Web/API/SharedWorker)
-API. There is no magic.
+## `server` / `worker` case
 
 ```typescript
-// @ts-nocheck
-declare let onconnect: (event: MessageEvent) => void;
+import { Server } from "@shinka-rpc/core";
+import outscope from "@shinka-rpc/outscope/browser-page";
+import { sharedWorkerServer } from "@shinka-rpc/shared-worker";
+import serializer from "@shinka-rpc/serializer-json";
 
-import { ServerBus } from "@shinka-rpc/core";
-import { SharedWorkerServer } from "@shinka-rpc/shared-worker";
-import serializer from "@shinka-rpc/serializer-json";  // for example
-
-export const server = new ServerBus({ serializer });
-
-onconnect = SharedWorkerServer(server);
+const server = new Server({
+  transport: sharedWorkerServer,
+  serializer,
+  outscope,
+});
 ```
-
-### API Reference:
-
-**SharedWorkerServer**:
-
-- **Reqiored** server: `ServerBus`
-
-- **Optional** `binary`: `Boolean` &mdash; enable binary-specific `transfer` optimization. **Default**: `false`
-
-- **Refurning**: `(e: MessageEvent) => void`

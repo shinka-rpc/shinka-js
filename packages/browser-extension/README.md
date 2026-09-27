@@ -38,13 +38,13 @@ export const ISOLATED2MAIN_TYPE = "MY_EXTENSION_ISOLATED2MAIN";
 Here we are able to connect to the page `ISOLATED` ExecutionWorld only:
 
 ```typescript
-import { ClientBus } from "@shinka-rpc/core";
+import { Client } from "@shinka-rpc/core";
 import { createClientFactory } from "@shinka-rpc/browser-extension";
 
 import { MAIN2ISOLATED_TYPE, ISOLATED2MAIN_TYPE } from "./constants";
 
 const factory = createClientFactory(ISOLATED2MAIN_TYPE, MAIN2ISOLATED_TYPE);
-const bus = new ClientBus({ factory });
+const bus = new Client({ factory });
 ```
 
 **API Reference**: createClientFactory
@@ -65,7 +65,7 @@ import {
   createClientFactory,
   createIsolatedPair,
 } from "@shinka-rpc/browser-extension";
-import { passThroughEvent, passThroughRequest } from "@shinka-rpc/core";
+import { passThroughEvents, passThroughRequests } from "@shinka-rpc/core";
 
 import { MAIN2ISOLATED_TYPE, ISOLATED2MAIN_TYPE } from "./constants";
 
@@ -79,16 +79,16 @@ const contentBusFactory = createClientFactory(
 
 const { contentBus, extensionBus } = createIsolatedPair({ contentBusFactory });
 
-passThroughEvent(contentBus, extensionBus, "example-event");
-passThroughRequest(contentBus, extensionBus, "example-request");
+passThroughEvents(contentBus, extensionBus, "ev1", "ev2" /*...*/);
+passThroughRequests(contentBus, extensionBus, "req1", "req2" /*...*/);
 ```
 
 **API Reference**: createIsolatedPair
 
-- **Required** contentBusFactory: `FactoryClient<ClientBus>`
+- **Required** contentBustransport: `TransportFactory<Client>`
 - **Optional** responseTimeout: `number`
-- **Optional** contentRegistry: `Registry<ClientBus>` hooks for content bus
-- **Optional** extensionRegistry: `Registry<ClientBus>` hooks for extension
+- **Optional** contentRegistry: `Registry<Client>` hooks for content bus
+- **Optional** extensionRegistry: `Registry<Client>` hooks for extension
 environment
 
 # Backgroung `server` script

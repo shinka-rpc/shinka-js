@@ -8,44 +8,36 @@ This package implements the transport implementation of
 
 # Usage
 
-## `client` case
+## `client` / `page` case
 
 ```typescript
-import { ClientBus, FactoryClient } from "@shinka-rpc/core";
-import { DedicatedWorker2FactoryData } from "@shinka-rpc/dedicated-worker";
+import { Client } from "@shinka-rpc/core";
+import outscope from "@shinka-rpc/outscope/browser-page";
+import { dedicatedWorkerClient } from "@shinka-rpc/dedicated-worker";
+import serializer from "@shinka-rpc/serializer-json";
 
-const factory: FactoryClient<ClientBus> = async (bus) =>
-  DedicatedWorker2FactoryData(
-    new Worker(new URL("./worker.ts", import.meta.url)),
-    bus,
-  );
+const transport = dedicatedWorkerClient(
+  () => new Worker(new URL("../worker", import.meta.url)),
+);
 
-export const bus = new ClientBus({ factory });
-
-bus.start();
+const bus = new Client({ transport, serializer, outscope });
 ```
 
 ## `worker` side
 
 **IMPORTANT**: on
 [Worker](https://developer.mozilla.org/en-US/docs/Web/API/Worker) side you have
-to use `ClientBus`
+to use `Client`
 
 ```typescript
-// @ts-nocheck
-declare let onmessage: (event: MessageEvent) => void;
+import { Client } from "@shinka-rpc/core";
+import outscope from "@shinka-rpc/outscope/browser-page";
+import { dedicatedWorkerServer } from "@shinka-rpc/dedicated-worker";
+import serializer from "@shinka-rpc/serializer-json"; 
 
-import { ClientBus } from "@shinka-rpc/core";
-import {
-  DedicatedWorkerServer,
-  createOnMessage,
-} from "@shinka-rpc/dedicated-worker";
-import serializer from "@shinka-rpc/serializer-json";  // for example
-
-export const server = new ClientBus({
-  factory: DedicatedWorkerServer,
+export const worker = new Client({
+  transport: dedicatedWorkerServer,
   serializer,
+  outscope,
 });
-
-onmessage = createOnMessage(server);
 ```

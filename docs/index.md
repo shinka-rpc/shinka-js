@@ -5,6 +5,8 @@ layout: home
 hero:
   name: "shinka-rpc"
   text: Symmetric RPC bus
+  image:
+    src: ./img/logo.png
   tagline: Remote procedure call framework
   actions:
     - theme: brand
@@ -16,13 +18,36 @@ hero:
     - theme: alt
       text: Serializers
       link: /serializers
+    - theme: alt
+      text: LiMons
+      link: /limons
+    - theme: alt
+      text: Other
+      link: /other
 
 features:
   - title: Symmetricity
-    details: Every participant may register his request and event handlers,
-      initialize connestions, and send events and requests to the interlocutor
+    icon: ☯
+    details: Server may send request to particular client and receive its
+      response
 
-  - title: External transports
+  - title: Multi Language
+    icon: 📢
+    details: At the least python is already implemented and waiting to be
+      published
+
+  - title: Slim Protocol
+    icon: 🤏
+    details: As compact as possible exchange protocol minifies parasitic load on
+      the network
+  
+  - title: Minimal dependency tree
+    icon: 🔗
+    details: reduces the attack vector across the supply chain. No external
+      dependencies outside <b>@shinka-rpc</b> namespace
+
+  - title: Pluggable transports
+    icon: 🚂
     details: We provide
       <a href="https://www.npmjs.com/package/@shinka-rpc/shared-worker">SharedWorker</a>,
       <a href="https://www.npmjs.com/package/@shinka-rpc/dedicated-worker">DedicatedWorker</a>,
@@ -30,16 +55,25 @@ features:
       <a href="https://www.npmjs.com/package/@shinka-rpc/browser-extension">BrowserExtension</a>
       transports, but you are able to define your own
 
-  - title: External serializers
+  - title: Pluggable serializers
+    icon: 🖭
     details: We provide by default
       <a href="https://www.npmjs.com/package/@shinka-rpc/serializer-json">json</a>,
-      <a href="https://www.npmjs.com/package/@shinka-rpc/serializer-bson">bson</a> and
-      <a href="https://www.npmjs.com/package/@shinka-rpc/serializer-msgspec">msgspec</a>
+      <a href="https://www.npmjs.com/package/@shinka-rpc/serializer-bson">bson</a>,
+      <a href="https://www.npmjs.com/package/@shinka-rpc/serializer-msgspec">msgspec</a> and
+      <a href="https://www.npmjs.com/package/@shinka-rpc/serializer-gzip">gzip</a>
       serializers, but you are able to create your own
 
-  - title: Multi Language
-    details: On the other side of the communication channel there may be an
-      application written in another language. At the least python is already
-      implemented and waiting to be published
----
+  - title: Pluggable <a href="./limons">LiMon</a>s
+    icon: 🍋
+    details: Liveness Monitors make decision about connection state. You can
+      choose the best one for each case
 
+  - title: Pluggable <a href="./other/exclusive-lock.html">ExclusiveLock</a>
+    icon: 🔒
+    details: Powerful data channel management tool
+
+  - title: Pluggable <a href="./core/pool.html">pool</a> schedulers
+    icon: 🔃
+    details: You can choose pool connection rotation logic
+---
