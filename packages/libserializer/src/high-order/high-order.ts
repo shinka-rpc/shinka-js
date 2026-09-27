@@ -101,7 +101,7 @@ export default <HOSO, SS extends {} = {}, ISP = any>({
         const transportInitOpts = { mode: modeMap[mode], mime };
         const callbacks = [];
         if (nextStop) callbacks.push(nextStop);
-        if (HOStop) callbacks.push(HOStop.bind(0, thisArg));
+        if (HOStop) callbacks.push(HOStop.bind(0, taHO));
         callbacks.push(clearObject.bind(0, taNext.state));
         callbacks.push(clearObject.bind(0, taHO.state));
         const stop = compose(callbacks, thisArg.dispatchError);
