@@ -11,6 +11,8 @@
     "prepublishall": "npm run build",
     "publish:all": "node util/publish-all.mjs",
     "publish:plan": "node util/publish-plan.mjs",
+    "unpublish:plan": "node util/unpublish-plan.mjs",
+    "unpublish:all": "node util/unpublish-all.mjs",
     "check:ts": "tsc --noEmit",
     "check:packages": "node util/check-packages.mjs",
     "docs:dev": "vitepress dev docs",

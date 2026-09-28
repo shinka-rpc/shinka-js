@@ -24,6 +24,7 @@ const getPackageJSONVersion = async (path) => {
     return {
       name: packageJSON.name,
       version: packageJSON.version,
+      tag: packageJSON.publishConfig.tag,
     };
   } catch (e) {
     return console.error(e);
@@ -70,10 +71,10 @@ const handlePackageJSON = async (path) => {
   if (ourData === undefined) return;
   const { name, version } = ourData;
   try {
-    const versions = await getNPMVersions(ourData.name);
+    const versions = await getNPMVersions(name);
     const publish =
       versions === undefined ? true : !new Set(versions).has(version);
-    return { name, path, dist: 0, version, versions, publish };
+    return { path, dist: 0, ...ourData, versions, publish };
   } catch (e) {
     console.error(e);
   }
