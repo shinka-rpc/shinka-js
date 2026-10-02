@@ -116,6 +116,15 @@ const config = defineConfig({
           ],
         },
       ],
+      "/scenarios/": [
+        {
+          items: [
+            { text: "Scenarios", link: "/scenarios/" },
+            { text: "WaitConnected", link: "/scenarios/wait-connected" },
+            { text: "SingleFlight", link: "/scenarios/single-flight" },
+          ],
+        },
+      ],
       "/schedulers/": [
         { items: [{ text: "Schedulers", link: "/schedulers/" }] },
       ],

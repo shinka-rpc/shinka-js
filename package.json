@@ -44,7 +44,7 @@
     "@types/js-yaml": ">=4",
     "@types/node": "*",
     "@types/pako": "*",
-    "@types/react": "^19.2.18",
+    "@types/react": "^19",
     "@types/ws": "*",
     "js-yaml": "^5",
     "lerna": "^10",
@@ -55,7 +55,7 @@
     "@swc/jest": "^0.2.39",
     "jest": "^30",
     "mermaid": "^11",
-    "nx": "^23.1.2",
+    "nx": "^23",
     "typescript": "^7",
     "vitepress": "next",
     "vitepress-plugin-mermaid": "^2"
@@ -68,7 +68,7 @@
   "allowScripts": {
     "@parcel/watcher@2.6.0": true,
     "unrs-resolver@1.12.2": true,
-    "@swc/core@1.16.2": true,
-    "nx@23.2.1": true
+    "nx@23.2.1": true,
+    "@swc/core@1.16.13": true
   }
 }

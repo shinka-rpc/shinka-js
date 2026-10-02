@@ -22,6 +22,9 @@ hero:
       text: LiMons
       link: /limons
     - theme: alt
+      text: Scenarios
+      link: /scenarios
+    - theme: alt
       text: Other
       link: /other
 
