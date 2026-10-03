@@ -1,6 +1,6 @@
 import { publishPlan } from "./lib/publish-plan.mjs";
 
-const dropKeys = ["publish", "path"];
+const dropKeys = ["publish", "path", "dist"];
 
 (async () => {
   const plan = (await publishPlan()).filter((i) => i.publish);

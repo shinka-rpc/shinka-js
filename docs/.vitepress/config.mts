@@ -58,6 +58,7 @@ const config = defineConfig({
         link: "/serializers/",
         activeMatch: "^/serializers/",
       },
+      { text: "Scenarios", link: "/scenarios/", activeMatch: "^/scenarios/" },
       { text: "<b>LiMon</b>s", link: "/limons/", activeMatch: "^/limons/" },
       {
         text: "Schedulers",
@@ -121,6 +122,8 @@ const config = defineConfig({
           items: [
             { text: "Scenarios", link: "/scenarios/" },
             { text: "WaitConnected", link: "/scenarios/wait-connected" },
+            { text: "ClientRegistry", link: "/scenarios/client-registry" },
+            { text: "PassThrough", link: "/scenarios/pass-through" },
             { text: "SingleFlight", link: "/scenarios/single-flight" },
           ],
         },

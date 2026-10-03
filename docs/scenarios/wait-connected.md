@@ -36,18 +36,11 @@ const wsConnecting = waitConnected(wsClient);
 
 const { 0: getWorkBook } = createSingleFlight({
   read: () => workbook?.state,
-
-  reset: () => {
-    workbook = null;
-  },
-
+  reset: () => (workbook = null),
   retrieve: async () => {
     await wsConnecting;
-
     const data = await wsClient.request<WorkbookState>("get-data", 0);
-
     workbook = new ServerWorkbook(data);
-
     return data;
   },
 });
@@ -173,18 +166,12 @@ and events.
 
 For example:
 
-```text
-IBus events
-    │
-    ├── connect ──────► resolve
-    │
-    └── disconnect ───► reset
-                           │
-                           ▼
-                    ReusablePromise
-                           │
-                           ▼
-                    await connection
+```mermaid
+flowchart TD
+    E([IBus events])
+    E --- C([connect]) --- R1([resolve])
+    E --- D([disconnect]) --- R2([reset])
+    R2 --- RP([ReusablePromise]) --- A([await connection])
 ```
 
 This keeps application code focused on the operation it wants to perform rather
