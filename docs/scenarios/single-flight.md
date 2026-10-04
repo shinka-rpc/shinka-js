@@ -44,10 +44,10 @@ executes `retrieve()`. The other callers wait for the same acquisition.
 ```mermaid
 sequenceDiagram
     participant A as Caller A
-    participant F as SingleFlight
-    participant R as retrieve()
     participant B as Caller B
     participant C as Caller C
+    participant F as SingleFlight
+    participant R as retrieve()
 
     A->>F: getWorkbook()
     F->>R: retrieve()
@@ -180,16 +180,16 @@ Here, different arguments with the same `userId` share the same flight.
 
 ```mermaid
 flowchart LR
-    A["{ userId: 42, force: false }"] --> I["identity()"]
-    B["{ userId: 42, force: true }"] --> I
-    C["{ userId: 17, force: false }"] --> I
+    A(["{ userId: 42, force: false }"]) --> I(["identity()"])
+    B(["{ userId: 42, force: true }"]) --> I
+    C(["{ userId: 17, force: false }"]) --> I
 
-    I --> K1["key = 42"]
+    I --> K1(["key = 42"])
     I --> K1
-    I --> K2["key = 17"]
+    I --> K2(["key = 17"])
 
-    K1 --> F1["Flight for 42"]
-    K2 --> F2["Flight for 17"]
+    K1 --> F1(["Flight for 42"])
+    K2 --> F2(["Flight for 17"])
 ```
 
 Different keys always have independent state.
@@ -333,8 +333,8 @@ Multiple callers invalidating the same key share one invalidation operation:
 ```mermaid
 sequenceDiagram
     participant A as Caller A
-    participant F as SingleFlight
     participant B as Caller B
+    participant F as SingleFlight
     participant X as reset()
 
     A->>F: invalidate(key)
@@ -395,9 +395,9 @@ later call can attempt retrieval again.
 ```mermaid
 sequenceDiagram
     participant A as Caller A
+    participant B as Caller B
     participant F as SingleFlight
     participant R as retrieve()
-    participant B as Caller B
 
     A->>F: singleFlight(key)
     F->>R: retrieve()
@@ -461,10 +461,10 @@ const [getWebSocket, invalidateWebSocket] = createSingleFlight({
 The resulting dependencies form independent flights:
 
 ```mermaid
-flowchart TD
-    Token["Token flight"]
-    WebSocket["WebSocket flight"]
-    Service["Service flight"]
+flowchart LR
+    Token(["Token flight"])
+    WebSocket(["WebSocket flight"])
+    Service(["Service flight"])
 
     WebSocket --> Token
     Service --> WebSocket

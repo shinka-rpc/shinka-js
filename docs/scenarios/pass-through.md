@@ -5,8 +5,8 @@ changing the data itself.
 
 ```mermaid
 flowchart LR
-    A["Source Shinka"]
-    B["Destination Shinka"]
+    A(["Source Shinka"])
+    B(["Destination Shinka"])
 
     A -->|"event / request"| B
 ```
@@ -167,9 +167,9 @@ A common use case is placing an intermediary between two communication layers.
 
 ```mermaid
 flowchart LR
-    C["Client"]
-    P["Proxy"]
-    S["Server"]
+    C(["Client"])
+    P(["Proxy"])
+    S(["Server"])
 
     C <-->|"RPC"| P
     P <-->|"RPC"| S

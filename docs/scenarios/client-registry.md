@@ -15,11 +15,11 @@ The returned `Set` is automatically kept in sync with the aggregator:
 
 ```mermaid
 flowchart LR
-    A[IBusAgg] -->|connect| R[Set&lt;IBus&gt;]
+    A([IBusAgg]) -->|connect| R([Set&lt;IBus&gt;])
     A -->|disconnect| R
 
-    C1[Client A] -->|connect| A
-    C2[Client B] -->|connect| A
+    C1([Client A]) -->|connect| A
+    C2([Client B]) -->|connect| A
 
     R --> C1
     R --> C2
