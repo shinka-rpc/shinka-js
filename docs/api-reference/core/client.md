@@ -47,7 +47,7 @@ client.addEventListener("error", console.error);
 client.start();
 ```
 
-See [`@shinka-rpc/outscope`](../other/outscope.md) for `OutScope`.
+See [`@shinka-rpc/outscope`](../outscope.md) for `OutScope`.
 
 See [Transport documentation](../transports/) for transports.
 
@@ -55,7 +55,7 @@ See [Serializer documentation](../serializers/) for serializers.
 
 See [LiMon documentation](../limons/) for liveness monitoring.
 
-See [Exclusive Lock documentation](../other/exclusive-lock.md) for exclusive locking.
+See [Exclusive Lock documentation](../exclusive-lock.md) for exclusive locking.
 
 ## Requests
 
@@ -197,7 +197,7 @@ Event listeners are invoked asynchronously.
 
 `Client` provides `exclusiveLock()` through its underlying communication bus.
 
-See [Exclusive Lock documentation](../other/exclusive-lock.md) for details.
+See [Exclusive Lock documentation](../exclusive-lock.md) for details.
 
 ## Configuration
 
@@ -221,7 +221,7 @@ Defines the lifetime of the execution scope in which the client operates.
 The client subscribes to the scope's termination and automatically stops when
 the scope ends.
 
-See [`@shinka-rpc/outscope`](../other/outscope.md).
+See [`@shinka-rpc/outscope`](../outscope.md).
 
 ### `transport`
 
@@ -254,7 +254,7 @@ Configures the exclusive-lock implementation.
 
 The default implementation is used when this option is omitted.
 
-See [Exclusive Lock documentation](../other/exclusive-lock.md).
+See [Exclusive Lock documentation](../exclusive-lock.md).
 
 ### `responseTimeout`
 
@@ -358,7 +358,7 @@ Acquires an exclusive communication lock.
 client.exclusiveLock(timeout)
 ```
 
-See [Exclusive Lock documentation](../other/exclusive-lock.md).
+See [Exclusive Lock documentation](../exclusive-lock.md).
 
 ### `extra`
 

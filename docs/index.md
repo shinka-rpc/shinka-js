@@ -10,23 +10,29 @@ hero:
   tagline: Remote procedure call framework
   actions:
     - theme: brand
-      text: Core
-      link: /core
+      text: Getting started
+      link: /getting-started
     - theme: alt
-      text: Transports
-      link: /transports
-    - theme: alt
-      text: Serializers
-      link: /serializers
-    - theme: alt
-      text: LiMons
-      link: /limons
-    - theme: alt
-      text: Scenarios
-      link: /scenarios
-    - theme: alt
-      text: Other
-      link: /other
+      text: API Reference
+      link: /api-reference
+    # - theme: alt
+    #   text: Core
+    #   link: /core
+    # - theme: alt
+    #   text: Transports
+    #   link: /transports
+    # - theme: alt
+    #   text: Serializers
+    #   link: /serializers
+    # - theme: alt
+    #   text: LiMons
+    #   link: /limons
+    # - theme: alt
+    #   text: Scenarios
+    #   link: /scenarios
+    # - theme: alt
+    #   text: Other
+    #   link: /other
 
 features:
   - title: Symmetricity

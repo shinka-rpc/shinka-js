@@ -35,6 +35,8 @@ Also there are some default serializers available:
 
 - [@shinka-rpc/serializer-msgspec](https://www.npmjs.com/package/@shinka-rpc/serializer-msgspec)
 
+- [@shinka-rpc/serializer-yaml](https://www.npmjs.com/package/@shinka-rpc/serializer-yaml)
+
 - [@shinka-rpc/serializer-gzip](https://www.npmjs.com/package/@shinka-rpc/serializer-gzip)
 
 - [@shinka-rpc/serializer-base64](https://www.npmjs.com/package/@shinka-rpc/serializer-base64)

@@ -42,7 +42,7 @@ import { Pool } from "@shinka-rpc/core";
 const pool = new Pool({ outscope, transport, scheduler });
 ```
 
-See [`@shinka-rpc/outscope`](../other/outscope.md) for `OutScope`.
+See [`@shinka-rpc/outscope`](../outscope.md) for `OutScope`.
 
 See [Transport documentation](../transports/) for transports.
 
@@ -50,7 +50,7 @@ See [Serializer documentation](../serializers/) for serializers.
 
 See [LiMon documentation](../limons/) for liveness monitoring.
 
-See [Exclusive Lock documentation](../other/exclusive-lock.md) for exclusive
+See [Exclusive Lock documentation](../exclusive-lock.md) for exclusive
 locking.
 
 ## Pool size
@@ -316,7 +316,7 @@ type PoolProps<SO, TO> = {
 
 Defines the lifetime of the execution scope in which the pool operates.
 
-See [`@shinka-rpc/outscope`](../other/outscope.md).
+See [`@shinka-rpc/outscope`](../outscope.md).
 
 ### `transport`
 
@@ -348,7 +348,7 @@ See [LiMon documentation](../limons/).
 Configures the exclusive-lock implementation used by connections created by the
 pool.
 
-See [Exclusive Lock documentation](../other/exclusive-lock.md).
+See [Exclusive Lock documentation](../exclusive-lock.md).
 
 ### `responseTimeout`
 

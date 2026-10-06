@@ -5,7 +5,7 @@ as it unable to do anything. So to make `@shinka-rpc` be able to do things, you
 have to pass the **transport** and (often) **serializer** &mdash; commonly very
 small functions.
 
-![diagram](../img/how-shinka-rpc-works.svg "How `@shinka-rpc` works")
+![diagram](../../img/how-shinka-rpc-works.svg "How `@shinka-rpc` works")
 
 # Basic principles
 

@@ -296,7 +296,7 @@ This mechanism is primarily intended for internal components and advanced
 integrations, for example when changing communication-related state that must
 not race with other messages.
 
-See the [exclusive lock documentation](../other/exclusive-lock.md).
+See the [exclusive lock documentation](../exclusive-lock.md).
 
 ## `extra`
 

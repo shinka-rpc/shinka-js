@@ -134,7 +134,7 @@ Defines the lifetime of the execution scope in which the server operates.
 `Server` does not assume a particular runtime or lifecycle API. The supplied
 `OutScope` implementation determines when the surrounding execution scope ends.
 
-See the [`@shinka-rpc/outscope` documentation](../other/outscope.md).
+See the [`@shinka-rpc/outscope` documentation](../outscope.md).
 
 This option is required.
 
@@ -202,7 +202,7 @@ the server.
 
 The default implementation is used when omitted.
 
-See the [exclusive lock documentation](../other/exclusive-lock.md).
+See the [exclusive lock documentation](../exclusive-lock.md).
 
 ## Request handlers
 

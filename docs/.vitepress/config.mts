@@ -46,101 +46,229 @@ const config = defineConfig({
     // https://vitepress.dev/reference/default-theme-config
 
     nav: [
-      { text: "Home", link: "/", activeMatch: "^/$" },
-      { text: "Core", link: "/core/", activeMatch: "^/core/" },
+      // { text: "Home", link: "/", activeMatch: "^/$" },
       {
-        text: "Transports",
-        link: "/transports/",
-        activeMatch: "^/transports/",
+        text: "Getting started",
+        link: "/getting-started/",
+        activeMatch: "^/getting-started/",
       },
       {
-        text: "Serializers",
-        link: "/serializers/",
-        activeMatch: "^/serializers/",
+        text: "API Reference",
+        activeMatch: "^/api-reference/",
+        items: [
+          {
+            text: "API Reference",
+            link: "/api-reference/",
+            activeMatch: "^/api-reference/$",
+          },
+          {
+            text: "Core",
+            link: "/api-reference/core/",
+            activeMatch: "^/api-reference/core/",
+          },
+          {
+            text: "Transports",
+            link: "/api-reference/transports/",
+            activeMatch: "^/api-reference/transports/",
+          },
+          {
+            text: "Serializers",
+            link: "/api-reference/serializers/",
+            activeMatch: "^/api-reference/serializers/",
+          },
+          {
+            text: "Scenarios",
+            link: "/api-reference/scenarios/",
+            activeMatch: "^/api-reference/scenarios/",
+          },
+          {
+            text: "<b>LiMon</b>s",
+            link: "/api-reference/limons/",
+            activeMatch: "^/api-reference/limons/",
+          },
+          {
+            text: "Schedulers",
+            link: "/api-reference/schedulers/",
+            activeMatch: "^/api-reference/schedulers/",
+          },
+          {
+            text: "Collections",
+            link: "/api-reference/collections",
+            activeMatch: "^/api-reference/collections$",
+          },
+          {
+            text: "Concurrency",
+            link: "/api-reference/concurrency",
+            activeMatch: "^/api-reference/concurrency$",
+          },
+          {
+            text: "OutScope",
+            link: "/api-reference/outscope",
+            activeMatch: "^/api-reference/outscope$",
+          },
+          {
+            text: "Util",
+            link: "/api-reference/util",
+            activeMatch: "^/api-reference/util$",
+          },
+          {
+            text: "Exclusive Lock",
+            link: "/api-reference/exclusive-lock",
+            activeMatch: "^/api-reference/exclusive-lock$",
+          },
+          {
+            text: "Lib*",
+            link: "/api-reference/lib/",
+            activeMatch: "^/api-reference/lib/",
+          },
+          // {
+          //   text: "Other",
+          //   link: "/api-reference/",
+          //   activeMatch: "^/api-reference/",
+          // },
+        ],
       },
-      { text: "Scenarios", link: "/scenarios/", activeMatch: "^/scenarios/" },
-      { text: "<b>LiMon</b>s", link: "/limons/", activeMatch: "^/limons/" },
-      {
-        text: "Schedulers",
-        link: "/schedulers/",
-        activeMatch: "^/schedulers/",
-      },
-      { text: "Other", link: "/other/", activeMatch: "^/other/" },
     ],
 
     sidebar: {
-      "/core/": [
+      "/getting-started/": [
         {
           items: [
-            { text: "Core", link: "/core/" },
-            { text: "Basic principles", link: "/core/basic-principles" },
-            { text: "Usage Example", link: "/core/usage-example" },
-            { text: "Shinka", link: "/core/shinka" },
-            { text: "Bus", link: "/core/bus" },
-            { text: "Client", link: "/core/client" },
-            { text: "Hub", link: "/core/hub" },
-            { text: "Pool", link: "/core/pool" },
-            { text: "Server", link: "/core/server" },
-          ],
-        },
-      ],
-      "/transports/": [
-        {
-          items: [
-            { text: "Transports", link: "/transports/" },
-            { text: "Dedicated Worker", link: "/transports/dedicated-worker" },
-            { text: "Shared Worker", link: "/transports/shared-worker" },
+            { text: "Getting Started", link: "/getting-started/" },
             {
-              text: "Browser Extension",
-              link: "/transports/browser-extension",
+              text: "What is RPC?",
+              link: "/getting-started/what-is-rpc",
             },
-            { text: "WebSocket", link: "/transports/web-socket" },
+            {
+              text: "Usage Example",
+              link: "/getting-started/usage-example",
+            },
           ],
         },
       ],
-      "/serializers/": [
+      "/api-reference/": [
         {
           items: [
-            { text: "Serializers", link: "/serializers/" },
-            { text: "JSON", link: "/serializers/json" },
-            { text: "BSON", link: "/serializers/bson" },
-            { text: "Msgspec", link: "/serializers/msgspec" },
-            { text: "GZIP", link: "/serializers/gzip" },
-          ],
-        },
-      ],
-      "/limons/": [
-        {
-          items: [
-            { text: "<b>LiMon</b>s", link: "/limons/" },
-            { text: "Opportunistic", link: "/limons/opportunistic" },
-          ],
-        },
-      ],
-      "/scenarios/": [
-        {
-          items: [
-            { text: "Scenarios", link: "/scenarios/" },
-            { text: "WaitConnected", link: "/scenarios/wait-connected" },
-            { text: "ClientRegistry", link: "/scenarios/client-registry" },
-            { text: "PassThrough", link: "/scenarios/pass-through" },
-            { text: "SingleFlight", link: "/scenarios/single-flight" },
-          ],
-        },
-      ],
-      "/schedulers/": [
-        { items: [{ text: "Schedulers", link: "/schedulers/" }] },
-      ],
-      "/other/": [
-        {
-          items: [
-            { text: "Other", link: "/other/" },
-            { text: "Collections", link: "/other/collections" },
-            { text: "Concurrency", link: "/other/concurrency" },
-            { text: "Exclusive Lock", link: "/other/exclusive-lock" },
-            { text: "OutScope", link: "/other/outscope" },
-            { text: "Util", link: "/other/util" },
-            { text: "Lib*", link: "/other/lib" },
+            { text: "API Reference", link: "/api-reference/" },
+            {
+              text: "Core",
+              link: "/api-reference/core/",
+              items: [
+                { text: "Shinka", link: "/api-reference/core/shinka" },
+                { text: "Bus", link: "/api-reference/core/bus" },
+                { text: "Client", link: "/api-reference/core/client" },
+                { text: "Hub", link: "/api-reference/core/hub" },
+                { text: "Pool", link: "/api-reference/core/pool" },
+                { text: "Server", link: "/api-reference/core/server" },
+              ],
+            },
+            {
+              text: "Transports",
+              link: "/api-reference/transports/",
+              items: [
+                {
+                  text: "Dedicated Worker",
+                  link: "/api-reference/transports/dedicated-worker",
+                },
+                {
+                  text: "Shared Worker",
+                  link: "/api-reference/transports/shared-worker",
+                },
+                {
+                  text: "Browser Extension",
+                  link: "/api-reference/transports/browser-extension",
+                },
+                {
+                  text: "WebSocket",
+                  link: "/api-reference/transports/web-socket",
+                },
+              ],
+            },
+            {
+              text: "Serializers",
+              link: "/api-reference/serializers/",
+              items: [
+                { text: "JSON", link: "/api-reference/serializers/json" },
+                { text: "BSON", link: "/api-reference/serializers/bson" },
+                {
+                  text: "Msgspec",
+                  link: "/api-reference/serializers/msgspec",
+                },
+                { text: "YAML", link: "/api-reference/serializers/yaml" },
+                { text: "GZIP", link: "/api-reference/serializers/gzip" },
+                { text: "Base64", link: "/api-reference/serializers/base64" },
+              ],
+            },
+            {
+              text: "<b>LiMon</b>s",
+              link: "/api-reference/limons/",
+              items: [
+                {
+                  text: "Opportunistic",
+                  link: "/api-reference/limons/opportunistic",
+                },
+              ],
+            },
+            {
+              text: "Scenarios",
+              link: "/api-reference/scenarios/",
+              items: [
+                {
+                  text: "WaitConnected",
+                  link: "/api-reference/scenarios/wait-connected",
+                },
+                {
+                  text: "ClientRegistry",
+                  link: "/api-reference/scenarios/client-registry",
+                },
+                {
+                  text: "PassThrough",
+                  link: "/api-reference/scenarios/pass-through",
+                },
+                {
+                  text: "SingleFlight",
+                  link: "/api-reference/scenarios/single-flight",
+                },
+              ],
+            },
+            {
+              text: "Schedulers",
+              link: "/api-reference/schedulers/",
+              // items: [],
+            },
+            {
+              text: "Collections",
+              link: "/api-reference/collections",
+            },
+            {
+              text: "Concurrency",
+              link: "/api-reference/concurrency",
+            },
+            { text: "OutScope", link: "/api-reference/outscope" },
+            { text: "Util", link: "/api-reference/util" },
+            {
+              text: "Exclusive Lock",
+              link: "/api-reference/exclusive-lock",
+            },
+            {
+              text: "Lib*",
+              link: "/api-reference/lib/",
+              items: [
+                {
+                  text: "libserializer",
+                  link: "/api-reference/lib/libserializer",
+                },
+                {
+                  text: "libtransport",
+                  link: "/api-reference/lib/libtransport",
+                },
+              ],
+            },
+            // {
+            //   text: "Other",
+            //   link: "/api-reference/",
+            //   items: [],
+            // },
           ],
         },
       ],

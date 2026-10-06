@@ -18,10 +18,10 @@ messaging infrastructure and an unexpected culinary coincidence.
 
 Short answer: under `Bus` hood. And it's not single:
 
-![diagram](../img/bus-shinka.svg "And where is this `shinka`?")
+![diagram](../../img/bus-shinka.svg "And where is this `shinka`?")
 
 There are ***6*** independent `shinka`s under the bus hood: own for _user_,
-_bus_, special _non-blocking_ shinka (serving [ExclusiveLock](../other/exclusive-lock.md)),
+_bus_, special _non-blocking_ shinka (serving [ExclusiveLock](../exclusive-lock.md)),
 _transport_, _serializer_,  and optionally _limon_. Your application defined `onRequest` /
 `onDataEvent` handlers and `request` / `dataEvent` methods are just `user shinka`
 
