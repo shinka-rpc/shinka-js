@@ -87,6 +87,11 @@ const config = defineConfig({
             activeMatch: "^/api-reference/limons/",
           },
           {
+            text: "Integrations",
+            link: "/api-reference/integrations/",
+            activeMatch: "^/api-reference/integrations/",
+          },
+          {
             text: "Schedulers",
             link: "/api-reference/schedulers/",
             activeMatch: "^/api-reference/schedulers/",
@@ -94,27 +99,27 @@ const config = defineConfig({
           {
             text: "Collections",
             link: "/api-reference/collections",
-            activeMatch: "^/api-reference/collections$",
+            activeMatch: "^/api-reference/collections",
           },
           {
             text: "Concurrency",
             link: "/api-reference/concurrency",
-            activeMatch: "^/api-reference/concurrency$",
+            activeMatch: "^/api-reference/concurrency",
           },
           {
             text: "OutScope",
             link: "/api-reference/outscope",
-            activeMatch: "^/api-reference/outscope$",
+            activeMatch: "^/api-reference/outscope",
           },
           {
             text: "Util",
             link: "/api-reference/util",
-            activeMatch: "^/api-reference/util$",
+            activeMatch: "^/api-reference/util",
           },
           {
             text: "Exclusive Lock",
             link: "/api-reference/exclusive-lock",
-            activeMatch: "^/api-reference/exclusive-lock$",
+            activeMatch: "^/api-reference/exclusive-lock",
           },
           {
             text: "Lib*",
@@ -206,6 +211,16 @@ const config = defineConfig({
                 {
                   text: "Opportunistic",
                   link: "/api-reference/limons/opportunistic",
+                },
+              ],
+            },
+            {
+              text: "Integrations",
+              link: "/api-reference/integrations/",
+              items: [
+                {
+                  text: "ReactJS",
+                  link: "/api-reference/integrations/react",
                 },
               ],
             },

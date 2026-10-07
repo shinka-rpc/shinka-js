@@ -1,6 +1,4 @@
-# @shinka-rpc/react
-
-React integration for [`@shinka-rpc/core`](https://www.npmjs.com/package/@shinka-rpc/core).
+# ReactJS Integration
 
 The package currently provides a single integration point: `useOutScope`. It
 connects the lifetime of a React component with the `OutScope` mechanism of
@@ -64,7 +62,7 @@ flowchart TD
     G --> H[Run OutScope callbacks]
     H --> I[Remove beforeunload handler]
 
-    F --> J{beforeunload]
+    F --> J{beforeunload}
     J --> H
 ```
 
@@ -123,7 +121,7 @@ be managed separately.
 
 ```mermaid
 flowchart LR
-    O[OutScope] --> A[cleanup A]
+    O([OutScope]) --> A[cleanup A]
     O --> B[cleanup B]
     O --> C[cleanup C]
 ```
@@ -296,10 +294,10 @@ Instead, it provides an adapter between two independent lifecycles:
 
 ```mermaid
 flowchart LR
-    R[React component lifetime]
-    A["@shinka-rpc/react"]
-    O[OutScope]
-    C["@shinka-rpc/core Client"]
+    R([React component lifetime])
+    A(["@shinka-rpc/react"])
+    O([OutScope])
+    C(["@shinka-rpc/core Client"])
 
     R --> A
     A --> O
@@ -366,21 +364,13 @@ export default function Workbook() {
 
 The important part is the ownership relationship:
 
-```text
-React component
-      │
-      ▼
-  useOutScope
-      │
-      ▼
-   OutScope
-      │
-      ▼
-    Client
-      │
-      ├── RPC connection
-      ├── event handlers
-      └── other resources
+```mermaid
+flowchart TD
+  RC([React component]) --> RH([useOutScope])
+  RH --> OS([OutScope]) --> C([Client])
+  C --> RPC([RPC connection])
+  C --> EH([event handlers])
+  C --> OR([other resources])
 ```
 
 When the component's lifetime ends, the `OutScope` becomes the cleanup boundary

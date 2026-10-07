@@ -3,14 +3,14 @@
 import React, { useRef, useEffect } from "react";
 
 /**
-Simple wrapper over useEffect guarantee that useEffect and its returned cleanup
-callback would be called exactly once
-*/
+ * Runs the effect only once per hook instance and ensures that its cleanup
+ * is also executed only once, including under React Strict Mode
+ */
 export const useOnce =
   process.env.NODE_ENV === "development"
     ? (effect: React.EffectCallback) => {
         const effectCalledRef = useRef(false);
-        const doubleCleanupRef = useRef(1);
+        const strictModeCleanupRef = useRef(1);
         const cleanupCbRef =
           useRef<ReturnType<React.EffectCallback>>(undefined);
 
@@ -20,7 +20,7 @@ export const useOnce =
           effectCalledRef.current = true;
           if (!originalCleanup) return;
           cleanupCbRef.current = () => {
-            if (doubleCleanupRef.current-- > 0) return;
+            if (strictModeCleanupRef.current-- > 0) return;
             originalCleanup();
           };
           return cleanupCbRef.current;
