@@ -1,5 +1,5 @@
 import { join, sep } from "path";
-import { copyFile, readFile, writeFile, cp } from "fs/promises";
+import { copyFile, readFile, writeFile } from "fs/promises";
 import { distDir, rootDir } from "./lib/paths.mjs";
 
 const package_json = "package.json";
@@ -21,17 +21,18 @@ const handlePackageJSON = async () => {
   );
 };
 
-const handleImgDir = async () => {
-  try {
-    await cp(join(srcDir, "img"), join(descDir, "img"), { recursive: true });
-  } catch {}
-};
+// const handleImgDir = async () => {
+//   // Doesn't work: npmjs tries to get images from github
+//   try {
+//     await cp(join(srcDir, "img"), join(descDir, "img"), { recursive: true });
+//   } catch {}
+// };
 
 (async () => {
   await Promise.all([
     copyFile(join(rootDir, "LICENSE"), join(descDir, "LICENSE")),
     copyFile(join(srcDir, "README.md"), join(descDir, "README.md")),
-    handleImgDir(),
+    // handleImgDir(),
     handlePackageJSON(),
   ]);
 })();

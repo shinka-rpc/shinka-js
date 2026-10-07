@@ -52,7 +52,8 @@ The registered callbacks are executed when the component's lifetime ends.
 
 They are also executed when the page is about to be unloaded.
 
-![Execution order](./img/execution-order.svg)
+<!-- ![Execution order](./img/execution-order.svg) -->
+![Execution order](https://raw.githubusercontent.com/shinka-rpc/shinka-js/2459dd49c305eb558023dcd2d97d039e532c166e/packages/react/img/execution-order.svg)
 
 ### Example
 
@@ -107,14 +108,16 @@ be managed separately.
 
 `OutScope` is a cleanup registry.
 
-![OutScope](./img/cleanup-semantics.svg)
+<!-- ![OutScope](./img/cleanup-semantics.svg) -->
+![OutScope](https://raw.githubusercontent.com/shinka-rpc/shinka-js/2459dd49c305eb558023dcd2d97d039e532c166e/packages/react/img/cleanup-semantics.svg)
 
 When cleanup starts, registered callbacks are drained until the scope is empty.
 
 A callback may register another callback while cleanup is in progress. The newly
 registered callback will also be processed:
 
-![Cleanup process](./img/cleanup-progress.svg)
+<!-- ![Cleanup process](./img/cleanup-progress.svg) -->
+![Cleanup process](https://raw.githubusercontent.com/shinka-rpc/shinka-js/2459dd49c305eb558023dcd2d97d039e532c166e/packages/react/img/cleanup-progress.svg)
 
 ### Cleanup errors
 
@@ -265,7 +268,8 @@ state management, or a replacement for React state.
 
 Instead, it provides an adapter between two independent lifecycles:
 
-![Lifetime](./img/lifetime.svg)
+<!-- ![Lifetime](./img/lifetime.svg) -->
+![Lifetime](https://raw.githubusercontent.com/shinka-rpc/shinka-js/2459dd49c305eb558023dcd2d97d039e532c166e/packages/react/img/lifetime.svg)
 
 The React component owns the lifetime.
 
@@ -327,7 +331,8 @@ export default function Workbook() {
 
 The important part is the ownership relationship:
 
-![Ownership relations](./img/ownership.svg)
+<!-- ![Ownership relations](./img/ownership.svg) -->
+![Ownership relations](https://raw.githubusercontent.com/shinka-rpc/shinka-js/2459dd49c305eb558023dcd2d97d039e532c166e/packages/react/img/ownership.svg)
 
 When the component's lifetime ends, the `OutScope` becomes the cleanup boundary
 for the resources associated with the client.
