@@ -52,21 +52,7 @@ The registered callbacks are executed when the component's lifetime ends.
 
 They are also executed when the page is about to be unloaded.
 
-```mermaid
-flowchart TD
-    A[React component mounts] --> B[useOutScope]
-    B --> C[Create OutScope]
-    C --> D[Register beforeunload handler]
-    D --> E[Callback receives OutScope]
-    E --> F[Resources register cleanup callbacks]
-
-    F --> G{Component unmounts}
-    G --> H[Run OutScope callbacks]
-    H --> I[Remove beforeunload handler]
-
-    F --> J{beforeunload}
-    J --> H
-```
+![Execution order](./img/execution-order.svg)
 
 ### Example
 
@@ -121,29 +107,14 @@ be managed separately.
 
 `OutScope` is a cleanup registry.
 
-```mermaid
-flowchart LR
-    O([OutScope]) --> A[cleanup A]
-    O --> B[cleanup B]
-    O --> C[cleanup C]
-```
+![OutScope](./img/cleanup-semantics.svg)
 
 When cleanup starts, registered callbacks are drained until the scope is empty.
 
 A callback may register another callback while cleanup is in progress. The newly
 registered callback will also be processed:
 
-```mermaid
-sequenceDiagram
-    participant S as OutScope
-    participant A as callback A
-    participant B as callback B
-
-    S->>A: execute
-    A->>S: add(callback B)
-    S->>B: execute
-    S->>S: scope becomes empty
-```
+![Cleanup process](./img/cleanup-progress.svg)
 
 ### Cleanup errors
 
@@ -294,17 +265,7 @@ state management, or a replacement for React state.
 
 Instead, it provides an adapter between two independent lifecycles:
 
-```mermaid
-flowchart LR
-    R([React component lifetime])
-    A(["@shinka-rpc/react"])
-    O([OutScope])
-    C(["@shinka-rpc/core Client"])
-
-    R --> A
-    A --> O
-    O --> C
-```
+![Lifetime](./img/lifetime.svg)
 
 The React component owns the lifetime.
 
@@ -366,14 +327,7 @@ export default function Workbook() {
 
 The important part is the ownership relationship:
 
-```mermaid
-flowchart TD
-  RC([React component]) --> RH([useOutScope])
-  RH --> OS([OutScope]) --> C([Client])
-  C --> RPC([RPC connection])
-  C --> EH([event handlers])
-  C --> OR([other resources])
-```
+![Ownership relations](./img/ownership.svg)
 
 When the component's lifetime ends, the `OutScope` becomes the cleanup boundary
 for the resources associated with the client.

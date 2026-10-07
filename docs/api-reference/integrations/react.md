@@ -58,7 +58,7 @@ flowchart TD
     D --> E[Callback receives OutScope]
     E --> F[Resources register cleanup callbacks]
 
-    F --> G{Component unmounts}
+    F --> G{Component\nunmounts}
     G --> H[Run OutScope callbacks]
     H --> I[Remove beforeunload handler]
 
