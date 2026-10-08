@@ -12,16 +12,36 @@ This package implements the transport implementation of
 
 ```typescript
 import { Client } from "@shinka-rpc/core";
-import outscope from "@shinka-rpc/outscope/browser-page";
 import { clientWebSocketTransport } from "@shinka-rpc/web-socket";
-import serializer from "@shinka-rpc/serializer-json";  // for example
 
 const transport = clientWebSocketTransport(
   () => new WebSocket(process.env.WEBSOCKET_URL!),
 );
 
-export const bus = new Client({ factory, serializer, outscope });
+const bus = new Client({ factory, serializer, outscope });
+```
 
-// You are able to start / stop the bus where you need it
-bus.start();
+## `server` case
+
+```typescript
+import express from "express";
+import http from "node:http";
+import { WebSocketServer } from "ws";
+
+import { Server } from "@shinka-rpc/core";
+import outscope from "@shinka-rpc/outscope/node-process";
+import { webSocketServer } from "@shinka-rpc/web-socket";
+
+const app = express();
+const port = 8081; // The port your express server will be running on.
+
+const httpServer = http.createServer(app);
+
+const wss = new WebSocketServer({ server: httpServer, path: "/ws" });
+
+const server = new Server({
+  outscope,
+  transport: webSocketServer(wss),
+  serializer,
+});
 ```
