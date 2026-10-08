@@ -1,6 +1,6 @@
 # @shinka-rpc/libtransport
 
-Symmetric RPC bus. [Documentation is here](https://shinka-rpc-js.readthedocs.io/latest/)
+Symmetric RPC bus. [Documentation is here](https://shinka-rpc-js.readthedocs.io/0.1.x/api-reference/lib/libtransport.html)
 
 Small transport adapters for APIs that expose similar message-sending interfaces.
 

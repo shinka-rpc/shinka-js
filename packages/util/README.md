@@ -1,6 +1,6 @@
 # @shinka-rpc/util
 
-Symmetric RPC bus
+Symmetric RPC bus. [Documentation is here](https://shinka-rpc-js.readthedocs.io/0.1.x/api-reference/util.html)
 
 This package implements auxiliary utilities
 

@@ -1,7 +1,7 @@
 # @shinka-rpc/core
 
 Symmetric RPC bus. This page explains basic concepts only.
-[Documentation is here](https://shinka-rpc-js.readthedocs.io/latest/core/)
+[Documentation is here](https://shinka-rpc-js.readthedocs.io/0.1.x/api-reference/core/)
 
 ![diagram](https://raw.githubusercontent.com/shinka-rpc/shinka-js/66e1552e57d63c30b2122387f06c4bb354c7e87f/docs/img/shinka-structure.svg "How `@shinka-rpc` works")
 

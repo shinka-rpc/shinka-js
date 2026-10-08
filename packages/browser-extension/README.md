@@ -1,6 +1,6 @@
 # @shinka-rpc/browser-extension
 
-Symmetric RPC bus. [Documentation is here](https://shinka-rpc-js.readthedocs.io/latest/transports/browser-extension/)
+Symmetric RPC bus. [Documentation is here](https://shinka-rpc-js.readthedocs.io/0.1.x/api-reference/transports/browser-extension.html)
 
 This package contains a transports of
 [@shinka-rpc/core](https://www.npmjs.com/package/@shinka-rpc/core) for
@@ -85,13 +85,13 @@ passThroughRequests(contentBus, extensionBus, "req1", "req2" /*...*/);
 
 **API Reference**: createIsolatedPair
 
-- **Required** contentBustransport: `TransportFactory<Client>`
+- **Required** contentBusTransport: `TransportFactory<Client>`
 - **Optional** responseTimeout: `number`
 - **Optional** contentRegistry: `Registry<Client>` hooks for content bus
 - **Optional** extensionRegistry: `Registry<Client>` hooks for extension
 environment
 
-# Backgroung `server` script
+# Background `server` script
 
 Here we receive connections from all tabs with active extension `ISOLATED`
 ExecutionWorld. It's clear `server` scenario

@@ -1,6 +1,7 @@
 # @shinka-rpc/react
 
 React integration for [`@shinka-rpc/core`](https://www.npmjs.com/package/@shinka-rpc/core).
+See the [documentation](https://shinka-rpc-js.readthedocs.io/0.1.x/api-reference/integrations/react.html).
 
 The package currently provides a single integration point: `useOutScope`. It
 connects the lifetime of a React component with the `OutScope` mechanism of

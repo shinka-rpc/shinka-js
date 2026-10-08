@@ -1,6 +1,6 @@
 # @shinka-rpc/limon-opportunistic
 
-Symmetric RPC bus. [Documentation is here](https://shinka-rpc-js.readthedocs.io/latest/limons/opportunistic/)
+Symmetric RPC bus. [Documentation is here](https://shinka-rpc-js.readthedocs.io/0.1.x/api-reference/limons/opportunistic.html)
 
 An opportunistic Liveness Monitor implementation for [@shinka-rpc/core](https://www.npmjs.com/package/@shinka-rpc/core).
 

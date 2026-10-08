@@ -1,6 +1,6 @@
 # @shinka-rpc/exclusive-lock
 
-Symmetric RPC bus
+Symmetric RPC bus. [Documentation is here](https://shinka-rpc-js.readthedocs.io/0.1.x/api-reference/exclusive-lock.html)
 
 Optional exclusive channel synchronization for `@shinka-rpc/core`.
 

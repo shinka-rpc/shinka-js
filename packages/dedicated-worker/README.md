@@ -1,6 +1,6 @@
 # @shinka-rpc/dedicated-worker [not tested!]
 
-Symmetric RPC bus. [Documentation is here](https://shinka-rpc-js.readthedocs.io/latest/transports/dedicated-worker/)
+Symmetric RPC bus. [Documentation is here](https://shinka-rpc-js.readthedocs.io/0.1.x/api-reference/transports/dedicated-worker.html)
 
 This package implements the transport implementation of
 [@shinka-rpc/core](https://www.npmjs.com/package/@shinka-rpc/core) for
@@ -12,9 +12,7 @@ This package implements the transport implementation of
 
 ```typescript
 import { Client } from "@shinka-rpc/core";
-import outscope from "@shinka-rpc/outscope/browser-page";
 import { dedicatedWorkerClient } from "@shinka-rpc/dedicated-worker";
-import serializer from "@shinka-rpc/serializer-json";
 
 const transport = dedicatedWorkerClient(
   () => new Worker(new URL("../worker", import.meta.url)),
@@ -31,9 +29,7 @@ to use `Client`
 
 ```typescript
 import { Client } from "@shinka-rpc/core";
-import outscope from "@shinka-rpc/outscope/browser-page";
 import { dedicatedWorkerServer } from "@shinka-rpc/dedicated-worker";
-import serializer from "@shinka-rpc/serializer-json"; 
 
 export const worker = new Client({
   transport: dedicatedWorkerServer,
@@ -41,3 +37,11 @@ export const worker = new Client({
   outscope,
 });
 ```
+
+## Important
+
+You have to check details of your bundler:
+- [rsbuild](https://rsbuild.rs/guide/basic/web-workers)
+- [vite](https://vite.dev/guide/features#web-workers)
+- [bun](https://bun.com/docs/runtime/workers#creating-a-worker)
+- 💩 [turbopack](https://github.com/vercel/turborepo/issues/3643)

@@ -1,6 +1,6 @@
 # `@shinka-rpc/collections`
 
-Symmetric RPC bus
+Symmetric RPC bus. See the [documentation](https://shinka-rpc-js.readthedocs.io/0.1.x/api-reference/collections.html).
 
 Lightweight, linked-list based collections for predictable mutation performance.
 

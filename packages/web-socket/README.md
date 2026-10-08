@@ -1,6 +1,6 @@
 # @shinka-rpc/web-socket
 
-Symmetric RPC bus. [Documentation is here](https://shinka-rpc-js.readthedocs.io/latest/transports/web-socket/)
+Symmetric RPC bus. [Documentation is here](https://shinka-rpc-js.readthedocs.io/0.1.x/api-reference/transports/web-socket.html)
 
 This package implements the transport implementation of
 [@shinka-rpc/core](https://www.npmjs.com/package/@shinka-rpc/core) for

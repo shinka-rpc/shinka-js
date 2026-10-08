@@ -1,6 +1,6 @@
 # @shinka-rpc/outscope
 
-Symmetric RPC bus
+Symmetric RPC bus. See the [documentation](https://shinka-rpc-js.readthedocs.io/0.1.x/api-reference/outscope.html).
 
 `@shinka-rpc/outscope` defines a minimal interface for subscribing to the end
 of an execution scope.

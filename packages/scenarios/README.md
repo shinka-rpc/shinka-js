@@ -3,7 +3,7 @@
 Reusable helpers for common communication and synchronization patterns built
 around Shinka RPC.
 
-See the [scenario documentation](https://shinka-rpc-js.readthedocs.io/0.1.x/scenarios)
+See the [scenario documentation](https://shinka-rpc-js.readthedocs.io/0.1.x/api-reference/scenarios/)
 for details and examples.
 
 ## Install

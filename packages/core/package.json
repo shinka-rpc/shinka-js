@@ -1,6 +1,6 @@
 {
   "name": "@shinka-rpc/core",
-  "version": "0.1.0-alpha.11",
+  "version": "0.1.0-alpha.12",
   "publishConfig": {
     "access": "public",
     "tag": "alpha"
@@ -35,7 +35,7 @@
     "default": "./src/index.ts"
   },
   "dependencies": {
-    "@shinka-rpc/util": "^0.0.3-alpha.2",
+    "@shinka-rpc/util": "^0.0.3-alpha.3",
     "@shinka-rpc/collections": "^0.0.1-alpha.0",
     "@shinka-rpc/concurrency": "^0.0.1-alpha.0",
     "@shinka-rpc/consensus": "^0.0.1-alpha.0"

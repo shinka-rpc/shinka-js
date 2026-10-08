@@ -1,6 +1,6 @@
 # @shinka-rpc/libserializer
 
-High-order serializer utilities for [Shinka RPC](https://shinka-rpc-js.readthedocs.io/latest/).
+High-order serializer utilities for [Shinka RPC](https://shinka-rpc-js.readthedocs.io/0.1.x/api-reference/lib/libserializer.html).
 
 `@shinka-rpc/libserializer` provides reusable building blocks for implementing serializers that operate **on top of another serializer**.
 

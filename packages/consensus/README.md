@@ -96,6 +96,6 @@ Invalid input `throw`s an `Error`
 ## Custom resolver
 
 You can create your own resolver from provided building bricks. Please check
-[default-resolver.ts](https://github.com/shinka-rpc/shinka-js/blob/0.1.x/packages/consensus/src/default-resolver.ts) and
-[create-resolver.ts](https://github.com/shinka-rpc/shinka-js/blob/0.1.x/packages/consensus/src/create-resolver.ts)
+[default-resolver.ts](https://github.com/shinka-rpc/shinka-js/blob/0.1.x/api-reference/packages/consensus/src/default-resolver.ts) and
+[create-resolver.ts](https://github.com/shinka-rpc/shinka-js/blob/0.1.x/api-reference/packages/consensus/src/create-resolver.ts)
 implementations. Good luck!

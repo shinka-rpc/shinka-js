@@ -1,6 +1,6 @@
 # @shinka-rpc/serializer-gzip
 
-Symmetric RPC bus. [Documentation is here](https://shinka-rpc-js.readthedocs.io/latest/serializers/gzip/)
+Symmetric RPC bus. [Documentation is here](https://shinka-rpc-js.readthedocs.io/0.1.x/api-reference/serializers/gzip.html)
 
 This package implements Higher-order serializer into GZIP
 

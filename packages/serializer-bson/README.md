@@ -1,6 +1,6 @@
 # @shinka-rpc/serializer-bson
 
-Symmetric RPC bus. [Documentation is here](https://shinka-rpc-js.readthedocs.io/latest/serializers/bson/)
+Symmetric RPC bus. [Documentation is here](https://shinka-rpc-js.readthedocs.io/0.1.x/api-reference/serializers/bson.html)
 
 This package implements serializer into BSON
 

@@ -1,6 +1,6 @@
 # @shinka-rpc/concurrency
 
-Symmetric RPC bus
+Symmetric RPC bus. See the [documentation](https://shinka-rpc-js.readthedocs.io/0.1.x/api-reference/concurrency.html).
 
 This package implements synchronization primitives
 

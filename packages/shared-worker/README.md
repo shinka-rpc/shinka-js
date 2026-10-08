@@ -1,6 +1,6 @@
 # @shinka-rpc/shared-worker
 
-Symmetric RPC bus. [Documentation is here](https://shinka-rpc-js.readthedocs.io/latest/transports/shared-worker/)
+Symmetric RPC bus. [Documentation is here](https://shinka-rpc-js.readthedocs.io/0.1.x/api-reference/transports/shared-worker.html)
 
 This package implements the transport implementation of
 [@shinka-rpc/core](https://www.npmjs.com/package/@shinka-rpc/core) for
@@ -12,9 +12,7 @@ This package implements the transport implementation of
 
 ```typescript
 import { Client } from "@shinka-rpc/core";
-import outscope from "@shinka-rpc/outscope/browser-page";
 import { sharedWorkerClient } from "@shinka-rpc/shared-worker";
-import serializer from "@shinka-rpc/serializer-json";
 
 const transport = sharedWorkerClient(
   () => new SharedWorker(new URL("../server", import.meta.url)),
@@ -27,9 +25,7 @@ export const client = new Client({ transport, serializer, outscope });
 
 ```typescript
 import { Server } from "@shinka-rpc/core";
-import outscope from "@shinka-rpc/outscope/browser-page";
 import { sharedWorkerServer } from "@shinka-rpc/shared-worker";
-import serializer from "@shinka-rpc/serializer-json";
 
 const server = new Server({
   transport: sharedWorkerServer,
@@ -37,3 +33,11 @@ const server = new Server({
   outscope,
 });
 ```
+
+## Important
+
+You have to check details of your bundler:
+- [rsbuild](https://rsbuild.rs/guide/basic/web-workers)
+- [vite](https://vite.dev/guide/features#web-workers)
+- [bun](https://bun.com/docs/runtime/workers#creating-a-worker)
+- 💩 [turbopack](https://github.com/vercel/turborepo/issues/3643)
