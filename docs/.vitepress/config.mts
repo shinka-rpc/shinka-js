@@ -270,12 +270,12 @@ const config = defineConfig({
               link: "/api-reference/lib/",
               items: [
                 {
-                  text: "libserializer",
-                  link: "/api-reference/lib/libserializer",
-                },
-                {
                   text: "libtransport",
                   link: "/api-reference/lib/libtransport",
+                },
+                {
+                  text: "libserializer",
+                  link: "/api-reference/lib/libserializer",
                 },
               ],
             },
