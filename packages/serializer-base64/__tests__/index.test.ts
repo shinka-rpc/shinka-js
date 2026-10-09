@@ -8,7 +8,7 @@ import base64Serializer from "../src";
 
 import type { SerializerInstance, SerializerRoot } from "../../core";
 
-const data: any = [0, 1, "2345", true, { for: "test" }];
+const data: any = [0, 1, "2345🌍", true, { for: "test" }];
 
 const makeSerializer = async (parent: SerializerRoot<any, any, any>) => {
   const reg = createHandlerRegistries();

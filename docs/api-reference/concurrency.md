@@ -51,7 +51,7 @@ try {
 }
 ```
 
-# Semaphore
+## Semaphore
 
 An asynchronous counting semaphore for limiting the number of concurrently
 running tasks.
@@ -277,7 +277,7 @@ const semaphore = new Semaphore({ waiters: LIFO, capacity: 8 });
 
 The most recently blocked task will acquire the next available permit.
 
-# Asynq
+## Asynq
 
 `Asynq<T>` is an asynchronous synchronization primitive that allows producers
 and consumers to exchange values through a configurable queue.

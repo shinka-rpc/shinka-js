@@ -105,9 +105,9 @@ For requests, the helper additionally marks the handler as asynchronous with:
 This reflects the fact that the forwarding handler awaits the destination
 request before returning its result.
 
-# API
+## API
 
-## `passThroughEvent`
+### `passThroughEvent`
 
 ```ts
 function passThroughEvent<SO, TO>(
@@ -121,7 +121,7 @@ function passThroughEvent<SO, TO>(
 Registers a data-event handler on `source` that forwards events with `key` to
 `dest`.
 
-## `passThroughEvents`
+### `passThroughEvents`
 
 ```ts
 function passThroughEvents<SO, TO>(
@@ -134,7 +134,7 @@ function passThroughEvents<SO, TO>(
 
 Registers pass-through handlers for multiple data-event keys.
 
-## `passThroughRequest`
+### `passThroughRequest`
 
 ```ts
 function passThroughRequest<SO, TO>(
@@ -148,7 +148,7 @@ function passThroughRequest<SO, TO>(
 Registers a request handler on `source` that forwards requests with `key` to
 `dest`.
 
-## `passThroughRequests`
+### `passThroughRequests`
 
 ```ts
 function passThroughRequests<SO, TO>(
@@ -161,7 +161,7 @@ function passThroughRequests<SO, TO>(
 
 Registers pass-through handlers for multiple request keys.
 
-# Example
+## Example
 
 A common use case is placing an intermediary between two communication layers.
 
@@ -197,7 +197,7 @@ passThroughEvents(
 The proxy therefore becomes a routing layer rather than another implementation
 of the underlying API.
 
-# Design
+## Design
 
 The helpers deliberately operate at the `Shinka` level rather than introducing
 another transport or protocol abstraction.

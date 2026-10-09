@@ -24,7 +24,7 @@ const serializersBin = [serializerMsgPack, serializerBson] as SerializerRoot<
 const seed: any = [
   0,
   [1, 2, 3],
-  "45678",
+  "45678🌍",
   true,
   {
     for: "test",

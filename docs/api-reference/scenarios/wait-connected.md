@@ -130,9 +130,9 @@ await client.request(...);
 The utility does not establish or maintain the connection itself. It only
 exposes the `IBus` connection state as an awaitable value.
 
-# API
+## API
 
-## `waitConnected(bus)`
+### `waitConnected(bus)`
 
 ```ts
 function waitConnected<SO, TO>(
@@ -142,13 +142,13 @@ function waitConnected<SO, TO>(
 
 Creates a reusable promise associated with the specified bus.
 
-### Parameters
+#### Parameters
 
 | Parameter | Type           | Description                                               |
 | --------- | -------------- | --------------------------------------------------------- |
 | `bus`     | `IBus<SO, TO>` | Bus whose `connect` and `disconnect` events are observed. |
 
-### Returns
+#### Returns
 
 A `ReusablePromise<void>` that:
 
@@ -156,7 +156,7 @@ A `ReusablePromise<void>` that:
 * resets after `disconnect`;
 * can be awaited across multiple connection cycles.
 
-# Design
+## Design
 
 `@shinka-rpc/scenarios` is intentionally small.
 

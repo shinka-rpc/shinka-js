@@ -5,7 +5,7 @@ import serializer, { type SerializerMSGPackOpts } from "../src";
 
 import type { SerializerInstance } from "../../core";
 
-const data: any = [0, 1, "2345", true, { for: "test" }];
+const data: any = [0, 1, "2345🌍", true, { for: "test" }];
 
 const makeSerializer = async (): Promise<
   SerializerInstance<SerializerMSGPackOpts>

@@ -9,8 +9,19 @@ export default createHighOrder({
     deserialize: [(data, thisArg) => Uint8Array.fromBase64(data), "Function"],
   },
   text: {
-    serialize: [(data, thisArg, opts) => btoa(data), "Function"],
-    deserialize: [(data, thisArg) => atob(data), "Function"],
+    serialize: [
+      (data, { state: { encoder } }, opts) => encoder.encode(data).toBase64(),
+      "Function",
+    ],
+    deserialize: [
+      (data, { state: { decoder } }) =>
+        decoder.decode(Uint8Array.fromBase64(data)),
+      "Function",
+    ],
   },
+  initState: () => ({
+    encoder: new TextEncoder(),
+    decoder: new TextDecoder(),
+  }),
   mimeSubType: "base64",
 });

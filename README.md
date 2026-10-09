@@ -29,11 +29,15 @@ Also there are some default serializers available:
 
 - [@shinka-rpc/serializer-json](https://www.npmjs.com/package/@shinka-rpc/serializer-json)
 
+- [@shinka-rpc/serializer-yaml](https://www.npmjs.com/package/@shinka-rpc/serializer-yaml)
+
 - [@shinka-rpc/serializer-bson](https://www.npmjs.com/package/@shinka-rpc/serializer-bson)
 
 - [@shinka-rpc/serializer-msgspec](https://www.npmjs.com/package/@shinka-rpc/serializer-msgspec)
 
 - [@shinka-rpc/serializer-gzip](https://www.npmjs.com/package/@shinka-rpc/serializer-gzip)
+
+- [@shinka-rpc/serializer-base64](https://www.npmjs.com/package/@shinka-rpc/serializer-base64)
 
 The main advantage of `@shinka-rpc` is in re-using of the same `core` with all
 transports. And when you decided to build many RPC communication buses, your

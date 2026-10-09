@@ -14,7 +14,7 @@ several languages, including Ukrainian, Belarusian, Polish, and even German
 messaging infrastructure and an unexpected culinary coincidence.
 :::
 
-# And where is this `shinka`?
+## And where is this `shinka`?
 
 Short answer: under `Bus` hood. And it's not single:
 
@@ -67,13 +67,13 @@ export const enum MessageType {
 ```
 :::
 
-# So, what is `Shinka`?
+## So, what is `Shinka`?
 
 It's independent communication channel:
 - `ShinkaOn`: own `onRequest` and `onDataEvent` handler registries
 - `ShinkaDo`: own `request` and `dataEvent` senders
 
-# Why?
+## Why?
 
 This allow building complex and powerful transports and serializers. For
 example, serializer may ask interlocutor to change encryption key. One of them,

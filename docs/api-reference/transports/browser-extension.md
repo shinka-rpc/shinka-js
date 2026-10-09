@@ -4,7 +4,7 @@ This package contains a transports of
 [@shinka-rpc/core](https://www.npmjs.com/package/@shinka-rpc/core) for
 browser extension
 
-# Usage
+## Usage
 
 The most common use-case is to passthrough requests and events from the page to
 the extension environment, and back. There are some contexts here:
@@ -31,7 +31,7 @@ export const MAIN2ISOLATED_TYPE = "MY_EXTENSION_MAIN2ISOLATED";
 export const ISOLATED2MAIN_TYPE = "MY_EXTENSION_ISOLATED2MAIN";
 ```
 
-## Page `MAIN` ExecutionWorld
+### Page `MAIN` ExecutionWorld
 
 Here we are able to connect to the page `ISOLATED` ExecutionWorld only:
 
@@ -51,7 +51,7 @@ const bus = new Client({ factory });
 - **Required** TAG_SEND: `unknown`
 
 
-## Page `ISOLATED` ExecutionWorld
+### Page `ISOLATED` ExecutionWorld
 
 Here we are able to connect both to the page `MAIN` ExecutionWorld and to the
 background script. Some requests and events we have to passthrough to the
@@ -89,7 +89,7 @@ passThroughRequests(contentBus, extensionBus, "req1", "req2" /*...*/);
 - **Optional** extensionRegistry: `Registry<Client>` hooks for extension
 environment
 
-# Background `server` script
+## Background `server` script
 
 Here we receive connections from all tabs with active extension `ISOLATED`
 ExecutionWorld. It's clear `server` scenario

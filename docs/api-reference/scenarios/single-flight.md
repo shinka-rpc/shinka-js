@@ -194,9 +194,7 @@ flowchart LR
 
 Different keys always have independent state.
 
----
-
-# Resource lifecycle
+## Resource lifecycle
 
 A resource can be thought of as moving through three relevant states:
 
@@ -218,7 +216,7 @@ The diagram describes the resource lifecycle conceptually. Internally, retrieval
 and invalidation are independently coordinated so that concurrent callers cannot
 start conflicting operations for the same identity key.
 
-## `retrieve`
+### `retrieve`
 
 ```ts
 retrieve: (arg, key) => Promise<T>
@@ -251,7 +249,7 @@ retrieve: async (id) => {
 read: (id) => cache.get(id)!,
 ```
 
-## `read`
+### `read`
 
 ```ts
 read: (arg, key) => T
@@ -264,7 +262,7 @@ Reads an already available resource.
 * the resource is already available; or
 * a caller has waited for another caller's successful retrieval.
 
-## `reset`
+### `reset`
 
 ```ts
 reset: (arg, key) => void
@@ -287,9 +285,7 @@ reset state.
 state. If `reset()` throws or leaves application state partially modified,
 recovery is the responsibility of the calling application.
 
----
-
-# Invalidation
+## Invalidation
 
 The second returned function invalidates a resource:
 
@@ -351,9 +347,7 @@ sequenceDiagram
 An invalidation therefore behaves as a synchronization barrier for the
 corresponding key.
 
----
-
-# Calls during invalidation
+## Calls during invalidation
 
 A `singleFlight()` call arriving while invalidation is in progress does not read
 the old resource.
@@ -383,9 +377,7 @@ sequenceDiagram
 This prevents a caller from observing a resource that has already entered the
 invalidation lifecycle.
 
----
-
-# Errors
+## Errors
 
 A failed retrieval completes the current flight with the same error.
 
@@ -418,9 +410,7 @@ sequenceDiagram
 `createSingleFlight` does not automatically retry failed retrievals. A
 subsequent call starts a new retrieval.
 
----
-
-# Composing flights
+## Composing flights
 
 Multiple `createSingleFlight` instances can be composed.
 
@@ -475,9 +465,7 @@ Each flight independently coalesces concurrent calls for its own identity keys.
 This means `createSingleFlight` can be used as a building block for larger
 asynchronous dependency graphs rather than only for isolated resources.
 
----
-
-# When to use `createSingleFlight`
+## When to use `createSingleFlight`
 
 `createSingleFlight` is a good fit when:
 
@@ -501,9 +489,7 @@ The requirement for `createSingleFlight` is different:
 > If several callers need the same unavailable resource at the same time,
 perform the acquisition once and let them share its completion.
 
----
-
-# Summary
+## Summary
 
 `createSingleFlight` provides three core guarantees for each identity key:
 

@@ -7,7 +7,7 @@ small functions.
 
 ![diagram](../../img/how-shinka-rpc-works.svg "How `@shinka-rpc` works")
 
-# Basic principles
+## Basic principles
 
 - `request` **requires** the response. Good analogy is
   [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API)
