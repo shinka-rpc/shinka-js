@@ -40,5 +40,10 @@
   "devDependencies": {
     "compare-versions": "^6.1.1",
     "vitepress": "next"
+  },
+  "allowScripts": {
+    "@parcel/watcher@2.6.0": true,
+    "nx@23.3.0": true,
+    "unrs-resolver@1.12.2": true
   }
 }
