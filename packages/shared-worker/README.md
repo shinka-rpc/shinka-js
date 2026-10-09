@@ -1,6 +1,6 @@
 # @shinka-rpc/shared-worker
 
-Symmetric RPC bus. [Documentation is here](https://shinka-rpc-js.readthedocs.io/latest/transports/shared-worker/)
+Symmetric RPC bus. [Documentation is here](https://shinka-rpc-js.readthedocs.io/0.1.x/api-reference/transports/shared-worker.html)
 
 This package implements the transport implementation of
 [@shinka-rpc/core](https://www.npmjs.com/package/@shinka-rpc/core) for
@@ -8,61 +8,36 @@ This package implements the transport implementation of
 
 # Usage
 
-## `client` case
+## `client` / `page` case
 
 ```typescript
-import { ClientBus, FactoryClient } from "@shinka-rpc/core";
-import { SharedWorker2FactoryData } from "@shinka-rpc/shared-worker";
-import serializer from "@shinka-rpc/serializer-json";  // for example
+import { Client } from "@shinka-rpc/core";
+import { sharedWorkerClient } from "@shinka-rpc/shared-worker";
 
-const factory: FactoryClient<ClientBus> = async (bus) =>
-  SharedWorker2FactoryData(
-    new SharedWorker(new URL("./worker.ts", import.meta.url)),
-    bus,
-  );
+const transport = sharedWorkerClient(
+  () => new SharedWorker(new URL("../server", import.meta.url)),
+);
 
-export const bus = new ClientBus({ factory, serializer });
-
-bus.start();
+export const client = new Client({ transport, serializer, outscope });
 ```
 
-### API Reference:
-
-**SharedWorker2FactoryData**:
-
-- **Required** instance: [SharedWorker](https://developer.mozilla.org/en-US/docs/Web/API/SharedWorker)
-
-- **Required** bus: `ClientBus`
-
-- **Optional** `binary`: `Boolean` &mdash; enable binary-specific `transfer` optimization. **Default**: `false`
-
-- **Refurning**: `FactoryData`
-
-## `server` case / `worker` side
-
-First of all: please read the docs about
-[SharedWorker](https://developer.mozilla.org/en-US/docs/Web/API/SharedWorker)
-API. There is no magic.
+## `server` / `worker` case
 
 ```typescript
-// @ts-nocheck
-declare let onconnect: (event: MessageEvent) => void;
+import { Server } from "@shinka-rpc/core";
+import { sharedWorkerServer } from "@shinka-rpc/shared-worker";
 
-import { ServerBus } from "@shinka-rpc/core";
-import { SharedWorkerServer } from "@shinka-rpc/shared-worker";
-import serializer from "@shinka-rpc/serializer-json";  // for example
-
-export const server = new ServerBus({ serializer });
-
-onconnect = SharedWorkerServer(server);
+const server = new Server({
+  transport: sharedWorkerServer,
+  serializer,
+  outscope,
+});
 ```
 
-### API Reference:
+## Important
 
-**SharedWorkerServer**:
-
-- **Reqiored** server: `ServerBus`
-
-- **Optional** `binary`: `Boolean` &mdash; enable binary-specific `transfer` optimization. **Default**: `false`
-
-- **Refurning**: `(e: MessageEvent) => void`
+You have to check details of your bundler:
+- [rsbuild](https://rsbuild.rs/guide/basic/web-workers)
+- [vite](https://vite.dev/guide/features#web-workers)
+- [bun](https://bun.com/docs/runtime/workers#creating-a-worker)
+- 💩 [turbopack](https://github.com/vercel/turborepo/issues/3643)

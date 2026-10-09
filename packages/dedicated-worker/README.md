@@ -1,6 +1,6 @@
 # @shinka-rpc/dedicated-worker [not tested!]
 
-Symmetric RPC bus. [Documentation is here](https://shinka-rpc-js.readthedocs.io/latest/transports/dedicated-worker/)
+Symmetric RPC bus. [Documentation is here](https://shinka-rpc-js.readthedocs.io/0.1.x/api-reference/transports/dedicated-worker.html)
 
 This package implements the transport implementation of
 [@shinka-rpc/core](https://www.npmjs.com/package/@shinka-rpc/core) for
@@ -8,44 +8,40 @@ This package implements the transport implementation of
 
 # Usage
 
-## `client` case
+## `client` / `page` case
 
 ```typescript
-import { ClientBus, FactoryClient } from "@shinka-rpc/core";
-import { DedicatedWorker2FactoryData } from "@shinka-rpc/dedicated-worker";
+import { Client } from "@shinka-rpc/core";
+import { dedicatedWorkerClient } from "@shinka-rpc/dedicated-worker";
 
-const factory: FactoryClient<ClientBus> = async (bus) =>
-  DedicatedWorker2FactoryData(
-    new Worker(new URL("./worker.ts", import.meta.url)),
-    bus,
-  );
+const transport = dedicatedWorkerClient(
+  () => new Worker(new URL("../worker", import.meta.url)),
+);
 
-export const bus = new ClientBus({ factory });
-
-bus.start();
+const bus = new Client({ transport, serializer, outscope });
 ```
 
 ## `worker` side
 
 **IMPORTANT**: on
 [Worker](https://developer.mozilla.org/en-US/docs/Web/API/Worker) side you have
-to use `ClientBus`
+to use `Client`
 
 ```typescript
-// @ts-nocheck
-declare let onmessage: (event: MessageEvent) => void;
+import { Client } from "@shinka-rpc/core";
+import { dedicatedWorkerServer } from "@shinka-rpc/dedicated-worker";
 
-import { ClientBus } from "@shinka-rpc/core";
-import {
-  DedicatedWorkerServer,
-  createOnMessage,
-} from "@shinka-rpc/dedicated-worker";
-import serializer from "@shinka-rpc/serializer-json";  // for example
-
-export const server = new ClientBus({
-  factory: DedicatedWorkerServer,
+export const worker = new Client({
+  transport: dedicatedWorkerServer,
   serializer,
+  outscope,
 });
-
-onmessage = createOnMessage(server);
 ```
+
+## Important
+
+You have to check details of your bundler:
+- [rsbuild](https://rsbuild.rs/guide/basic/web-workers)
+- [vite](https://vite.dev/guide/features#web-workers)
+- [bun](https://bun.com/docs/runtime/workers#creating-a-worker)
+- 💩 [turbopack](https://github.com/vercel/turborepo/issues/3643)
