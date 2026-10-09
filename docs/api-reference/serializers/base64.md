@@ -1,7 +1,4 @@
-# Base64 Serializer
-
-A Base64 serializer for [`@shinka-rpc/core`](https://www.npmjs.com/package/@shinka-rpc/core).
-[Documentation is here](https://shinka-rpc-js.readthedocs.io/0.1.x/api-reference/serializers/base64.html)
+# Higher-order Base64 Serializer
 
 This package converts binary data and text into Base64-encoded text, making it useful when a transport supports text but cannot carry binary payloads directly.
 
