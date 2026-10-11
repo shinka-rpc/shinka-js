@@ -292,6 +292,14 @@ const config = defineConfig({
     socialLinks: [
       { icon: "github", link: "https://github.com/shinka-rpc/shinka-js" },
     ],
+
+    search: { provider: "local" },
+  },
+
+  vite: {
+    optimizeDeps: {
+      include: ["fastdom", "fastdom/extensions/fastdom-promised.js"],
+    },
   },
 });
 
