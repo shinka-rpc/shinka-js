@@ -63,7 +63,7 @@ import {
   createClientFactory,
   createIsolatedPair,
 } from "@shinka-rpc/browser-extension";
-import { passThroughEvents, passThroughRequests } from "@shinka-rpc/core";
+import { passThroughEvents, passThroughRequests } from "@shinka-rpc/scenario";
 
 import { MAIN2ISOLATED_TYPE, ISOLATED2MAIN_TYPE } from "./constants";
 
