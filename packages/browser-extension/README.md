@@ -1,5 +1,9 @@
 # @shinka-rpc/browser-extension
 
+![minzip](https://badgen.net/bundlejs/minzip/@shinka-rpc%2Fbrowser-extension)
+[![install size](https://packagephobia.com/badge?p=@shinka-rpc/browser-extension@alpha)](https://packagephobia.com/result?p=@shinka-rpc/browser-extension@alpha)
+
+
 Symmetric RPC bus. [Documentation is here](https://shinka-rpc-js.readthedocs.io/0.1.x/api-reference/transports/browser-extension.html)
 
 This package contains a transports of

@@ -1,5 +1,8 @@
 # @shinka-rpc/core
 
+![minzip](https://badgen.net/bundlejs/minzip/@shinka-rpc%2Fcore)
+[![install size](https://packagephobia.com/badge?p=@shinka-rpc/core@alpha)](https://packagephobia.com/result?p=@shinka-rpc/core@alpha)
+
 Symmetric RPC bus. This page explains basic concepts only.
 [Documentation is here](https://shinka-rpc-js.readthedocs.io/0.1.x/api-reference/core/)
 

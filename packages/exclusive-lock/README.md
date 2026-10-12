@@ -1,5 +1,8 @@
 # @shinka-rpc/exclusive-lock
 
+![minzip](https://badgen.net/bundlejs/minzip/@shinka-rpc%2Fexclusive-lock)
+[![install size](https://packagephobia.com/badge?p=@shinka-rpc/exclusive-lock@alpha)](https://packagephobia.com/result?p=@shinka-rpc/exclusive-lock@alpha)
+
 Symmetric RPC bus. [Documentation is here](https://shinka-rpc-js.readthedocs.io/0.1.x/api-reference/exclusive-lock.html)
 
 Optional exclusive channel synchronization for `@shinka-rpc/core`.

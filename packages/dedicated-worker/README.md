@@ -1,4 +1,7 @@
-# @shinka-rpc/dedicated-worker [not tested!]
+# @shinka-rpc/dedicated-worker
+
+![minzip](https://badgen.net/bundlejs/minzip/@shinka-rpc%2Fdedicated-worker)
+[![install size](https://packagephobia.com/badge?p=@shinka-rpc/dedicated-worker@alpha)](https://packagephobia.com/result?p=@shinka-rpc/dedicated-worker@alpha)
 
 Symmetric RPC bus. [Documentation is here](https://shinka-rpc-js.readthedocs.io/0.1.x/api-reference/transports/dedicated-worker.html)
 

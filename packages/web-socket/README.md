@@ -1,5 +1,8 @@
 # @shinka-rpc/web-socket
 
+![minzip](https://badgen.net/bundlejs/minzip/@shinka-rpc%2Fweb-socket)
+[![install size](https://packagephobia.com/badge?p=@shinka-rpc/web-socket@alpha)](https://packagephobia.com/result?p=@shinka-rpc/web-socket@alpha)
+
 Symmetric RPC bus. [Documentation is here](https://shinka-rpc-js.readthedocs.io/0.1.x/api-reference/transports/web-socket.html)
 
 This package implements the transport implementation of

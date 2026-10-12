@@ -1,5 +1,8 @@
 # @shinka-rpc/react
 
+![minzip](https://badgen.net/bundlejs/minzip/@shinka-rpc%2Freact)
+[![install size](https://packagephobia.com/badge?p=@shinka-rpc/react@alpha)](https://packagephobia.com/result?p=@shinka-rpc/react@alpha)
+
 React integration for [`@shinka-rpc/core`](https://www.npmjs.com/package/@shinka-rpc/core).
 See the [documentation](https://shinka-rpc-js.readthedocs.io/0.1.x/api-reference/integrations/react.html).
 

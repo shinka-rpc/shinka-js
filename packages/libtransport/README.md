@@ -1,5 +1,8 @@
 # @shinka-rpc/libtransport
 
+![minzip](https://badgen.net/bundlejs/minzip/@shinka-rpc%2Flibtransport)
+[![install size](https://packagephobia.com/badge?p=@shinka-rpc/libtransport@alpha)](https://packagephobia.com/result?p=@shinka-rpc/libtransport@alpha)
+
 Symmetric RPC bus. [Documentation is here](https://shinka-rpc-js.readthedocs.io/0.1.x/api-reference/lib/libtransport.html)
 
 Small transport adapters for APIs that expose similar message-sending interfaces.

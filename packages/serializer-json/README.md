@@ -1,5 +1,8 @@
 # @shinka-rpc/serializer-json
 
+![minzip](https://badgen.net/bundlejs/minzip/@shinka-rpc%2Fserializer-json)
+[![install size](https://packagephobia.com/badge?p=@shinka-rpc/serializer-json@alpha)](https://packagephobia.com/result?p=@shinka-rpc/serializer-json@alpha)
+
 A minimal JSON serializer for [`@shinka-rpc/core`](https://www.npmjs.com/package/@shinka-rpc/core).
 [Documentation is here](https://shinka-rpc-js.readthedocs.io/0.1.x/api-reference/serializers/json.html)
 

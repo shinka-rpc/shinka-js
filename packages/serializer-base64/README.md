@@ -1,5 +1,8 @@
 # @shinka-rpc/serializer-base64
 
+![minzip](https://badgen.net/bundlejs/minzip/@shinka-rpc%2Fserializer-base64)
+[![install size](https://packagephobia.com/badge?p=@shinka-rpc/serializer-base64@alpha)](https://packagephobia.com/result?p=@shinka-rpc/serializer-base64@alpha)
+
 A Base64 serializer for [`@shinka-rpc/core`](https://www.npmjs.com/package/@shinka-rpc/core).
 [Documentation is here](https://shinka-rpc-js.readthedocs.io/0.1.x/api-reference/serializers/base64.html)
 

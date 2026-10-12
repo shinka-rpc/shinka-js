@@ -1,5 +1,8 @@
 # @shinka-rpc/outscope
 
+![minzip](https://badgen.net/bundlejs/minzip/@shinka-rpc%2Foutscope)
+[![install size](https://packagephobia.com/badge?p=@shinka-rpc/outscope@alpha)](https://packagephobia.com/result?p=@shinka-rpc/outscope@alpha)
+
 Symmetric RPC bus. See the [documentation](https://shinka-rpc-js.readthedocs.io/0.1.x/api-reference/outscope.html).
 
 `@shinka-rpc/outscope` defines a minimal interface for subscribing to the end

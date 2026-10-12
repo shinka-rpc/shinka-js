@@ -1,5 +1,8 @@
 # @shinka-rpc/limon-opportunistic
 
+![minzip](https://badgen.net/bundlejs/minzip/@shinka-rpc%2Flimon-opportunistic)
+[![install size](https://packagephobia.com/badge?p=@shinka-rpc/limon-opportunistic@alpha)](https://packagephobia.com/result?p=@shinka-rpc/limon-opportunistic@alpha)
+
 Symmetric RPC bus. [Documentation is here](https://shinka-rpc-js.readthedocs.io/0.1.x/api-reference/limons/opportunistic.html)
 
 An opportunistic Liveness Monitor implementation for [@shinka-rpc/core](https://www.npmjs.com/package/@shinka-rpc/core).

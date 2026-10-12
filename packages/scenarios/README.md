@@ -1,5 +1,8 @@
 # @shinka-rpc/scenarios
 
+![minzip](https://badgen.net/bundlejs/minzip/@shinka-rpc%2Fscenarios)
+[![install size](https://packagephobia.com/badge?p=@shinka-rpc/scenarios@alpha)](https://packagephobia.com/result?p=@shinka-rpc/scenarios@alpha)
+
 Reusable helpers for common communication and synchronization patterns built
 around Shinka RPC.
 

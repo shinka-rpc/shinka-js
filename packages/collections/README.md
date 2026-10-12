@@ -1,5 +1,8 @@
 # `@shinka-rpc/collections`
 
+![minzip](https://badgen.net/bundlejs/minzip/@shinka-rpc%2Fcollections)
+[![install size](https://packagephobia.com/badge?p=@shinka-rpc/collections@alpha)](https://packagephobia.com/result?p=@shinka-rpc/collections@alpha)
+
 Symmetric RPC bus. See the [documentation](https://shinka-rpc-js.readthedocs.io/0.1.x/api-reference/collections.html).
 
 Lightweight, linked-list based collections for predictable mutation performance.

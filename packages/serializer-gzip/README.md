@@ -1,5 +1,8 @@
 # @shinka-rpc/serializer-gzip
 
+![minzip](https://badgen.net/bundlejs/minzip/@shinka-rpc%2Fserializer-gzip)
+[![install size](https://packagephobia.com/badge?p=@shinka-rpc/serializer-gzip@alpha)](https://packagephobia.com/result?p=@shinka-rpc/serializer-gzip@alpha)
+
 Gzip compression serializers for [`@shinka-rpc/core`](https://www.npmjs.com/package/@shinka-rpc/core), built using [`pako`](https://www.npmjs.com/package/pako) and [`@shinka-rpc/libserializer`](https://www.npmjs.com/package/@shinka-rpc/libserializer).
 
 The package provides two implementations:

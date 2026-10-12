@@ -1,5 +1,8 @@
 # @shinka-rpc/libserializer
 
+![minzip](https://badgen.net/bundlejs/minzip/@shinka-rpc%2Flibserializer)
+[![install size](https://packagephobia.com/badge?p=@shinka-rpc/libserializer@alpha)](https://packagephobia.com/result?p=@shinka-rpc/libserializer@alpha)
+
 High-order serializer utilities for [Shinka RPC](https://shinka-rpc-js.readthedocs.io/0.1.x/api-reference/lib/libserializer.html).
 
 `@shinka-rpc/libserializer` provides reusable building blocks for implementing serializers that operate **on top of another serializer**.

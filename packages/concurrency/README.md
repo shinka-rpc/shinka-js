@@ -1,5 +1,8 @@
 # @shinka-rpc/concurrency
 
+![minzip](https://badgen.net/bundlejs/minzip/@shinka-rpc%2Fconcurrency)
+[![install size](https://packagephobia.com/badge?p=@shinka-rpc/concurrency@alpha)](https://packagephobia.com/result?p=@shinka-rpc/concurrency@alpha)
+
 Symmetric RPC bus. See the [documentation](https://shinka-rpc-js.readthedocs.io/0.1.x/api-reference/concurrency.html).
 
 This package implements synchronization primitives

@@ -35,6 +35,7 @@
     "default": "./src/index.ts"
   },
   "dependencies": {
+    "@shinka-rpc/util": "^0.0.3-alpha.3",
     "@shinka-rpc/core": "^0.1.0-alpha.0",
     "@shinka-rpc/concurrency": "^0.0.1-alpha.0",
     "@shinka-rpc/consensus": "^0.0.1-alpha.0"

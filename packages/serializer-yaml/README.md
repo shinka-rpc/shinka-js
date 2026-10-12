@@ -1,5 +1,8 @@
 # @shinka-rpc/serializer-yaml
 
+![minzip](https://badgen.net/bundlejs/minzip/@shinka-rpc%2Fserializer-yaml)
+[![install size](https://packagephobia.com/badge?p=@shinka-rpc/serializer-yaml@alpha)](https://packagephobia.com/result?p=@shinka-rpc/serializer-yaml@alpha)
+
 A YAML serializer for [`@shinka-rpc/core`](https://www.npmjs.com/package/@shinka-rpc/core).
 [Documentation is here](https://shinka-rpc-js.readthedocs.io/0.1.x/api-reference/serializers/yaml.html)
 

@@ -1,5 +1,8 @@
 # @shinka-rpc/util
 
+![minzip](https://badgen.net/bundlejs/minzip/@shinka-rpc%2Futil)
+[![install size](https://packagephobia.com/badge?p=@shinka-rpc/util@alpha)](https://packagephobia.com/result?p=@shinka-rpc/util@alpha)
+
 Symmetric RPC bus. [Documentation is here](https://shinka-rpc-js.readthedocs.io/0.1.x/api-reference/util.html)
 
 This package implements auxiliary utilities

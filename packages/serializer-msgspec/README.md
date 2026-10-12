@@ -1,5 +1,8 @@
 # @shinka-rpc/serializer-msgspec
 
+![minzip](https://badgen.net/bundlejs/minzip/@shinka-rpc%2Fserializer-msgspec)
+[![install size](https://packagephobia.com/badge?p=@shinka-rpc/serializer-msgspec@alpha)](https://packagephobia.com/result?p=@shinka-rpc/serializer-msgspec@alpha)
+
 A MessagePack serializer for [`@shinka-rpc/core`](https://www.npmjs.com/package/@shinka-rpc/core).
 [Documentation is here](https://shinka-rpc-js.readthedocs.io/0.1.x/api-reference/serializers/msgspec.html)
 
