@@ -145,6 +145,10 @@ const config = defineConfig({
               link: "/getting-started/what-is-rpc",
             },
             {
+              text: "🚧 Shinka RPC Compared with Other RPC Solutions",
+              link: "/getting-started/compare-rpc-solutions",
+            },
+            {
               text: "Usage Example",
               link: "/getting-started/usage-example",
             },
