@@ -229,9 +229,10 @@ export type LiMonThisArg<SO, TO, LS> = InternalHandlerThisArg<SO, TO, LS> & {
   heartbeat: LiMonHeartbeatFn;
 };
 export type LiMonHeartbeatFn = () => void;
+export type LiMonStart = () => void | Promise<void>;
 export type LiMonInstance = {
-  start: () => void;
-  stop: () => void;
+  start?: LiMonStart;
+  stop?: () => void;
 };
 export type LiMonFactory<SO, TO, LS> = (
   thisArg: LiMonThisArg<SO, TO, LS>,

@@ -1,5 +1,5 @@
 import { expect, test } from "@jest/globals";
-import outscope from "../../outscope/src/tests";
+import testOutScope from "../../outscope/src/tests";
 
 import { Client, Hub, TransportFactory, type SerializerRoot } from "../src";
 import { createHandlerRegistries } from "../src/shinka";
@@ -20,6 +20,7 @@ const setupClientHub = async (
     results: Record<string, any>[],
   ) => SerializerRoot<any, any, any>,
 ) => {
+  const { outscope, outscopeState } = testOutScope();
   const results: Record<string, any>[] = [];
 
   const { 0: pipe1to2, 1: pipe2to1 } = mkPipePair(0, 0);
@@ -32,19 +33,19 @@ const setupClientHub = async (
 
   const hub = new Hub();
 
-  client.addEventListener("connect", () =>
+  client.addEventListener("connected", () =>
     results.push({ key: "client1-event", val: "connect" }),
   );
 
-  client.addEventListener("disconnect", () =>
+  client.addEventListener("disconnected", () =>
     results.push({ key: "client1-event", val: "disconnect" }),
   );
 
-  hub.addEventListener("connect", () =>
+  hub.addEventListener("connected", () =>
     results.push({ key: "hub-event", val: "connect" }),
   );
 
-  hub.addEventListener("disconnect", () =>
+  hub.addEventListener("disconnected", () =>
     results.push({ key: "hub-event", val: "disconnect" }),
   );
 
@@ -70,7 +71,7 @@ const setupClientHub = async (
     });
   };
 
-  return { results, client, hub, start };
+  return { results, client, hub, start, outscopeState };
 };
 
 test("hub-classic", async () => {
@@ -95,6 +96,9 @@ test("hub-classic", async () => {
   await client.stop();
   // await common.stop();
   await hub.dispose();
+
+  hub.size;
+  hub.isDisposing;
 
   expect(results).toStrictEqual([
     { key: "client1-event", val: "connect" },

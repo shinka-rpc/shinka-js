@@ -8,7 +8,7 @@ import {
 } from "./util";
 
 import { createHandlerRegistries, completeShinka } from "../src/shinka/shinka";
-import { highOrderShinka } from "../src/shinka";
+import { highOrderShinka } from "../src"; // have to be from root
 import type {
   ShinkaOn,
   DispatchMap,

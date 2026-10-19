@@ -8,4 +8,4 @@ export * from "./pool";
 export type * from "./shinka";
 export { Response, highOrderShinka } from "./shinka";
 
-export { StructuredMimeType } from "@shinka-rpc/util";
+export type { StructuredMimeType } from "@shinka-rpc/util";

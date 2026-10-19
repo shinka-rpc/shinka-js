@@ -134,8 +134,8 @@ export class Server<SO = any, TO = any, TC = any> {
     if (this.#vars.state !== ServerState.STOPPED)
       return console.error("Server is not in `STOPPED` state");
     this.#connectDelegate.set(this.#connectFn);
-    this.#callEvent("started");
     this.#vars.state = ServerState.STARTED;
+    this.#callEvent("started");
   };
 
   stop = async () => {
@@ -149,8 +149,8 @@ export class Server<SO = any, TO = any, TC = any> {
     } catch (e) {
       console.trace(e);
     }
-    this.#callEvent("stopped");
     this.#vars.state = ServerState.STOPPED;
+    this.#callEvent("stopped");
   };
 
   public get size() {

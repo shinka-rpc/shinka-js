@@ -5,7 +5,7 @@ import {
   type AsyncDisposeContext,
 } from "@shinka-rpc/util";
 import { FIFO, type IQueue } from "@shinka-rpc/collections";
-import { Semaphore } from "@shinka-rpc/concurrency";
+import { Semaphore, ReusablePromise } from "@shinka-rpc/concurrency";
 
 import { createSendData, createOnRawData } from "./serializer-strategy";
 import {
@@ -63,6 +63,7 @@ import {
 } from "./handlers/non-blocking";
 import { NBAcquire } from "./const-enums";
 import {
+  BusState,
   FIFOPush,
   drain,
   acquireMe,
@@ -73,7 +74,9 @@ import {
   nbEventAccept,
   nbEventRelease,
   eventListenerCaller,
+  createTransition,
   type VarsBye,
+  type TransitionVars,
 } from "./util";
 
 const { freeze: objectFreeze, seal: objectSeal, assign: objectAssign } = Object;
@@ -83,17 +86,9 @@ const transportNotInitialized = () => {
 };
 
 const dummy = () => {};
+const aDummy = async () => {};
 
-const enum BusState {
-  STOPPED = 0,
-  STARTING = 1,
-  STARTED = 2,
-  STOPPING = 3,
-}
-
-type BusVars = VarsBye & {
-  state: BusState;
-};
+type BusVars = VarsBye & TransitionVars;
 
 type DispatchErrors = {
   send: (error: any) => void;
@@ -124,11 +119,14 @@ export class Bus<SO, TO, TC> implements IBus<SO, TO> {
   #resetStatesQueue: IQueue<() => void>;
   #resetBye: () => void;
   #complete: CompleteFn<SO, TO, TC>;
+  #dispatchError: (error: any) => void;
 
   public request: ShinkaDoRequest<SO, TO>;
   public dataEvent: ShinkaDoDataEvent<SO, TO>;
   public extra: Record<string | symbol, any>;
   public exclusiveLock: (timeout: number) => Promise<AsyncDisposeContext>;
+  public start: () => Promise<void>;
+  public stop: () => Promise<void>;
 
   constructor(
     outscope: OutScope,
@@ -153,36 +151,56 @@ export class Bus<SO, TO, TC> implements IBus<SO, TO> {
     };
     this.#dispatchMap = new Map();
     this.#lastDataAt = objectSeal({ sent: 0, received: 0 });
-    this.#vars = objectSeal({ state: BusState.STOPPED, bye: 0, closed: 0 });
-    this.#resetBye = byeReset.bind(this.#vars);
-    this.#sendDelegate = delegate(transportNotInitialized as SendFn<any, any>);
-    this.#transportCloseDelegate = delegate(
-      transportNotInitialized as () => Promise<void>,
+
+    const vars: BusVars = objectSeal({
+      state: BusState.STOPPED,
+      bye: 0,
+      closed: 0,
+      transition: null,
+    });
+
+    this.#vars = vars;
+
+    this.start = createTransition.bind(
+      0,
+      vars,
+      BusState.STARTED,
+      BusState.STARTING,
+      this.#start,
+      this.#callEventListeners.bind(this, "connecting", null),
+      new ReusablePromise(),
     );
+
+    this.stop = createTransition.bind(
+      0,
+      vars,
+      BusState.STOPPED,
+      BusState.STOPPING,
+      this.#stop,
+      this.#callEventListeners.bind(this, "disconnecting", null),
+      new ReusablePromise(),
+    );
+
+    this.#resetBye = byeReset.bind(vars);
+    this.#sendDelegate = delegate(transportNotInitialized as SendFn<any, any>);
+    this.#transportCloseDelegate = delegate(aDummy);
     this.#serializerStopDelegate = delegate(dummy);
     this.#limonStopDelegate = delegate(dummy);
     this.#onOutScopeDelegate = delegate(dummy);
 
+    const dispatchError = this.#callEventListeners.bind(this, "error");
+    this.#dispatchError = dispatchError;
+
     this.#dispatchErrors = {
-      send: (error) =>
-        this.#callEventListeners("error", {
-          message: "Failed to send data",
-          error,
-        }),
+      send: (error) => dispatchError({ message: "Failed to send data", error }),
       recv: (error) =>
-        this.#callEventListeners("error", {
-          message: "Failed to handle received data",
-          error,
-        }),
+        dispatchError({ message: "Failed to handle received data", error }),
     };
 
     const send = this.#sendDelegate.call;
     const nbTA = {} as any as NBThisArg<SO, TO, any>;
 
     const nbTAState: NBThisArgState = {};
-
-    const dispatchError = (error: any) =>
-      this.#callEventListeners("error", error);
 
     const createOrCompleteShinka = makeCreateOrCompleteShinka<SO, TO, any>(
       this.#dispatchMap,
@@ -371,24 +389,10 @@ export class Bus<SO, TO, TC> implements IBus<SO, TO> {
         );
   };
 
-  public start = async () => {
-    if (this.#vars.state === BusState.STARTED) return;
-    if (this.#vars.state !== BusState.STOPPED)
-      return this.#callEventListeners("error", {
-        message: "Bus is not in `STOPPED` state",
-        when: "start",
-      });
-
+  #start = async () => {
+    const dispatchError = this.#dispatchError;
+    let error: any;
     try {
-      this.#vars.state = BusState.STARTING;
-
-      let limonStart: (() => void) | null = null;
-      if (this.#sta.limon) {
-        const limonInstance = this.#sta.limon.factory(this.#sta.limon.TA);
-        this.#limonStopDelegate.set(limonInstance.stop);
-        limonStart = limonInstance.start;
-      }
-
       const maybeSerializerInstance = this.#sta.serializer.factory(
         this.#sta.serializer.TA,
         defaultSerializerOpts,
@@ -414,117 +418,194 @@ export class Bus<SO, TO, TC> implements IBus<SO, TO> {
         this.#lastDataAt,
       );
 
-      const maybeTransportInstance = this.#sta.transport.factory(
-        this.#sta.transport.TA,
-        onRawData,
-        this.#onTerminated,
-        transportInitOpts,
-      );
-      const {
-        send: sendSerialized,
-        close,
-        instruction,
-        onReady: onReadyTransport,
-        context: transportCtx,
-      } = maybeTransportInstance instanceof Promise
-        ? await maybeTransportInstance
-        : maybeTransportInstance;
-
-      this.#transportCloseDelegate.set(close);
-
-      const send = createSendData(
-        typeHints.serialize,
-        serialize,
-        sendSerialized,
-        this.#dispatchErrors.send,
-        this.#lastDataAt,
-      );
-
-      this.#sendDelegate.set(send);
-
-      if (onReadyTransport) {
-        const onReadyTransportPromise = onReadyTransport();
-        if (onReadyTransportPromise instanceof Promise)
-          await onReadyTransportPromise;
-      }
-      if (onReadySerializer) {
-        const onReadySerializerPromise = onReadySerializer();
-        if (onReadySerializerPromise instanceof Promise)
-          await onReadySerializerPromise;
-      }
-
-      this.#complete(transportCtx, this);
-
-      if (limonStart) limonStart();
-      this.#sta.nb.TA.lock.start(this.#sta.nb.TA);
-
-      if (instruction.hi && !this.#lastDataAt.sent)
-        busEvents.heartbeat(this.#sta.bus.shinka.dataEvent);
-
-      if (instruction.bye) this.#vars.bye = 1;
-      this.#vars.closed = 0;
-
-      const onOutScope = instruction.bye
-        ? gracefulShutdown.bind(
-            0,
-            this.#sta.bus.shinka.dataEvent,
-            this.#resetBye,
-            this.stop,
-          )
-        : this.stop;
-
-      this.#onOutScopeDelegate.set(onOutScope);
-      this.#outscope.add(this.#onOutScopeDelegate.call);
-      this.#vars.state = BusState.STARTED;
-      this.#callEventListeners("connect", null);
-    } catch (e) {
-      this.#callEventListeners("error", e);
       try {
-        await this.#transportCloseDelegate.call();
+        const maybeTransportInstance = this.#sta.transport.factory(
+          this.#sta.transport.TA,
+          onRawData,
+          this.#onTerminated,
+          transportInitOpts,
+        );
+        const {
+          send: sendSerialized,
+          close,
+          instruction,
+          onReady: onReadyTransport,
+          context: transportCtx,
+        } = maybeTransportInstance instanceof Promise
+          ? await maybeTransportInstance
+          : maybeTransportInstance;
+
+        this.#transportCloseDelegate.set(close);
+
+        const send = createSendData(
+          typeHints.serialize,
+          serialize,
+          sendSerialized,
+          this.#dispatchErrors.send,
+          this.#lastDataAt,
+        );
+
+        this.#sendDelegate.set(send);
+
+        try {
+          if (onReadyTransport) await onReadyTransport();
+          if (onReadySerializer) await onReadySerializer();
+
+          this.#complete(transportCtx, this);
+
+          const limonInstance =
+            this.#sta.limon && this.#sta.limon.factory(this.#sta.limon.TA);
+          if (limonInstance) {
+            const { start: limonInstanceStart, stop: limonInstanceStop } =
+              limonInstance;
+            if (limonInstanceStart)
+              try {
+                await limonInstanceStart();
+                if (limonInstanceStop)
+                  this.#limonStopDelegate.set(limonInstanceStop);
+              } catch (e4) {
+                error = e4;
+                dispatchError(e4);
+                e4 = dummy; // sentinel. Why not?
+                if (limonInstanceStop) {
+                  try {
+                    limonInstanceStop();
+                  } catch (e) {
+                    dispatchError(e);
+                  }
+                }
+                throw e4;
+              }
+          }
+
+          this.#sta.nb.TA.lock.start(this.#sta.nb.TA);
+
+          if (instruction.hi && !this.#lastDataAt.sent) {
+            // send doesn't throw but dispatchError
+            busEvents.heartbeat(this.#sta.bus.shinka.dataEvent);
+          }
+
+          if (instruction.bye) this.#vars.bye = 1;
+          this.#vars.closed = 0;
+
+          const onOutScope = instruction.bye
+            ? gracefulShutdown.bind(
+                0,
+                this.#sta.bus.shinka.dataEvent,
+                this.#resetBye,
+                this.stop,
+              )
+            : this.stop;
+
+          try {
+            this.#outscope.add(this.#onOutScopeDelegate.call);
+            this.#onOutScopeDelegate.set(onOutScope);
+            this.#vars.state = BusState.STARTED;
+            this.#callEventListeners("connected", null);
+          } catch (e4) {
+            // outscope
+            if (e4 !== dummy) {
+              dispatchError(e4);
+              error = e4;
+              e4 = dummy;
+            }
+            try {
+              this.#outscope.remove(this.#onOutScopeDelegate.call);
+            } catch (e) {
+              dispatchError(e);
+            }
+            try {
+              this.#limonStopDelegate.call();
+            } catch (e) {
+              dispatchError(e);
+            }
+            throw e4;
+          }
+        } catch (e3) {
+          // onReady + limon-init
+          if (e3 !== dummy) {
+            dispatchError(e3);
+            error = e3;
+            e3 = dummy;
+          }
+          try {
+            await this.#transportCloseDelegate.call();
+          } catch (e) {
+            dispatchError(e);
+          }
+          throw e3;
+        }
       } catch (e2) {
-        this.#callEventListeners("error", e2);
+        // transport-init
+        if (e2 !== dummy) {
+          dispatchError(e2);
+          error = e2;
+          e2 = dummy;
+        }
+        try {
+          this.#serializerStopDelegate.call();
+        } catch (e) {
+          dispatchError(e);
+        }
+        throw e2;
+      }
+    } catch (e1) {
+      // serializer-init
+      if (e1 !== dummy) {
+        dispatchError(e1);
+        error = e1;
+        // e1 = dummy;
       }
       this.#cleanup();
-      throw e;
+      throw error;
+    } finally {
+      this.#vars.transition = null;
     }
   };
 
-  public stop = async () => {
-    if (this.#vars.state === BusState.STOPPED) return;
-    if (this.#vars.state !== BusState.STARTED)
-      return this.#callEventListeners("error", {
-        message: "Bus is not in `STARTED` state",
-        when: "stop",
-      });
-
-    this.#vars.state = BusState.STOPPING;
+  #stop = async () => {
+    const dispatchError = this.#dispatchError;
 
     if (!this.#vars.closed) {
+      // send doesn't throw but dispatchError
       if (this.#vars.bye) busEvents.terminate(this.#sta.bus.shinka.dataEvent);
 
       try {
         await this.#transportCloseDelegate.call();
       } catch (e) {
-        this.#callEventListeners("error", e);
+        dispatchError(e);
       }
     }
 
-    this.#serializerStopDelegate.call();
-    this.#limonStopDelegate.call();
+    try {
+      this.#serializerStopDelegate.call();
+    } catch (e) {
+      dispatchError(e);
+    }
 
-    this.#sta.nb.TA.lock.stop(this.#sta.nb.TA);
+    try {
+      this.#limonStopDelegate.call();
+    } catch (e) {
+      dispatchError(e);
+    }
+
+    try {
+      this.#sta.nb.TA.lock.stop(this.#sta.nb.TA);
+    } catch (e) {
+      dispatchError(e);
+    }
+
+    try {
+      this.#outscope.remove(this.#onOutScopeDelegate.call);
+    } catch (e) {
+      dispatchError(e);
+    }
 
     this.#cleanup();
-
-    this.#callEventListeners("disconnect", null);
   };
 
   public restart = async () => {
-    try {
-      await this.stop();
-    } catch (e) {
-      this.#callEventListeners("error", e);
-    }
+    await this.stop(); // doesn't throw
     await this.start();
   };
 
@@ -554,21 +635,33 @@ export class Bus<SO, TO, TC> implements IBus<SO, TO> {
 
       dispatchHandler(message as any);
     } catch (e) {
-      this.#callEventListeners("error", e);
+      this.#dispatchError(e);
     }
   };
 
   #cleanup = () => {
-    for (const cb of this.#resetStatesQueue) cb();
+    const dispatchError = this.#dispatchError;
+
+    for (const cb of this.#resetStatesQueue)
+      try {
+        cb();
+      } catch (e) {
+        dispatchError(e);
+      }
 
     this.#onOutScopeDelegate.reset();
-    this.#outscope.remove(this.#onOutScopeDelegate.call);
+
     this.#sendDelegate.reset();
     this.#serializerStopDelegate.reset();
     this.#limonStopDelegate.reset();
     this.#transportCloseDelegate.reset();
     this.#vars.bye = 0;
+    this.#lastDataAt.sent = 0;
+    this.#lastDataAt.received = 0;
 
     this.#vars.state = BusState.STOPPED;
+
+    this.#vars.transition = null;
+    this.#callEventListeners("disconnected", null);
   };
 }

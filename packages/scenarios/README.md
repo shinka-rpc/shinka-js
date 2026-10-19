@@ -30,6 +30,8 @@ asynchronous resource acquisition.
   behavior.
 - **`passThroughEvent`**, **`passThroughEvents`**, **`passThroughRequest`**, and
 **`passThroughRequests`** forward selected operations between Shinka endpoints.
+- **`reconnect`** helper automatically attempts to restart a `Bus` after it
+  disconnects.
 
 ## Example
 

@@ -6,8 +6,10 @@ import { baseListenerFactory } from "./base-listener-factory";
 import type { ShinkaEventListener, EventListenerType } from "./types";
 
 const eventListenerTypes: EventListenerType[] = [
-  "connect",
-  "disconnect",
+  "connected",
+  "connecting",
+  "disconnected",
+  "disconnecting",
   "error",
 ];
 

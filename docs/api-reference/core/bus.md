@@ -1,18 +1,11 @@
-# `Bus`
+# Bus
 
-`Bus` represents a single communication connection.
+`Bus` is the connection-level primitive of `@shinka-rpc/core`. It provides the
+lifecycle and messaging operations used by higher-level components such as
+[`Client`](./client.md), [`Server`](./server.md), [`Pool`](./pool.md), and
+[`Hub`](./hub.md).
 
-It is the connection-level primitive of `@shinka-rpc/core`. Higher-level
-abstractions such as [`Client`](./client.md), [`Server`](./server.md),
-[`Pool`](./pool.md) and [`Hub`](./hub.md) use `Bus` to represent and manage
-their individual connections.
-
-A `Bus` does not define the role of either endpoint. It only represents the
-communication channel between two peers.
-
-For example, both sides of a `DedicatedWorker` connection can be represented by
-`Bus` instances created through `Client`, even though one side happens to run
-inside a worker.
+A `Bus` represents a connection, not an endpoint role. Both sides of a connection—for example, two dedicated workers—can use a `Bus`-based abstraction.
 
 ## Connection model
 
@@ -38,341 +31,184 @@ Higher-level abstractions determine how connections are organized:
 See the respective documentation for [`Client`](./client.md),
 [`Server`](./server.md), [`Hub`](./hub.md) and [`Pool`](./pool.md).
 
-## Creating a `Bus`
+## Responsibilities
 
-Most applications do not need to construct `Bus` directly.
+A `Bus` coordinates the components required to exchange messages:
 
-A `Client` creates its own `Bus` internally:
+- **Transport** — moves serialized data between peers.
+- **Serializer** — converts application data to and from the transport representation.
+- **LiMon** — optionally monitors connection liveness.
+- **Lock** — optionally coordinates exclusive access to the outgoing channel.
+- **Outscope** — integrates the connection with an external lifecycle.
 
-```ts
-const client = new Client({ outscope, transport, serializer });
-```
-
-A `Server` and `Hub` create a `Bus` for every accepted connection.
-
-A `Pool` manages multiple `Bus` instances and exposes them through disposable proxies.
-
-Direct construction is primarily useful when building higher-level abstractions
-on top of `@shinka-rpc/core`.
-
-## Sending requests
-
-Use `request()` to send a request to the remote peer.
-
-```ts
-const metadata = await bus.request("meta", null);
-```
-
-A request has:
-
-* a `key` identifying the requested operation;
-* arbitrary request data;
-* an optional metadata object.
-
-The remote peer handles the request using `onRequest()`:
-
-```ts
-bus.onRequest("meta", async () => {
-  return await getMetadata();
-});
-```
-
-The returned value becomes the response of `request()`.
-
-### Request example
-
-The requesting side:
-
-```ts
-const user = await bus.request("user", { id: 42 });
-```
-
-The receiving side:
-
-```ts
-bus.onRequest("user", async (data) => {
-  return await getUser(data.id);
-});
-```
-
-Requests are asynchronous and return a `Promise`.
-
-The request response is subject to the configured response timeout. See the
-[`responseTimeout` documentation]().
-
-## Handling requests
-
-Use `onRequest()` to register a request handler.
-
-```ts
-bus.onRequest("user", async (data) => {
-  return await getUser(data.id);
-});
-```
-
-The handler receives the request key, request data, and the `Bus` itself as `thisArg`:
-
-```ts
-bus.onRequest("user", async (data, bus) => {
-  console.log("Request received through", bus);
-  return await getUser(data.id);
-});
-```
-
-The `thisArg` is particularly useful when the same handler registry is shared
-by multiple connections.
-
-For example, `Server` registers handlers once and passes the corresponding `Bus`
-to each handler.
-
-## Sending data events
-
-Use `dataEvent()` to send a one-way event to the remote peer.
-
-```ts
-bus.dataEvent("message", { text: "Hello" });
-```
-
-A data event does not produce a response.
-
-The remote side can subscribe with `onDataEvent()`:
-
-```ts
-bus.onDataEvent("message", (data, bus) => console.log(data.text));
-```
-
-Data events are useful for notifications, state updates, and other messages
-where request/response semantics are unnecessary.
-
-## Handling data events
-
-Register a handler with `onDataEvent()`:
-
-```ts
-bus.onDataEvent("message", (data) => console.log("Received:", data));
-```
-
-The handler receives:
-
-1. the event key;
-2. the event data;
-3. the `Bus` that received the event.
-
-```ts
-bus.onDataEvent("message", (data, bus) => console.log(data, bus));
-```
-
-## Starting a connection
-
-```ts
-await bus.start();
-```
-
-Starts the connection.
-
-The exact meaning of establishing a connection is determined by the configured
-transport. See the [transport documentation](../transports/).
-
-Once the bus is started, its request and event APIs can be used.
-
-The `connect` event is emitted after the bus has successfully completed its
-startup sequence.
-
-Calling `start()` on an already started bus has no effect.
-
-## Stopping a connection
-
-```ts
-await bus.stop();
-```
-
-Stops the connection and releases its resources.
-
-If the connection is currently active, the `disconnect` event is emitted after
-cleanup has completed.
-
-Stopping a bus also stops its serializer and liveness monitor, if configured.
-
-Calling `stop()` on an already stopped bus has no effect.
-
-## Restarting a connection
-
-```ts
-await bus.restart();
-```
-
-Equivalent to stopping the current connection and starting it again.
-
-```ts
-await bus.restart();
-```
-
-The bus can therefore be reused after it has been stopped.
-
-## Ping
-
-```ts
-const latency = await bus.ping();
-```
-
-Sends a ping request to the remote peer and returns the elapsed time in
-milliseconds.
-
-```ts
-const latency = await bus.ping();
-
-console.log(`Round-trip time: ${latency} ms`);
-```
-
-The returned value measures the request/response round trip rather than the
-underlying transport latency alone.
-
-## Events
-
-`Bus` supports three event types:
-
-```ts
-"connect" | "disconnect" | "error"
-```
-
-Register a listener with `addEventListener()`:
-
-```ts
-bus.addEventListener("connect", () => console.log("Connected"));
-bus.addEventListener("disconnect", () => console.log("Disconnected"));
-bus.addEventListener("error", console.error);
-```
-
-Remove a listener with `removeEventListener()`:
-
-```ts
-const onDisconnect = () => console.log("Disconnected");
-
-bus.addEventListener("disconnect", onDisconnect);
-bus.removeEventListener("disconnect", onDisconnect);
-```
-
-### `connect`
-
-Emitted when the bus has successfully started.
-
-### `disconnect`
-
-Emitted after the bus has been stopped and its resources have been cleaned up.
-
-A disconnect may be caused by:
-
-* an explicit call to `stop()`;
-* the underlying transport closing;
-* a liveness timeout;
-* another fatal connection condition.
-
-### `error`
-
-Emitted when an error occurs while operating the bus.
-
-```ts
-bus.addEventListener("error", console.error);
-```
-
-Errors are reported through the event system rather than being silently ignored.
-
-## Exclusive lock
-
-`Bus` provides `exclusiveLock()` for operations that require exclusive access to
-the communication channel.
-
-```ts
-{
-  await using lock = await bus.exclusiveLock(1000);
-  // exclusive operation
-}
-```
-
-The lock guarantees the required channel-level exclusivity between cooperating
-components.
-
-This mechanism is primarily intended for internal components and advanced
-integrations, for example when changing communication-related state that must
-not race with other messages.
-
-See the [exclusive lock documentation](../exclusive-lock.md).
-
-## `extra`
-
-```ts
-bus.extra
-```
-
-An application-defined storage object associated with the connection.
-
-`@shinka-rpc/core` does not assign any semantics to its contents.
-
-```ts
-bus.extra.session = session;
-bus.extra.authenticated = true;
-```
-
-When a `Bus` is obtained from a `Server` or `Hub`, this object belongs to that
-particular connection.
+These components are configurable. A `Bus` does not require every optional component to be present.
 
 ## Lifecycle
 
-A typical `Bus` lifecycle is:
+A `Bus` has four lifecycle states:
+
+| State | Meaning |
+| --- | --- |
+| `STOPPED` | No active Bus lifecycle. |
+| `STARTING` | The connection is being initialized. |
+| `STARTED` | The connection has been initialized successfully. |
+| `STOPPING` | The connection is being shut down. |
+
+The normal lifecycle is:
 
 ```mermaid
-flowchart LR
-    STOPPED -- "start()" --> STARTED -- "stop()" --> STOPPED
+stateDiagram-v2
+    [*] --> STOPPED
+    STOPPED --> STARTING: start()
+    STARTING --> STARTED: initialization succeeds
+    STARTING --> STOPPED: initialization fails and cleanup completes
+    STARTED --> STOPPING: stop()
+    STOPPING --> STOPPED: cleanup completes
 ```
 
-`restart()` performs the complete transition:
+### Starting
+
+`start()` initializes the components required for the connection and prepares the `Bus` to exchange messages.
+
+When initialization succeeds, the state becomes `STARTED` and the `connected` event is dispatched.
+
+If initialization fails:
+
+1. The original error is reported through the `error` event.
+2. Cleanup is attempted for the resources initialized so far.
+3. Cleanup errors are also reported, without replacing the original startup error.
+4. The lifecycle returns to `STOPPED`.
+5. The `start()` call rejects with the original startup error.
+
+A failed start does not permanently disable the instance. After cleanup completes, the `Bus` can be started again.
+
+### Stopping
+
+`stop()` attempts to shut down the connection and clean up its resources. The lifecycle returns to `STOPPED` even when individual cleanup operations fail.
+
+Errors encountered during shutdown are reported through the `error` event. They do not prevent subsequent cleanup steps from being attempted, and they do not cause `stop()` to reject merely because a cleanup operation failed.
+
+This is a best-effort cleanup guarantee: the `Bus` restores its internal lifecycle state, but it cannot guarantee that an external resource was successfully released when its own cleanup operation failed.
+
+Once cleanup completes, the `disconnected` event is dispatched.
+
+### Restarting
+
+`restart()` performs a stop followed by a start:
 
 ```mermaid
-flowchart LR
-    STARTED -- "restart()" --- STOPPED --> STARTED
+sequenceDiagram
+    participant Caller
+    participant Bus
+
+    Caller->>Bus: restart()
+    Bus->>Bus: stop()
+    Bus-->>Caller: stop completes
+    Caller->>Bus: start()
+    Bus-->>Caller: start result
 ```
 
-The bus cannot be started while it is already starting or stopping, and invalid
-lifecycle operations are reported through the `error` event.
+Because shutdown reports cleanup failures through `error` rather than rejecting `stop()`, a cleanup failure alone does not prevent `restart()` from proceeding to `start()`. If the subsequent start fails, the restart operation rejects with the startup error.
 
-## `Bus` as a low-level API
+## Concurrent lifecycle calls
 
-`Bus` is intentionally small.
+Lifecycle transitions are serialized. A `Bus` does not run its start and stop transition procedures concurrently.
 
-It does not manage:
+Concurrent calls are coordinated according to the transition already in progress:
 
-* multiple connections;
-* connection pools;
-* client/server roles;
-* application-level routing;
-* authentication;
-* application-specific state.
+- Calls requesting the same pending transition wait for its outcome.
+- Calls requesting the opposite transition wait for the current transition to settle, then re-evaluate the current state.
+- If the requested target state has already been reached, the operation can complete without starting another transition.
+- After a failed transition has been cleaned up, subsequent lifecycle operations can proceed.
 
-Those concerns belong to higher-level abstractions or to the application itself.
+For example, a `stop()` called while startup is pending waits for startup to settle before determining whether shutdown is needed.
 
-The core communication API is:
+```mermaid
+sequenceDiagram
+    participant Caller
+    participant Bus
 
-```ts
-bus.request(key, data);
-bus.dataEvent(key, data);
+    Caller->>Bus: start()
+    Bus-->>Caller: connecting
+    Caller->>Bus: start()
+    Note over Bus: The second call joins the pending start
 
-bus.onRequest(key, handler);
-bus.onDataEvent(key, handler);
+    Bus-->>Caller: connected
+    Bus-->>Caller: Both start calls settle
+
+    Caller->>Bus: stop()
+    Bus-->>Caller: disconnecting
+    Caller->>Bus: start()
+    Note over Bus: The new start waits for the pending stop
+
+    Bus-->>Caller: disconnected
+    Bus-->>Caller: connecting
+    Bus-->>Caller: connected
 ```
 
-Connection lifecycle is managed through:
+The exact interleaving of caller continuations is not part of the lifecycle contract. In particular, code awaiting several lifecycle calls must not assume that its own completion markers will be observed before the next lifecycle event.
 
-```ts
-await bus.start();
-await bus.stop();
-await bus.restart();
-```
+## Events
 
-And connection diagnostics through:
+A `Bus` exposes the following event types:
 
-```ts
-await bus.ping();
-```
+| Event | Meaning |
+| --- | --- |
+| `connecting` | A transition to `STARTING` has begun. |
+| `connected` | Initialization succeeded and the `Bus` reached `STARTED`. |
+| `disconnecting` | A transition to `STOPPING` has begun. |
+| `disconnected` | Shutdown or failed-start cleanup has completed and the `Bus` reached `STOPPED`. |
+| `error` | An error occurred during initialization or cleanup. |
 
-This makes `Bus` suitable as the common building block for both simple one-to-one
-connections and more complex connection managers.
+Lifecycle events are dispatched asynchronously using `queueMicrotask`. Do not treat event listeners as synchronous callbacks of `start()` or `stop()`.
+
+The lifecycle event sequence describes the `Bus` state transitions. It does not impose a global ordering on unrelated callbacks, promise continuations, or logging performed by application code.
+
+## Messaging API
+
+`Bus` also provides operations for application-level messaging:
+
+- `request()` — sends a request and awaits its response.
+- `dataEvent()` — sends a data event.
+- `onRequest()` — registers request handlers.
+- `onDataEvent()` — registers data-event handlers.
+- `ping()` — measures round-trip time.
+- `exclusiveLock()` — reserves exclusive access to the outgoing channel.
+- `extra` — exposes the additional data associated with the `Bus`.
+
+The precise behavior of these operations depends on the configured transport, serializer, and optional components.
+
+### Exclusive access
+
+An exclusive lock reserves the outgoing channel for a critical section. Messages produced while the lock is held can be buffered and sent when the lock is released.
+
+The reservation concerns writing to the transport: it does not necessarily mean that no messages are pending in memory. This can be useful for operations such as rotating a serialization or encryption key without interleaving writes that use different configurations.
+
+## Configuration
+
+A `Bus` is configured through `BusProps`:
+
+| Property | Required | Purpose |
+| --- | --- | --- |
+| `outscope` | Yes | Integrates the connection with an external lifecycle. |
+| `transport` | Yes | Provides the underlying communication transport. |
+| `serializer` | No | Configures message serialization. |
+| `limon` | No | Configures optional liveness monitoring. |
+| `lock` | No | Configures optional exclusive-channel coordination. |
+| `responseTimeout` | No | Configures the response timeout. |
+
+The default serializer configuration uses an array root. Transport and serializer implementations can provide additional configuration options.
+
+## Lifecycle guarantees
+
+The lifecycle implementation is designed to provide the following guarantees:
+
+- At most one lifecycle transition procedure is active at a time.
+- Concurrent calls targeting the same pending transition share its outcome.
+- Opposite transitions are serialized and re-evaluate the state before proceeding.
+- A failed start attempts cleanup, reports the original error, and restores the internal state to `STOPPED`.
+- Shutdown attempts all applicable cleanup steps, reports cleanup errors, and restores the internal state to `STOPPED`.
+- The instance remains eligible for a subsequent lifecycle operation after a transition failure.
+- Lifecycle events describe the transition and resulting state; they do not guarantee ordering relative to unrelated application-level continuations.
+
+These guarantees concern the `Bus` lifecycle and its internal state. They do not guarantee that a failing external transport or integration has successfully released every resource.

@@ -1,6 +1,6 @@
 import { expect, test } from "@jest/globals";
 
-import { delegate } from "@shinka-rpc/util";
+import { delegate } from "../src";
 
 test("delegate-1-arg", () => {
   const results: [string, number][] = [];

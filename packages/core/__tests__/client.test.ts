@@ -1,5 +1,5 @@
 import { expect, test } from "@jest/globals";
-import outscope from "../../outscope/src/tests";
+import testOutScope from "../../outscope/src/tests";
 import { defaultExclusiveLock } from "../../exclusive-lock/src";
 import { sleep } from "../../util";
 
@@ -39,6 +39,7 @@ const setupClientClient = async <TO>(
   delays: [number, number] = [0, 0],
   lock: ExclusiveLock<any, any, any> | undefined = undefined,
 ) => {
+  const { outscope, outscopeState } = testOutScope();
   const results: Record<string, any>[] = [];
   const TA = {} as any as TAs;
 
@@ -70,19 +71,19 @@ const setupClientClient = async <TO>(
   bus1.addEventListener("error", console.error);
   bus2.addEventListener("error", console.error);
 
-  bus1.addEventListener("connect", () =>
+  bus1.addEventListener("connected", () =>
     results.push({ key: "bus1-event", val: "connect" }),
   );
 
-  bus1.addEventListener("disconnect", () =>
+  bus1.addEventListener("disconnected", () =>
     results.push({ key: "bus1-event", val: "disconnect" }),
   );
 
-  bus2.addEventListener("connect", () =>
+  bus2.addEventListener("connected", () =>
     results.push({ key: "bus2-event", val: "connect" }),
   );
 
-  bus2.addEventListener("disconnect", () =>
+  bus2.addEventListener("disconnected", () =>
     results.push({ key: "bus2-event", val: "disconnect" }),
   );
 
@@ -96,7 +97,7 @@ const setupClientClient = async <TO>(
     await bus2.stop();
   };
 
-  return { results, bus1, bus2, start, stop, TA };
+  return { results, bus1, bus2, start, stop, TA, outscopeState };
 };
 
 // === sync

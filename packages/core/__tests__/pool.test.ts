@@ -1,5 +1,5 @@
 import { expect, test } from "@jest/globals";
-import outscope from "../../outscope/src/tests";
+import testOutScope from "../../outscope/src/tests";
 import { sequence, sleep } from "../../util";
 import { Asynq } from "../../concurrency";
 import { FIFO } from "../../collections";
@@ -116,13 +116,14 @@ test("pool", async () => {
     busKeyFn: () => `bus-${busSeq()}`,
     clientKeyFn: () => `client-${clientSeq()}`,
   };
+  const { outscope, outscopeState } = testOutScope();
   const serverBus: IBus<any, any>[] = [];
   const server = new Server({
     outscope,
     transport: fakeTransportServer(token),
   });
 
-  server.addEventListener("connect", (bus) => serverBus.push(bus));
+  server.addEventListener("connected", (bus) => serverBus.push(bus));
 
   createSyncHandler("server-sync", server, results);
   createDataEventHandler("server-event", server, results);
@@ -134,11 +135,11 @@ test("pool", async () => {
     transport: clientTransport,
   });
 
-  pool.addEventListener("connect", (bus) =>
+  pool.addEventListener("connected", (bus) =>
     bus.addEventListener("error", console.error),
   );
 
-  pool.addEventListener("disconnect", (bus) =>
+  pool.addEventListener("disconnected", (bus) =>
     bus.removeEventListener("error", console.error),
   );
 
@@ -160,7 +161,7 @@ test("pool", async () => {
   {
     // use-case: pool -> server
     using bus = await pool.acquire();
-    bus.addEventListener("connect", console.info);
+    bus.addEventListener("connected", console.info);
     busProxy = bus;
     results.push({
       key: "pool-response",
@@ -168,7 +169,7 @@ test("pool", async () => {
     });
     await bus.ping();
     bus.dataEvent("server-event", "bus-server");
-    bus.removeEventListener("connect", console.info);
+    bus.removeEventListener("connected", console.info);
 
     await bus.start(); // nothing
   }
@@ -176,6 +177,10 @@ test("pool", async () => {
   expect(() =>
     serverSyncService(busProxy, "bus-server", true, true, true),
   ).toThrow();
+
+  expect(busProxy.stop).toThrow();
+  expect(busProxy.restart).toThrow();
+  expect(busProxy.exclusiveLock.bind(0, 0)).toThrow();
 
   // use-case: server -> pool
   results.push({
@@ -187,6 +192,14 @@ test("pool", async () => {
   await pool.setSize(0);
 
   await sleep(0);
+
+  await expect(() => pool.setSize(-1)).rejects.toThrow();
+
+  pool.size = 0;
+
+  await sleep(0);
+
+  pool.size;
 
   pool.removeEventListener("error", console.error);
 

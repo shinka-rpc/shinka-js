@@ -28,17 +28,44 @@ const fromFive = sequence(5);
 
 ## sleep
 
-Simple wrapper over `setTimeout` and `Promise`
-
-```typescript
-import { sleep } from "@shinka-rpc/util";
-
-await sleep(250);
-```
+Abortable wrapper over `setTimeout` and `Promise`
 
 **API Reference**:
 
 - **Required** time: `Number` of milliseconds, passed directly to `setTimeout`
+- **Optional** opts: `Object`: `{ signal?: AbortSignal }`
+
+### Import
+
+```typescript
+import { sleep } from "@shinka-rpc/util";
+```
+
+### Usage
+
+Simple case:
+
+```typescript
+await sleep(250);
+```
+
+Aborting:
+
+```typescript
+const abort = new AbortController();
+const sleepPromise = sleep(250, { signal: abort.signal });
+abort.abort("example");
+await sleepPromise; // throws "example"
+```
+
+Already aborted (lines 2 and 3 have been swapped):
+
+```typescript
+const abort = new AbortController();
+abort.abort("example");
+const sleepPromise = sleep(250, { signal: abort.signal });
+await sleepPromise; // throws "example"
+```
 
 ## delegate
 

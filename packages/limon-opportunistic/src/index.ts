@@ -102,6 +102,10 @@ export default ({
 
       const start = () => {
         if (thisArg.state.timeoutId === null) return;
+        thisArg.shinka.dataEvent(
+          OpportunisticLiMonEventKeys.EXTERNAL,
+          thisArg.state.ownTimeout,
+        );
         scheduler(thisArg);
       };
       const stop = () => {
@@ -112,4 +116,4 @@ export default ({
 
       return { start, stop };
     };
-  }) as LiMon<any, any, LiMonOpportunisticState>;
+  }) satisfies LiMon<any, any, LiMonOpportunisticState>;

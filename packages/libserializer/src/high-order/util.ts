@@ -41,7 +41,7 @@ export const nextMime = (mime: StructuredMimeType, mimeSubType: string) =>
   }) satisfies StructuredMimeType;
 
 export const compose = (
-  callbacks: (() => void)[],
+  callbacks: Iterable<() => void>,
   dispatchError: (err: any) => void,
 ) => {
   return () => {

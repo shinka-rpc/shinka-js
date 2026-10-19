@@ -1,4 +1,9 @@
-export type EventListenerType = "connect" | "disconnect" | "error";
+export type EventListenerType =
+  | "connected"
+  | "connecting"
+  | "disconnected"
+  | "disconnecting"
+  | "error";
 
 export type ShinkaEventListener<B> = (bus: B, payload: any) => void;
 export type ShinkaEventListenerSet<B> = Set<ShinkaEventListener<B>>;

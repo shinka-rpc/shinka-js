@@ -1,6 +1,6 @@
 {
   "name": "@shinka-rpc/scenarios",
-  "version": "0.1.0-alpha.4",
+  "version": "0.1.0-alpha.5",
   "publishConfig": {
     "access": "public",
     "tag": "alpha"
@@ -35,6 +35,8 @@
     "default": "./src/index.ts"
   },
   "dependencies": {
-    "@shinka-rpc/core": "^0.1.0-alpha.0"
+    "@shinka-rpc/core": "^0.1.0-alpha.0",
+    "@shinka-rpc/concurrency": "^0.0.1-alpha.0",
+    "@shinka-rpc/util": "^0.0.2"
   }
 }

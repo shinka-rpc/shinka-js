@@ -248,6 +248,10 @@ const config = defineConfig({
                   text: "SingleFlight",
                   link: "/api-reference/scenarios/single-flight",
                 },
+                {
+                  text: "Reconnect",
+                  link: "/api-reference/scenarios/reconnect",
+                },
               ],
             },
             {

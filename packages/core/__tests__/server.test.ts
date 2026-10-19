@@ -1,9 +1,10 @@
 import { expect, test } from "@jest/globals";
-import outscope from "../../outscope/src/tests";
+import testOutScope from "../../outscope/src/tests";
 
 import {
   Client,
   Server,
+  TransportServer,
   type IBus,
   type SerializerRoot,
   type ShinkaOn,
@@ -44,10 +45,14 @@ const fakeTransportServer = (
     dispatch(onRawData);
     return { send, close, instruction: {}, context: null };
   };
-  return (
+  return ((
     shinkaOn: ShinkaOn<any, any, any>,
     connect: TransportConnectFn<any, any, any, null>,
-  ) => setTimeout(connect, 0, tf);
+    eventListeners,
+  ) => {
+    eventListeners.add("started", connect.bind(0, tf));
+    eventListeners.remove("started", console.log);
+  }) satisfies TransportServer<any, any, any, any>;
 };
 
 const setupClientServer = async (
@@ -56,6 +61,7 @@ const setupClientServer = async (
     results: Record<string, any>[],
   ) => SerializerRoot<any, any, any>,
 ) => {
+  const { outscope, outscopeState } = testOutScope();
   const results: Record<string, any>[] = [];
 
   const { 0: pipe1to2, 1: pipe2to1 } = mkPipePair(0, 0);
@@ -66,11 +72,11 @@ const setupClientServer = async (
     serializer: createSerializer("client1", results),
   });
 
-  client.addEventListener("connect", () =>
+  client.addEventListener("connected", () =>
     results.push({ key: "client1-event", val: "connect" }),
   );
 
-  client.addEventListener("disconnect", () =>
+  client.addEventListener("disconnected", () =>
     results.push({ key: "client1-event", val: "disconnect" }),
   );
 
@@ -88,12 +94,12 @@ const setupClientServer = async (
     serializer: createSerializer("server", results),
   });
 
-  server.addEventListener("connect", (bus) => {
+  server.addEventListener("connected", (bus) => {
     connectPromiseHandler.resolve(bus);
     results.push({ key: "server-event", val: "connect" });
   });
 
-  server.addEventListener("disconnect", () =>
+  server.addEventListener("disconnected", () =>
     results.push({ key: "server-event", val: "disconnect" }),
   );
 
@@ -124,6 +130,8 @@ test("server", async () => {
     key: "bus-sync-response-got",
     out: await busSync(bus, "bus-sync", true, true, true),
   });
+
+  server.size;
 
   await client.stop();
   // await bus.stop();

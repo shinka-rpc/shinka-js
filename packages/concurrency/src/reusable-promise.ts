@@ -8,7 +8,7 @@ type ResolveFn<P> = (value: P) => void;
 type State<P> = {
   promise: Promise<P>;
   resolve: ResolveFn<P>;
-  reject: ResolveFn<P>;
+  reject: ResolveFn<any>;
   done: boolean;
 };
 
@@ -45,7 +45,7 @@ export class ReusablePromise<P> {
   #renewExecutor: PromiseExecutor<P>;
 
   public resolve: ResolveFn<P>;
-  public reject: ResolveFn<P>;
+  public reject: ResolveFn<any>;
 
   constructor() {
     const state: Partial<State<P>> = {};

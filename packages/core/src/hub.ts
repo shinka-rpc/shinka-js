@@ -33,7 +33,7 @@ export class Hub<SO = any, TO = any, TC = any> {
     this.#disposing.resolve();
   }
 
-  #onClientDisconnect = (bus: Bus<SO, TO, TC>) => this.#clients.delete(bus);
+  #onClientDisconnected = (bus: Bus<SO, TO, TC>) => this.#clients.delete(bus);
 
   public connect = async ({
     outscope,
@@ -59,9 +59,10 @@ export class Hub<SO = any, TO = any, TC = any> {
     );
 
     objectFreeze(bus);
-    bus.addEventListener("disconnect", this.#onClientDisconnect);
-    this.#clients.add(bus);
+    bus.addEventListener("disconnected", this.#onClientDisconnected);
+
     await bus.start();
+    this.#clients.add(bus);
 
     return bus;
   };
