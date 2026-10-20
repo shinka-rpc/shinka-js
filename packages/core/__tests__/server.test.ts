@@ -19,7 +19,7 @@ import {
   // createMockSerializerAsync,
   createMockSerializerSync,
   createSyncHandler,
-  createMockBusService,
+  createRequestBusService,
   // createAsyncHandler,
 } from "./util";
 
@@ -116,10 +116,10 @@ test("server", async () => {
     createMockSerializerSync,
   );
   createSyncHandler("server-sync", server, results);
-  const clientSync = createMockBusService("server-sync");
+  const clientSync = createRequestBusService("server-sync");
 
   createSyncHandler("client-sync", client, results);
-  const busSync = createMockBusService("client-sync");
+  const busSync = createRequestBusService("client-sync");
 
   results.push({
     key: "client-sync-response-got",

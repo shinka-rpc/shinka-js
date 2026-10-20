@@ -10,8 +10,8 @@ import type {
   MessageResponse,
   RequestHandler,
   ShinkaMeta,
-  DispatchError,
   ShinkaVars,
+  DispatchError,
 } from "./types";
 import type {
   MessageTypeAllRequest,
@@ -50,16 +50,16 @@ const createOnResponse =
     callback(body);
   };
 
-type MaybeEventHandler<TA> =
-  | ((body: any, thisArg: TA, dispatchError: DispatchError) => void)
+type MaybeEventHandler<TA, B, R> =
+  | ((body: B, thisArg: TA, dispatchError: DispatchError) => R)
   | undefined;
 
-export const reqrsp = <SO, TO, TA>(
+export const reqrsp = <SO, TO, TA, B>(
   requestType: MessageTypeAllRequest,
   eventType: MessageTypeAllEvent,
   responseTypes: [MessageTypeAllError, MessageTypeAllSuccess],
   onRequest: RequestHandler<SO, TO, TA, any>,
-  getDataEvent: (key: DataEventKey) => MaybeEventHandler<TA>,
+  getDataEvent: (key: DataEventKey) => MaybeEventHandler<TA, B, void>,
   timeout: number,
 ) => {
   const pending: PendingMap = new Map();
@@ -108,7 +108,7 @@ export const reqrsp = <SO, TO, TA>(
     const { 1: body, 2: key } = message;
     const cb = getDataEvent(key);
     if (!cb) return vars.dispatchError!({ type: "no event handler", key });
-    cb(body, vars.thisArg!, vars.dispatchError!);
+    cb(body, vars.thisArg!, vars.dispatchError);
   };
 
   const eventSend = (

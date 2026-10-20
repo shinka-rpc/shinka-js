@@ -1,19 +1,20 @@
-import type { DataEventKey, ReqRegEntry, RequestHandlerFn } from "./types";
-import hooks from "./hook";
-import { createRegistry, makeRequestRegistryHook } from "./util";
+import hooksRequest from "./hook-request";
+import hooksEvent from "./hook-event";
+import {
+  createRegistry,
+  makeRequestRegistryHook,
+  makeEventRegistryHook,
+} from "./util";
 
-const requestRegistryHook = makeRequestRegistryHook(hooks);
+const requestRegistryHook = makeRequestRegistryHook(hooksRequest);
+const eventRegistryHook = makeEventRegistryHook(hooksEvent);
 
 export const createReqRegistry = <SO, TO, TA, B, R>() =>
-  createRegistry<
-    DataEventKey,
-    RequestHandlerFn<SO, TO, TA, B>,
-    ReqRegEntry<SO, TO, TA, B, R>
-  >(requestRegistryHook);
+  createRegistry(requestRegistryHook<SO, TO, TA, B, R>);
 
 export type ReqRegistryType = ReturnType<typeof createReqRegistry>;
 
 export const createEventRegistry = <TA, B>() =>
-  createRegistry<DataEventKey, (data: B, thisArg: TA) => void>();
+  createRegistry(eventRegistryHook<TA>);
 
 export type EventRegistryType = ReturnType<typeof createEventRegistry>;

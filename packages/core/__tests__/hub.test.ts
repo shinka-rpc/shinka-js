@@ -10,7 +10,7 @@ import {
   // createMockSerializerAsync,
   createMockSerializerSync,
   createSyncHandler,
-  createMockBusService,
+  createRequestBusService,
   // createAsyncHandler,
 } from "./util";
 
@@ -79,7 +79,7 @@ test("hub-classic", async () => {
     createMockSerializerSync,
   );
   createSyncHandler("bus1-sync", hub, results);
-  const clientService = createMockBusService("bus1-sync");
+  const clientService = createRequestBusService("bus1-sync");
   const common = await start();
 
   results.push({
@@ -119,7 +119,7 @@ test("hub-reverse", async () => {
   );
   createSyncHandler("bus1-sync", client, results);
   const common = await start();
-  const commonService = createMockBusService("bus1-sync");
+  const commonService = createRequestBusService("bus1-sync");
 
   results.push({
     key: "bus1-sync-response-got",

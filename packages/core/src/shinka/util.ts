@@ -7,6 +7,11 @@ import type {
   DispatchError,
   ReqRegEntry,
   ReqRegEntryCb,
+  EvRegEntryCb,
+  EvRegEntry,
+  MetaTypeHint,
+  ShinkaOnDataEvent,
+  ShinkaOnDataEventHandler,
 } from "./types";
 
 const splitMetadataHint = <SO, TO>(
@@ -73,6 +78,15 @@ export const asOnRequest =
     reqSet(key, [cb, metadata, hint]);
   };
 
+export const asOnDataEvent =
+  <TA, B>(evSet: (key: DataEventKey, val: EvRegEntry<TA>) => void) =>
+  (
+    key: DataEventKey,
+    cb: ShinkaOnDataEventHandler<TA>,
+    { hint }: MetaTypeHint = {},
+  ) =>
+    evSet(key, [cb, hint]);
+
 export type Hooks = {
   Function: <SO, TO, TA, B, R>(
     cb: ReqRegEntryCb<TA, B, R>,
@@ -92,3 +106,17 @@ export const makeRequestRegistryHook =
     2: hint,
   }: ReqRegEntry<SO, TO, TA, B, R>) =>
     hooks[hint || (cb.constructor.name as FnConstructorName)](cb, metadata);
+
+export type EventHooks = {
+  Function: <TA, B>(
+    cb: (body: B, thisArg: TA) => void,
+  ) => (body: B, thisArg: TA, dispatchError: DispatchError) => void;
+  AsyncFunction: <TA, B>(
+    cb: (body: B, thisArg: TA) => Promise<void>,
+  ) => (body: B, thisArg: TA, dispatchError: DispatchError) => Promise<void>;
+};
+
+export const makeEventRegistryHook =
+  (hooks: EventHooks) =>
+  <TA>({ 0: cb, 1: hint }: EvRegEntry<TA>) =>
+    hooks[hint || (cb.constructor.name as FnConstructorName)](cb as any);

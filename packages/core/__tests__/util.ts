@@ -129,16 +129,35 @@ export const createAsyncHandler = (
     },
   );
 
-export const createDataEventHandler = (
+export const createSyncDataEventHandler = (
   key: string,
   bus: ShinkaOn<any, any, any>,
   results: Record<string, any>[],
 ) =>
-  bus.onDataEvent(key, (arg: any) => {
-    results.push({ key: "data-event", arg });
-  });
+  bus.onDataEvent(
+    key,
+    ([arg, ok]: any) => {
+      results.push({ key: "data-event", arg });
+      if (!ok) throw arg;
+    },
+    { hint: "Function" },
+  );
 
-export const createMockBusService =
+export const createAsyncDataEventHandler = (
+  key: string,
+  bus: ShinkaOn<any, any, any>,
+  results: Record<string, any>[],
+) =>
+  bus.onDataEvent(
+    key,
+    async ([arg, ok]: any) => {
+      results.push({ key: "data-event", arg });
+      if (!ok) throw arg;
+    },
+    { hint: "AsyncFunction" },
+  );
+
+export const createRequestBusService =
   (KEY: string) =>
   (
     bus: ShinkaDo<any, any>,
@@ -154,6 +173,20 @@ export const createMockBusService =
         ? {
             serialize: `${KEY}-req-serialize`,
             transport: `${KEY}-req-transport`,
+          }
+        : undefined,
+    );
+
+export const createEventBusService =
+  (KEY: string) =>
+  (bus: ShinkaDo<any, any>, arg: any, ok: Boolean, withOpts: Boolean) =>
+    bus.dataEvent(
+      KEY,
+      [arg, ok],
+      withOpts
+        ? {
+            serialize: `${KEY}-ev-serialize`,
+            transport: `${KEY}-ev-transport`,
           }
         : undefined,
     );

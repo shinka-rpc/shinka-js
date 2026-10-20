@@ -1,7 +1,7 @@
 import { reqrsp } from "./request-response";
 
 import { createEventRegistry, createReqRegistry } from "./registry";
-import { createDispatchRequest, asOnRequest } from "./util";
+import { createDispatchRequest, asOnRequest, asOnDataEvent } from "./util";
 import type { MessageTypeGroup } from "./message-type";
 
 import type { DispatchMap, Shinka, ShinkaOn } from "./types";
@@ -10,8 +10,9 @@ const { freeze: objectFreeze } = Object;
 
 export const createHandlerRegistries = <SO, TO, TA>() => {
   const { 0: reqGet, 1: reqSet } = createReqRegistry<SO, TO, TA, any, any>();
-  const { 0: evGet, 1: onDataEvent } = createEventRegistry<TA, any>();
+  const { 0: evGet, 1: evSet } = createEventRegistry<TA, any>();
   const onRequest = asOnRequest(reqSet);
+  const onDataEvent = asOnDataEvent<TA, any>(evSet);
   const dispatchRequest = createDispatchRequest(reqGet);
   return objectFreeze({
     evGet,

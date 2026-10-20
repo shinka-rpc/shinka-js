@@ -50,6 +50,10 @@ export type ShinkaMeta<SO, TO> = {
   serialize?: SO;
 };
 
+export type MetaTypeHint = {
+  hint?: FnConstructorName;
+};
+
 export type SendFn<SO, TO> = (
   message: Message<any>,
   metadata?: ShinkaMeta<SO, TO>,
@@ -67,13 +71,13 @@ export type ShinkaVarsSetter<SO, TO, TA> = (
   vars: Partial<ShinkaVars<SO, TO, TA>>,
 ) => void;
 
-export type MetadataWithHint<SO, TO> = ShinkaMeta<SO, TO> & {
-  hint?: FnConstructorName;
-};
+export type MetadataWithHint<SO, TO> = ShinkaMeta<SO, TO> & MetaTypeHint;
+
+export type ShinkaOnRequestHandler<TA> = (data: any, thisArg: TA) => any;
 
 export type ShinkaOnRequest<SO, TO, TA> = (
   key: DataEventKey,
-  cb: (data: any, thisArg: TA) => any,
+  cb: ShinkaOnRequestHandler<TA>,
   metadataWithHint?: MetadataWithHint<SO, TO>,
 ) => void;
 
@@ -83,9 +87,12 @@ export type ShinkaDoRequest<SO, TO> = <T>(
   metadata?: ShinkaMeta<SO, TO>,
 ) => Promise<T>;
 
+export type ShinkaOnDataEventHandler<TA> = (data: any, thisArg: TA) => void;
+
 export type ShinkaOnDataEvent<TA> = (
   key: DataEventKey,
-  val: (data: any, thisArg: TA) => void,
+  val: ShinkaOnDataEventHandler<TA>,
+  metadata?: MetaTypeHint,
 ) => void;
 
 export type ShinkaDoDataEvent<SO, TO> = (
@@ -126,5 +133,14 @@ export type ReqRegEntryCb<TA, B, R> = (body: B, thisArg: TA) => R;
 export type ReqRegEntry<SO, TO, TA, B, R> = [
   ReqRegEntryCb<TA, B, R>,
   ShinkaMeta<SO, TO> | undefined,
+  FnConstructorName | undefined,
+];
+
+export type EvRegEntryCb<TA, B, R> = (
+  cb: (body: B, thisArg: TA) => R,
+) => (body: B, thisArg: TA, dispatchError: DispatchError) => R;
+
+export type EvRegEntry<TA> = [
+  ShinkaOnDataEventHandler<TA>,
   FnConstructorName | undefined,
 ];

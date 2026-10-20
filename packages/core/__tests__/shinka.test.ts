@@ -4,7 +4,7 @@ import { sleep } from "../../util";
 import {
   createSyncHandler,
   createAsyncHandler,
-  createDataEventHandler,
+  createSyncDataEventHandler,
 } from "./util";
 
 import { createHandlerRegistries, completeShinka } from "../src/shinka/shinka";
@@ -36,11 +36,11 @@ test("high-order-shinka", async () => {
 
   createSyncHandler("sync", shinkaOn0, results);
   createAsyncHandler("async", shinkaOn0, results);
-  createDataEventHandler("event", shinkaOn0, results);
+  createSyncDataEventHandler("event", shinkaOn0, results);
 
   createSyncHandler("sync", shinkaOn1, results);
   createAsyncHandler("async", shinkaOn1, results);
-  createDataEventHandler("event", shinkaOn1, results);
+  createSyncDataEventHandler("event", shinkaOn1, results);
 
   shinkaOn0.onDataEvent("my-event", (value, thisArg) => {
     results.push(["my-event@0", value, thisArg.id]);
@@ -171,13 +171,21 @@ test("high-order-shinka", async () => {
   // @ts-ignore
   onDataEvent(msgEvent2);
 
-  const msgEvent3: MessageDataEvent<any> = [3, ["event", "data"], 1];
+  const msgEvent3: MessageDataEvent<any> = [
+    3,
+    ["event", ["data", true, false]],
+    1,
+  ];
 
   // @ts-ignore
   onDataEvent(msgEvent3);
 
   for (let i = 0; i < 2; i++) {
-    const msgEvent: MessageDataEvent<any> = [3, ["my-event", "data"], i];
+    const msgEvent: MessageDataEvent<any> = [
+      3,
+      ["my-event", ["data", true, false]],
+      i,
+    ];
 
     // @ts-ignore
     onDataEvent(msgEvent);
@@ -197,20 +205,20 @@ test("high-order-shinka", async () => {
     { key: "sync-request", arg: 3 },
     { key: "async-request", arg: 4 },
     [1, 0, "nested-response-send"],
-    { transport: "sync-transport", serialize: "sync-serialize" },
+    { serialize: "sync-serialize", transport: "sync-transport" },
     [1, 0, "nested-response-send"],
-    { transport: "async-transport", serialize: "async-serialize" },
+    { serialize: "async-serialize", transport: "async-transport" },
     { key: "sync-request", arg: 5 },
     { key: "async-request", arg: 6 },
     [2, 0, "nested-response-send"],
-    { transport: "sync-transport", serialize: "sync-serialize" },
+    { serialize: "sync-serialize", transport: "sync-transport" },
     [2, 0, "nested-response-send"],
-    { transport: "async-transport", serialize: "async-serialize" },
+    { serialize: "async-serialize", transport: "async-transport" },
     "Unable to find handler wrong-sync",
-    { key: "data-event", arg: "data" },
+    { key: "data-event", arg: "d" },
     "Unable to find handler wrong-event",
     { key: "data-event", arg: "data" },
-    ["my-event@0", "data", 0],
-    ["my-event@1", "data", 1],
+    ["my-event@0", ["data", true, false], 0],
+    ["my-event@1", ["data", true, false], 1],
   ]);
 });

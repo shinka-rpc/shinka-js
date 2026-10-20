@@ -84,7 +84,7 @@ export type BusHandlerRegistries<SO, TO, STATE> = HandlerRegistries<
 export type SerializedData = string | Uint8Array | Message<any>;
 
 export type ProcessData<B> = [DataEventKey, B];
-export type DataEventHandler<TA, B> = (
+export type ___DataEventHandler<TA, B> = (
   key: DataEventKey,
   data: B,
   thisArg: TA,

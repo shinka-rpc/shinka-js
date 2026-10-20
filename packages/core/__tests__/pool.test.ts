@@ -21,8 +21,9 @@ import {
   // createMockSerializerAsync,
   // createMockSerializerSync,
   createSyncHandler,
-  createDataEventHandler,
-  createMockBusService,
+  createSyncDataEventHandler,
+  createRequestBusService,
+  createEventBusService,
   // createAsyncHandler,
 } from "./util";
 
@@ -126,7 +127,7 @@ test("pool", async () => {
   server.addEventListener("connected", (bus) => serverBus.push(bus));
 
   createSyncHandler("server-sync", server, results);
-  createDataEventHandler("server-event", server, results);
+  createSyncDataEventHandler("server-event", server, results);
 
   const clientTransport = fakeTransportClient(token, results);
   const pool = new Pool({
@@ -145,9 +146,10 @@ test("pool", async () => {
 
   createSyncHandler("pool-sync", pool, results);
 
-  const serverSyncService = createMockBusService("server-sync");
-  const serverEventService = createMockBusService("server-event");
-  const poolSyncService = createMockBusService("pool-sync");
+  const serverSyncService = createRequestBusService("server-sync");
+  const serverEventService = createRequestBusService("server-event");
+  const poolSyncService = createRequestBusService("pool-sync");
+  const poolEventService = createEventBusService("server-event");
 
   server.start();
 
@@ -168,7 +170,7 @@ test("pool", async () => {
       opts: await serverSyncService(bus, "bus-server", true, true, true),
     });
     await bus.ping();
-    bus.dataEvent("server-event", "bus-server");
+    poolEventService(bus, "bus-server", true, false);
     bus.removeEventListener("connected", console.info);
 
     await bus.start(); // nothing
@@ -236,7 +238,10 @@ test("pool", async () => {
     { key: "bus-0", opts: { value: [5, 0, 1], opts: undefined } },
     {
       key: "client-0",
-      opts: { value: [3, "bus-server", "server-event"], opts: undefined },
+      opts: {
+        value: [3, ["bus-server", true], "server-event"],
+        opts: undefined,
+      },
     },
     {
       key: "bus-0",
