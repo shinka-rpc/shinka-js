@@ -14,7 +14,7 @@ export const createReqRegistry = <SO, TO, TA, B, R>() =>
 
 export type ReqRegistryType = ReturnType<typeof createReqRegistry>;
 
-export const createEventRegistry = <TA, B>() =>
+export const createEventRegistry = <TA>() =>
   createRegistry(eventRegistryHook<TA>);
 
 export type EventRegistryType = ReturnType<typeof createEventRegistry>;

@@ -10,7 +10,7 @@ const { freeze: objectFreeze } = Object;
 
 export const createHandlerRegistries = <SO, TO, TA>() => {
   const { 0: reqGet, 1: reqSet } = createReqRegistry<SO, TO, TA, any, any>();
-  const { 0: evGet, 1: evSet } = createEventRegistry<TA, any>();
+  const { 0: evGet, 1: evSet } = createEventRegistry<TA>();
   const onRequest = asOnRequest(reqSet);
   const onDataEvent = asOnDataEvent<TA, any>(evSet);
   const dispatchRequest = createDispatchRequest(reqGet);

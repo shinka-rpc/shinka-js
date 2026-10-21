@@ -6,18 +6,17 @@ import type {
   ShinkaDoDataEvent,
   ShinkaDoRequest,
 } from "./types";
-import {
-  createHOReqRegistry,
-  createHOEventRegistry,
-} from "./high-order-registry";
-import { asOnRequest } from "./util";
+import { createEventRegistry } from "./registry";
+import { createHOReqRegistry } from "./high-order-registry";
+import { asOnRequest, asOnDataEvent } from "./util";
 
 const { freeze: objectFreeze } = Object;
 
 const createHOHandlerRegistries = <SO, TO, TA>() => {
   const { 0: reqGet, 1: reqSet } = createHOReqRegistry<SO, TO, TA, any, any>();
-  const { 0: evGet, 1: onDataEvent } = createHOEventRegistry<TA, any>();
+  const { 0: evGet, 1: evSet } = createEventRegistry<TA>();
   const onRequest = asOnRequest(reqSet);
+  const onDataEvent = asOnDataEvent(evSet);
   return objectFreeze({
     evGet,
     reqGet,
@@ -76,7 +75,7 @@ export const highOrderShinka =
     rootOnDataEvent(eventIdentity, ({ 0: key, 1: data }, thisArg) => {
       const handler = evGet(key);
       handler
-        ? handler(data, taMap.get(thisArg))
+        ? handler(data, taMap.get(thisArg), thisArg.dispatchError)
         : thisArg.dispatchError(`Unable to find handler ${key}`);
     });
 

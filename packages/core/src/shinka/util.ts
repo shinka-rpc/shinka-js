@@ -1,6 +1,7 @@
 import type { Context } from "./context";
 import type {
   DataEventKey,
+  ShinkaOn,
   ShinkaMeta,
   FnConstructorName,
   MetadataWithHint,
@@ -13,6 +14,8 @@ import type {
   ShinkaOnDataEvent,
   ShinkaOnDataEventHandler,
 } from "./types";
+
+const { freeze: objectFreeze } = Object;
 
 const splitMetadataHint = <SO, TO>(
   metadataWithHint: MetadataWithHint<SO, TO>,
@@ -38,6 +41,8 @@ export const createRegistry = <K, V, H = V>(valHook?: (val: H) => V) => {
     : (registry.set.bind(registry) as any as (key: K, val: H) => Map<K, V>);
   return [get, set] as [typeof get, typeof set];
 };
+
+export type AbstractRegistryType<K, V, H> = typeof createRegistry<K, V, H>;
 
 type MaybeReqHandler<SO, TO, TA> =
   | ((

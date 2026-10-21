@@ -5,6 +5,7 @@ import {
   createSyncHandler,
   createAsyncHandler,
   createSyncDataEventHandler,
+  createAsyncDataEventHandler,
 } from "./util";
 
 import { createHandlerRegistries, completeShinka } from "../src/shinka/shinka";
@@ -41,13 +42,14 @@ test("high-order-shinka", async () => {
   createSyncHandler("sync", shinkaOn1, results);
   createAsyncHandler("async", shinkaOn1, results);
   createSyncDataEventHandler("event", shinkaOn1, results);
+  createAsyncDataEventHandler("event-async", shinkaOn1, results);
 
   shinkaOn0.onDataEvent("my-event", (value, thisArg) => {
-    results.push(["my-event@0", value, thisArg.id]);
+    push(["my-event@0", value, thisArg.id]);
   });
 
   shinkaOn1.onDataEvent("my-event", (value, thisArg) => {
-    results.push(["my-event@1", value, thisArg.id]);
+    push(["my-event@1", value, thisArg.id]);
   });
 
   const [setVars, shinka] = completeShinka(
@@ -61,12 +63,15 @@ test("high-order-shinka", async () => {
   const onSuccess = dispatchMap.get(1)!;
   const onDataEvent = dispatchMap.get(3)!;
 
-  const thisArg = { dispatchError: push };
+  const dispatchError = (e: any) => push(["dispatchError", e]);
+  const send = (o: any) => push(["send", o]);
+
+  const thisArg = { dispatchError };
 
   associateThisArg0(thisArg, { ...thisArg, id: 0 });
   associateThisArg1(thisArg, { ...thisArg, id: 1 });
 
-  setVars({ send: push, dispatchError: push, thisArg });
+  setVars({ send, dispatchError, thisArg });
 
   const ho0 = completeShinka0(shinka);
   const ho1 = completeShinka1(shinka);
@@ -79,146 +84,145 @@ test("high-order-shinka", async () => {
 
   await sleep(0);
 
-  const msgResponse: MessageResponse<any> = [1, 0, [0, "response"]];
-
   // @ts-ignore
-  onSuccess(msgResponse);
+  onSuccess([1, 0, [0, "response"]] as MessageResponse<any>);
   await reqPromise;
 
-  const msgRequestSync1: MessageRequest<any> = [
-    0,
-    0,
-    0,
-    ["sync", [1, true, true]],
-  ];
+  await sleep(0);
 
   // @ts-ignore
-  onMessageRequest(msgRequestSync1);
+  onMessageRequest([0, 0, 0, ["sync", [1, true, true]]] as MessageRequest<any>);
 
-  const msgRequestAsync1: MessageRequest<any> = [
+  await sleep(0);
+
+  // @ts-ignore
+  onMessageRequest([
     0,
     0,
     0,
     ["async", [2, true, true]],
-  ];
-
-  // @ts-ignore
-  onMessageRequest(msgRequestAsync1);
+  ] as MessageRequest<any>);
 
   await sleep(0);
 
-  const msgRequestSync2: MessageRequest<any> = [
+  // @ts-ignore
+  onMessageRequest([
     0,
     0,
     0,
     ["sync", [3, false, true]],
-  ];
+  ] as MessageRequest<any>);
+
+  await sleep(0);
 
   // @ts-ignore
-  onMessageRequest(msgRequestSync2);
-
-  const msgRequestAsync2: MessageRequest<any> = [
+  onMessageRequest([
     0,
     0,
     0,
     ["async", [4, false, true]],
-  ];
-
-  // @ts-ignore
-  onMessageRequest(msgRequestAsync2);
+  ] as MessageRequest<any>);
 
   await sleep(0);
 
-  const msgRequestSync3: MessageRequest<any> = [
+  // @ts-ignore
+  onMessageRequest([
     0,
     0,
     0,
     ["sync", [5, false, false]],
-  ];
+  ] as MessageRequest<any>);
+
+  await sleep(0);
 
   // @ts-ignore
-  onMessageRequest(msgRequestSync3);
-
-  const msgRequestAsync3: MessageRequest<any> = [
+  onMessageRequest([
     0,
     0,
     0,
     ["async", [6, false, false]],
-  ];
-
-  // @ts-ignore
-  onMessageRequest(msgRequestAsync3);
+  ] as MessageRequest<any>);
 
   await sleep(0);
 
-  const msgRequestSync4: MessageRequest<any> = [
+  // @ts-ignore
+  onMessageRequest([
     0,
     0,
     0,
     ["wrong-sync", [7, false, false]],
-  ];
+  ] as MessageRequest<any>);
+
+  await sleep(0);
 
   // @ts-ignore
-  onMessageRequest(msgRequestSync4);
+  onDataEvent([3, ["event", ["data", true]], 0] as MessageDataEvent<any>);
 
-  const msgEvent1: MessageDataEvent<any> = [3, ["event", "data"], 0];
-
-  // @ts-ignore
-  onDataEvent(msgEvent1);
-
-  const msgEvent2: MessageDataEvent<any> = [3, ["wrong-event", "data"], 0];
+  await sleep(0);
 
   // @ts-ignore
-  onDataEvent(msgEvent2);
+  onDataEvent([3, ["wrong-event", "data"], 0] as MessageDataEvent<any>);
 
-  const msgEvent3: MessageDataEvent<any> = [
+  await sleep(0);
+
+  // @ts-ignore
+  onDataEvent([3, ["event", ["data", true]], 1] as MessageDataEvent<any>);
+
+  await sleep(0);
+
+  // @ts-ignore
+  onDataEvent([
     3,
-    ["event", ["data", true, false]],
+    ["event", ["error+sync", false]],
     1,
-  ];
+  ] as MessageDataEvent<any>);
+
+  await sleep(0);
 
   // @ts-ignore
-  onDataEvent(msgEvent3);
+  onDataEvent([
+    3,
+    ["event-async", ["error+async", false]],
+    1,
+  ] as MessageDataEvent<any>);
+
+  await sleep(0);
 
   for (let i = 0; i < 2; i++) {
-    const msgEvent: MessageDataEvent<any> = [
-      3,
-      ["my-event", ["data", true, false]],
-      i,
-    ];
-
     // @ts-ignore
-    onDataEvent(msgEvent);
+    onDataEvent([3, ["my-event", "data"], i] as MessageDataEvent<any>);
+    await sleep(0);
   }
 
   expect(results).toStrictEqual([
-    [3, ["event", [true, true, true]], 0],
-    undefined,
-    [0, 0, 0, ["request", [true, true, true]]],
-    undefined,
+    ["send", [3, ["event", [true, true, true]], 0]],
+    ["send", [0, 0, 0, ["request", [true, true, true]]]],
     { key: "sync-request", arg: 1 },
+    ["send", [1, 0, "bus1-simple-response-send"]],
     { key: "async-request", arg: 2 },
-    [1, 0, "bus1-simple-response-send"],
-    {},
-    [1, 0, "simple-response-send"],
-    {},
+    ["send", [1, 0, "simple-response-send"]],
     { key: "sync-request", arg: 3 },
+    ["send", [1, 0, "nested-response-send"]],
+    // { serialize: "sync-serialize", transport: "sync-transport" },
     { key: "async-request", arg: 4 },
-    [1, 0, "nested-response-send"],
-    { serialize: "sync-serialize", transport: "sync-transport" },
-    [1, 0, "nested-response-send"],
-    { serialize: "async-serialize", transport: "async-transport" },
+    ["send", [1, 0, "nested-response-send"]],
+    // { serialize: "async-serialize", transport: "async-transport" },
     { key: "sync-request", arg: 5 },
+    ["send", [2, 0, "nested-response-send"]],
+    // { serialize: "sync-serialize", transport: "sync-transport" },
     { key: "async-request", arg: 6 },
-    [2, 0, "nested-response-send"],
-    { serialize: "sync-serialize", transport: "sync-transport" },
-    [2, 0, "nested-response-send"],
-    { serialize: "async-serialize", transport: "async-transport" },
-    "Unable to find handler wrong-sync",
-    { key: "data-event", arg: "d" },
-    "Unable to find handler wrong-event",
+    ["send", [2, 0, "nested-response-send"]],
+    // { serialize: "async-serialize", transport: "async-transport" },
+    ["dispatchError", "Unable to find handler wrong-sync"],
+    ["send", [2, 0, 15]], // USER_ERROR=2
     { key: "data-event", arg: "data" },
-    ["my-event@0", ["data", true, false], 0],
-    ["my-event@1", ["data", true, false], 1],
+    ["dispatchError", "Unable to find handler wrong-event"],
+    { key: "data-event", arg: "data" },
+    { arg: "error+sync", key: "data-event" },
+    ["dispatchError", "error+sync"],
+    { arg: "error+async", key: "data-event" },
+    ["dispatchError", "error+async"],
+    ["my-event@0", "data", 0],
+    ["my-event@1", "data", 1],
   ]);
 });

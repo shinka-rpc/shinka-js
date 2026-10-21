@@ -1,19 +1,9 @@
-import type { DataEventKey, ReqRegEntry, ReqRegEntryCb } from "./types";
-import hooks from "./high-order-hook";
+import hooksHighOrderRequest from "./high-order-hook-request";
 import { createRegistry, makeRequestRegistryHook } from "./util";
 
-const requestRegistryHook = makeRequestRegistryHook(hooks);
+const requestRegistryHook = makeRequestRegistryHook(hooksHighOrderRequest);
 
 export const createHOReqRegistry = <SO, TO, TA, B, R>() =>
-  createRegistry<
-    DataEventKey,
-    ReqRegEntryCb<TA, B, R>,
-    ReqRegEntry<SO, TO, TA, B, R>
-  >(requestRegistryHook);
+  createRegistry(requestRegistryHook<SO, TO, TA, B, R>);
 
 export type HOReqRegistryType = ReturnType<typeof createHOReqRegistry>;
-
-export const createHOEventRegistry = <TA, B>() =>
-  createRegistry<DataEventKey, (data: B, thisArg: TA) => void>();
-
-export type HOEventRegistryType = ReturnType<typeof createHOEventRegistry>;
