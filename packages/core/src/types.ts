@@ -286,7 +286,11 @@ export type NBThisArgSetVars<SO, TO, NBS> = {
   bus: ShinkaVarsSetter<SO, TO, InternalHandlerThisArg<SO, TO, any>>;
   transport: ShinkaVarsSetter<SO, TO, InternalHandlerThisArg<SO, TO, any>>;
   serializer: ShinkaVarsSetter<SO, TO, InternalHandlerThisArg<SO, TO, any>>;
-  limon: ShinkaVarsSetter<SO, TO, LimonShinkaAndTA<SO, TO>> | null;
+  limon: ShinkaVarsSetter<
+    SO,
+    TO,
+    LiMonThisArg<SO, TO, LimonShinkaAndTA<SO, TO>>
+  > | null;
   nb: ShinkaVarsSetter<SO, TO, NBThisArg<SO, TO, NBS>>;
 };
 

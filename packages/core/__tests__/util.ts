@@ -5,6 +5,7 @@ import {
   type ShinkaDo,
   type SerializerRoot,
   type InternalHandlerThisArg,
+  ShinkaMeta,
 } from "../src";
 
 export const mkPipe = (delay = 0) => {
@@ -85,6 +86,7 @@ export const createSyncHandler = (
   key: string,
   bus: ShinkaOn<any, any, any>,
   results: Record<string, any>[],
+  metadata = true,
 ) =>
   bus.onRequest(
     key,
@@ -99,16 +101,19 @@ export const createSyncHandler = (
       if (ok) return result;
       else throw result;
     },
-    {
-      serialize: "sync-serialize-default",
-      transport: "sync-transport-default",
-    },
+    metadata
+      ? {
+          serialize: "sync-serialize-default",
+          transport: "sync-transport-default",
+        }
+      : undefined,
   );
 
 export const createAsyncHandler = (
   key: string,
   bus: ShinkaOn<any, any, any>,
   results: Record<string, any>[],
+  metadata = true,
 ) =>
   bus.onRequest(
     key,
@@ -123,10 +128,12 @@ export const createAsyncHandler = (
       if (ok) return result;
       else throw result;
     },
-    {
-      serialize: "async-serialize-default",
-      transport: "async-transport-default",
-    },
+    metadata
+      ? {
+          serialize: "async-serialize-default",
+          transport: "async-transport-default",
+        }
+      : undefined,
   );
 
 export const createSyncDataEventHandler = (

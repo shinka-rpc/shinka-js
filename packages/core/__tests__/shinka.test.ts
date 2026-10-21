@@ -41,6 +41,9 @@ test("high-order-shinka", async () => {
 
   createSyncHandler("sync", shinkaOn1, results);
   createAsyncHandler("async", shinkaOn1, results);
+  createSyncHandler("sync-no-meta", shinkaOn1, results, false);
+  createAsyncHandler("async-no-meta", shinkaOn1, results, false);
+
   createSyncDataEventHandler("event", shinkaOn1, results);
   createAsyncDataEventHandler("event-async", shinkaOn1, results);
 
@@ -150,6 +153,26 @@ test("high-order-shinka", async () => {
     0,
     0,
     0,
+    ["sync", [7, true, false]],
+  ] as MessageRequest<any>);
+
+  await sleep(0);
+
+  // @ts-ignore
+  onMessageRequest([
+    0,
+    0,
+    0,
+    ["async", [8, true, false]],
+  ] as MessageRequest<any>);
+
+  await sleep(0);
+
+  // @ts-ignore
+  onMessageRequest([
+    0,
+    0,
+    0,
     ["wrong-sync", [7, false, false]],
   ] as MessageRequest<any>);
 
@@ -213,8 +236,12 @@ test("high-order-shinka", async () => {
     { key: "async-request", arg: 6 },
     ["send", [2, 0, "nested-response-send"]],
     // { serialize: "async-serialize", transport: "async-transport" },
+    { key: "sync-request", arg: 7 },
+    ["send", [2, 0, "bus1-simple-response-send"]],
+    { key: "async-request", arg: 8 },
+    ["send", [2, 0, "simple-response-send"]],
     ["dispatchError", "Unable to find handler wrong-sync"],
-    ["send", [2, 0, 15]], // USER_ERROR=2
+    ["send", [2, 0, 19]], // USER_ERROR=2
     { key: "data-event", arg: "data" },
     ["dispatchError", "Unable to find handler wrong-event"],
     { key: "data-event", arg: "data" },

@@ -202,17 +202,17 @@ export class Bus<SO, TO, TC> implements IBus<SO, TO> {
 
     const nbTAState: NBThisArgState = {};
 
-    const createOrCompleteShinka = makeCreateOrCompleteShinka<SO, TO, any>(
+    const createOrCompleteShinka = makeCreateOrCompleteShinka(
       this.#dispatchMap,
       responseTimeout,
     );
 
-    const { 0: busSetVars, 1: busShinka } = createOrCompleteShinka(
+    const { 0: busSetVars, 1: busShinka } = createOrCompleteShinka<SO, TO, any>(
       messageTypeBus,
       busHandlerRegistries,
     );
 
-    const { 0: nbSetVars, 1: nbShinka } = createOrCompleteShinka(
+    const { 0: nbSetVars, 1: nbShinka } = createOrCompleteShinka<SO, TO, any>(
       messageTypeNB,
       nbHandlerRegistries,
     );

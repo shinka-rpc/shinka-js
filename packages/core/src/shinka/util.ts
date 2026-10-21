@@ -1,21 +1,16 @@
 import type { Context } from "./context";
 import type {
   DataEventKey,
-  ShinkaOn,
   ShinkaMeta,
   FnConstructorName,
   MetadataWithHint,
   DispatchError,
   ReqRegEntry,
   ReqRegEntryCb,
-  EvRegEntryCb,
   EvRegEntry,
   MetaTypeHint,
-  ShinkaOnDataEvent,
   ShinkaOnDataEventHandler,
 } from "./types";
-
-const { freeze: objectFreeze } = Object;
 
 const splitMetadataHint = <SO, TO>(
   metadataWithHint: MetadataWithHint<SO, TO>,
@@ -84,7 +79,7 @@ export const asOnRequest =
   };
 
 export const asOnDataEvent =
-  <TA, B>(evSet: (key: DataEventKey, val: EvRegEntry<TA>) => void) =>
+  <SO, TO, TA, B>(evSet: (key: DataEventKey, val: EvRegEntry<TA>) => void) =>
   (
     key: DataEventKey,
     cb: ShinkaOnDataEventHandler<TA>,

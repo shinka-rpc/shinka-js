@@ -12,8 +12,8 @@ export const createHandlerRegistries = <SO, TO, TA>() => {
   const { 0: reqGet, 1: reqSet } = createReqRegistry<SO, TO, TA, any, any>();
   const { 0: evGet, 1: evSet } = createEventRegistry<TA>();
   const onRequest = asOnRequest(reqSet);
-  const onDataEvent = asOnDataEvent<TA, any>(evSet);
-  const dispatchRequest = createDispatchRequest(reqGet);
+  const onDataEvent = asOnDataEvent<SO, TO, TA, any>(evSet);
+  const dispatchRequest = createDispatchRequest<SO, TO, TA>(reqGet);
   return objectFreeze({
     evGet,
     dispatchRequest,
@@ -52,7 +52,7 @@ export const completeShinka = <SO, TO, TA>(
     4: onMessageRequest,
     5: dispatchDataEvent,
     6: dataEvent,
-  } = reqrsp(
+  } = reqrsp<SO, TO, TA, any>(
     REQUEST,
     EVENT,
     [RESPONSE_ERR, RESPONSE_OK],
@@ -92,8 +92,8 @@ export const createOrCompleteShinka = <SO, TO, TA>(
   );
 
 export const makeCreateOrCompleteShinka =
-  <SO, TO, TA>(dispatchMap: DispatchMap, responseTimeout: number) =>
-  (
+  (dispatchMap: DispatchMap, responseTimeout: number) =>
+  <SO, TO, TA>(
     messageTypeGroup: MessageTypeGroup,
     maybeHandlerRegistries?: HandlerRegistries<SO, TO, TA>,
   ) =>
