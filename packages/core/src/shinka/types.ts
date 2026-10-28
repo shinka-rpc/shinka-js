@@ -1,3 +1,4 @@
+import type { AbortFn } from "../types";
 import type { Context } from "./context";
 import type {
   MessageType,
@@ -7,6 +8,7 @@ import type {
 } from "./message-type";
 
 export type FnConstructorName = "Function" | "AsyncFunction";
+export type MapPop<K, V> = (key: K) => V | undefined;
 
 export type REQID = number;
 export type DataEventKey = string | number | boolean;
@@ -54,6 +56,14 @@ export type MetaTypeHint = {
   hint?: FnConstructorName;
 };
 
+export type MetaAbort = {
+  signal?: AbortSignal;
+};
+
+export type MetaTimeout = {
+  timeout?: number;
+};
+
 export type SendFn<SO, TO> = (
   message: Message<any>,
   metadata?: ShinkaMeta<SO, TO>,
@@ -65,34 +75,61 @@ export type ShinkaVars<SO, TO, TA> = {
   thisArg: TA;
   send: SendFn<SO, TO>;
   dispatchError: DispatchError;
+  abort: AbortFn;
 };
 
 export type ShinkaVarsSetter<SO, TO, TA> = (
   vars: Partial<ShinkaVars<SO, TO, TA>>,
 ) => void;
 
-export type MetadataWithHint<SO, TO> = ShinkaMeta<SO, TO> & MetaTypeHint;
+export type ShinkaOnRequestMeta<SO, TO> = ShinkaMeta<SO, TO> &
+  MetaTypeHint &
+  MetaTimeout;
 
-export type ShinkaOnRequestHandler<TA> = (data: any, thisArg: TA) => any;
+export type TaskCTL = {
+  signal: AbortSignal;
+};
+
+export type ShinkaOnRequestHandlerBase<TA, B, R> = (
+  data: B,
+  thisArg: TA,
+  taskCtl: TaskCTL,
+) => R;
+
+export type ShinkaOnRequestHandler<TA> = ShinkaOnRequestHandlerBase<
+  TA,
+  any,
+  any
+>;
 
 export type ShinkaOnRequest<SO, TO, TA> = (
   key: DataEventKey,
   cb: ShinkaOnRequestHandler<TA>,
-  metadataWithHint?: MetadataWithHint<SO, TO>,
+  metadataWithHint?: ShinkaOnRequestMeta<SO, TO>,
 ) => void;
+
+export type ShinkaDoRequestMeta<SO, TO> = ShinkaMeta<SO, TO> &
+  MetaAbort &
+  MetaTimeout;
 
 export type ShinkaDoRequest<SO, TO> = <T>(
   key: DataEventKey,
   data: any,
-  metadata?: ShinkaMeta<SO, TO>,
+  metadata?: ShinkaDoRequestMeta<SO, TO>,
 ) => Promise<T>;
 
-export type ShinkaOnDataEventHandler<TA> = (data: any, thisArg: TA) => void;
+export type ShinkaOnDataEventHandler<TA> = (
+  data: any,
+  thisArg: TA,
+  metadata?: ShinkaOnDataEventMeta,
+) => void;
+
+export type ShinkaOnDataEventMeta = MetaTypeHint;
 
 export type ShinkaOnDataEvent<TA> = (
   key: DataEventKey,
   val: ShinkaOnDataEventHandler<TA>,
-  metadata?: MetaTypeHint,
+  metadata?: ShinkaOnDataEventMeta,
 ) => void;
 
 export type ShinkaDoDataEvent<SO, TO> = (
@@ -113,27 +150,29 @@ export type ShinkaDo<SO, TO> = {
 
 export type Shinka<SO, TO, TA> = ShinkaOn<SO, TO, TA> & ShinkaDo<SO, TO>;
 export type RejectResolve = [(reason?: any) => void, (value: any) => void];
+
+export type DisposeTimeout = (n: number | undefined) => () => void;
+
 export type RequestHandler<SO, TO, TA, B> = (
   key: DataEventKey,
   body: B,
   context: Context<SO, TO>,
   thisArg: TA,
   dispatchError: DispatchError,
+  signal: AbortSignal,
+  dTimeout: DisposeTimeout,
 ) => void;
 
 export type RequestHandlerFn<SO, TO, TA, B> = (
   body: B,
   context: Context<SO, TO>,
   thisArg: TA,
-  dispatchError: DispatchError,
+  signal: AbortSignal,
 ) => void;
 
-export type ReqRegEntryCb<TA, B, R> = (body: B, thisArg: TA) => R;
-
 export type ReqRegEntry<SO, TO, TA, B, R> = [
-  ReqRegEntryCb<TA, B, R>,
-  ShinkaMeta<SO, TO> | undefined,
-  FnConstructorName | undefined,
+  ShinkaOnRequestHandlerBase<TA, B, R>,
+  ShinkaOnRequestMeta<SO, TO> | undefined,
 ];
 
 export type EvRegEntryCb<TA, B, R> = (
@@ -142,5 +181,32 @@ export type EvRegEntryCb<TA, B, R> = (
 
 export type EvRegEntry<TA> = [
   ShinkaOnDataEventHandler<TA>,
-  FnConstructorName | undefined,
+  ShinkaOnDataEventMeta | undefined,
 ];
+
+export type ReqHandler<SO, TO, TA> = (
+  body: any,
+  ctx: Context<SO, TO>,
+  thisArg: TA,
+  signal: AbortSignal,
+  dTimeout: DisposeTimeout,
+) => any;
+export type MaybeReqHandler<SO, TO, TA> = ReqHandler<SO, TO, TA> | undefined;
+
+export type EventHandler<TA, B, R> = (
+  body: B,
+  thisArg: TA,
+  dispatchError: DispatchError,
+) => R;
+export type MaybeEventHandler<TA, B, R> = EventHandler<TA, B, R> | undefined;
+
+export type ReqRspOnAbort = () => void;
+export type ReqRspRemoteEntryAbort = [AbortSignal, ReqRspOnAbort];
+export type ReqRspRemoteEntry = [
+  RejectResolve,
+  ReturnType<typeof setTimeout>,
+  ReqRspRemoteEntryAbort | undefined,
+];
+export type ReqRspRemoteMap = Map<REQID, ReqRspRemoteEntry>;
+export type ReqRspLocalEntry = [AbortController, ReturnType<typeof setTimeout>];
+export type ReqRspLocalMap = Map<REQID, ReqRspLocalEntry>;

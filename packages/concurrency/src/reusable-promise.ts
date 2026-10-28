@@ -1,56 +1,39 @@
-type PromiseExecutor<P> = (
-  resolve: (value: P | PromiseLike<P>) => void,
-  reject: (reason?: P) => void,
-) => void;
-
 type ResolveFn<P> = (value: P) => void;
+type RejectFn = (value?: any) => void;
 
 type State<P> = {
   promise: Promise<P>;
   resolve: ResolveFn<P>;
-  reject: ResolveFn<any>;
+  reject: RejectFn;
   done: boolean;
 };
 
-const { freeze: objectFreeze } = Object;
+const { freeze: objectFreeze, assign: objectAssign } = Object;
 
-function renewExecutor<P>(
-  this: Partial<State<P>>,
-  resolve: ResolveFn<P>,
-  reject: ResolveFn<P>,
-) {
-  this.resolve = resolve;
-  this.reject = reject;
-}
-
-const renewState = <P>(
-  state: Partial<State<P>>,
-  renewExecutor: PromiseExecutor<P>,
-) => {
+const resetState = <P>(state: State<P>) => {
   state.done = false;
-  state.promise = new Promise<P>(renewExecutor);
-  return state as State<P>;
+  objectAssign(state, (Promise<P>).withResolvers());
 };
 
 const toResolver =
   <P>(state: State<P>, key: "resolve" | "reject") =>
   (value: P) => {
-    if (state.done) throw new Error("Already done");
     state.done = true;
     state[key](value);
   };
 
 export class ReusablePromise<P> {
   #state: State<P>;
-  #renewExecutor: PromiseExecutor<P>;
+  #reset: () => void;
 
   public resolve: ResolveFn<P>;
-  public reject: ResolveFn<any>;
+  public reject: RejectFn;
 
   constructor() {
-    const state: Partial<State<P>> = {};
-    this.#renewExecutor = (renewExecutor<P>).bind(state);
-    this.#state = renewState(state, this.#renewExecutor);
+    const state = {} as any as State<P>;
+    this.#state = state;
+    this.#reset = (resetState<P>).bind(null, state);
+    this.#reset();
     this.resolve = toResolver(this.#state, "resolve");
     this.reject = toResolver(this.#state, "reject");
 
@@ -59,14 +42,14 @@ export class ReusablePromise<P> {
 
   public then = (
     onfulfilled?: ((value: P) => void) | null | undefined,
-    onrejected?: ((reason: any) => void) | null | undefined,
+    onrejected?: ((reason?: any) => void) | null | undefined,
   ) => this.#state.promise.then(onfulfilled, onrejected);
 
-  public catch = (onrejected?: ((reason: P) => void) | null | undefined) =>
+  public catch = (onrejected?: ((reason?: P) => void) | null | undefined) =>
     this.#state.promise.catch(onrejected);
 
   public reset = () => {
-    if (this.#state.done) renewState(this.#state, this.#renewExecutor);
+    if (this.#state.done) this.#reset();
     return this;
   };
 

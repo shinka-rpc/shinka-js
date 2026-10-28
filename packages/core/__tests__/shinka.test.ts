@@ -55,19 +55,22 @@ test("high-order-shinka", async () => {
     push(["my-event@1", value, thisArg.id]);
   });
 
-  const [setVars, shinka] = completeShinka(
-    [0, 1, 2, 3],
-    dispatchMap,
-    5000,
-    handlerRegistries,
-  );
+  const {
+    0: onAbort,
+    1: setVars,
+    2: shinka,
+  } = completeShinka([0, 1, 2, 3], dispatchMap, 5000, handlerRegistries);
 
   const onMessageRequest = dispatchMap.get(0)!;
   const onSuccess = dispatchMap.get(1)!;
   const onDataEvent = dispatchMap.get(3)!;
 
-  const dispatchError = (e: any) => push(["dispatchError", e]);
-  const send = (o: any) => push(["send", o]);
+  const dispatchError = (e: any) => {
+    push(["dispatchError", e]);
+  };
+  const send = (o: any) => {
+    push(["send", o]);
+  };
 
   const thisArg = { dispatchError };
 
@@ -241,7 +244,7 @@ test("high-order-shinka", async () => {
     { key: "async-request", arg: 8 },
     ["send", [2, 0, "simple-response-send"]],
     ["dispatchError", "Unable to find handler wrong-sync"],
-    ["send", [2, 0, 19]], // USER_ERROR=2
+    ["send", [2, 0, { error: "Unable to find handler", id: "wrong-sync" }]],
     { key: "data-event", arg: "data" },
     ["dispatchError", "Unable to find handler wrong-event"],
     { key: "data-event", arg: "data" },

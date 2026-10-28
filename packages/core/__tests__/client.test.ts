@@ -21,6 +21,7 @@ import {
   createEventBusService,
   createAsyncDataEventHandler,
   createAsyncHandler,
+  createAbortableHandler,
 } from "./util";
 
 type TAs = {
@@ -36,11 +37,21 @@ type TestSerializerFactory<TO> = (
   setThisArg?: (TA: InternalHandlerThisArg<any, any, any>) => void,
 ) => SerializerRoot<any, TO, any>;
 
-const setupClientClient = async <TO>(
-  createSerializer: TestSerializerFactory<TO>,
-  delays: [number, number] = [0, 0],
-  lock: ExclusiveLock<any, any, any> | undefined = undefined,
-) => {
+type SetupClientClientProps<TO> = {
+  serializer?: TestSerializerFactory<TO>;
+  delays?: [number, number];
+  lock?: ExclusiveLock<any, any, any>;
+  timeouts?: [number, number];
+};
+
+const setupClientClient = async <TO>({
+  serializer,
+  delays,
+  lock,
+  timeouts,
+}: SetupClientClientProps<TO> = {}) => {
+  delays = delays || [0, 0];
+  timeouts = timeouts || [1000, 1000];
   const { outscope, outscopeState } = testOutScope();
   const results: Record<string, any>[] = [];
   const TA = {} as any as TAs;
@@ -55,15 +66,15 @@ const setupClientClient = async <TO>(
   const bus1 = new Client({
     outscope,
     transport: fakeTransportClient(pipe1to2, "bus1", results, setTA("t1")),
-    serializer: createSerializer("bus1", results, setTA("s1")),
-    responseTimeout: 1000,
+    serializer: serializer && serializer("bus1", results, setTA("s1")),
+    responseTimeout: timeouts[0],
     lock,
   });
   const bus2 = new Client({
     outscope,
     transport: fakeTransportClient(pipe2to1, "bus2", results, setTA("t2")),
-    serializer: createSerializer("bus2", results, setTA("s2")),
-    responseTimeout: 1000,
+    serializer: serializer && serializer("bus2", results, setTA("s2")),
+    responseTimeout: timeouts[1],
     lock,
   });
 
@@ -108,9 +119,9 @@ const setupClientClient = async <TO>(
 // === sync
 
 test("sync-simple-ok", async () => {
-  const { results, bus1, bus2, start, stop } = await setupClientClient(
-    createMockSerializerSync,
-  );
+  const { results, bus1, bus2, start, stop } = await setupClientClient({
+    serializer: createMockSerializerSync,
+  });
   const bus1SyncReq = createRequestBusService("bus1-sync");
   const bus1SyncEv = createEventBusService("bus1-event");
 
@@ -167,9 +178,9 @@ test("sync-simple-ok", async () => {
 });
 
 test("sync-simple-ok-serializer-async", async () => {
-  const { results, bus1, bus2, start, stop } = await setupClientClient(
-    createMockSerializerAsync,
-  );
+  const { results, bus1, bus2, start, stop } = await setupClientClient({
+    serializer: createMockSerializerAsync,
+  });
   const bus1SyncReq = createRequestBusService("bus1-sync");
   createSyncHandler("bus1-sync", bus1, results);
   await start();
@@ -196,9 +207,9 @@ test("sync-simple-ok-serializer-async", async () => {
 });
 
 test("sync-nested-ok", async () => {
-  const { results, bus1, bus2, start, stop } = await setupClientClient(
-    createMockSerializerSync,
-  );
+  const { results, bus1, bus2, start, stop } = await setupClientClient({
+    serializer: createMockSerializerSync,
+  });
   const bus1SyncReq = createRequestBusService("bus1-sync");
   createSyncHandler("bus1-sync", bus1, results);
   await start();
@@ -225,9 +236,9 @@ test("sync-nested-ok", async () => {
 });
 
 test("sync-simple-err", async () => {
-  const { results, bus1, bus2, start, stop } = await setupClientClient(
-    createMockSerializerSync,
-  );
+  const { results, bus1, bus2, start, stop } = await setupClientClient({
+    serializer: createMockSerializerSync,
+  });
 
   const bus1SyncReq = createRequestBusService("bus1-sync");
   createSyncHandler("bus1-sync", bus1, results);
@@ -274,9 +285,9 @@ test("sync-simple-err", async () => {
 });
 
 test("sync-nested-err", async () => {
-  const { results, bus1, bus2, start, stop } = await setupClientClient(
-    createMockSerializerSync,
-  );
+  const { results, bus1, bus2, start, stop } = await setupClientClient({
+    serializer: createMockSerializerSync,
+  });
   const bus1SyncReq = createRequestBusService("bus1-sync");
   createSyncHandler("bus1-sync", bus1, results);
   await start();
@@ -309,9 +320,9 @@ test("sync-nested-err", async () => {
 // === async
 
 test("async-simple-ok", async () => {
-  const { results, bus1, bus2, start, stop } = await setupClientClient(
-    createMockSerializerSync,
-  );
+  const { results, bus1, bus2, start, stop } = await setupClientClient({
+    serializer: createMockSerializerSync,
+  });
   const bus1SyncReq = createRequestBusService("bus1-async");
   createAsyncHandler("bus1-async", bus1, results);
   await start();
@@ -338,9 +349,9 @@ test("async-simple-ok", async () => {
 });
 
 test("async-nested-ok", async () => {
-  const { results, bus1, bus2, start, stop } = await setupClientClient(
-    createMockSerializerSync,
-  );
+  const { results, bus1, bus2, start, stop } = await setupClientClient({
+    serializer: createMockSerializerSync,
+  });
   const bus1SyncReq = createRequestBusService("bus1-async");
   createAsyncHandler("bus1-async", bus1, results);
   await start();
@@ -367,9 +378,9 @@ test("async-nested-ok", async () => {
 });
 
 test("async-simple-err", async () => {
-  const { results, bus1, bus2, start, stop } = await setupClientClient(
-    createMockSerializerSync,
-  );
+  const { results, bus1, bus2, start, stop } = await setupClientClient({
+    serializer: createMockSerializerSync,
+  });
   const bus1SyncReq = createRequestBusService("bus1-async");
   createAsyncHandler("bus1-async", bus1, results);
   const bus1AsyncEv = createEventBusService("bus1-async");
@@ -411,9 +422,9 @@ test("async-simple-err", async () => {
 });
 
 test("async-nested-err", async () => {
-  const { results, bus1, bus2, start, stop } = await setupClientClient(
-    createMockSerializerSync,
-  );
+  const { results, bus1, bus2, start, stop } = await setupClientClient({
+    serializer: createMockSerializerSync,
+  });
   const bus1SyncReq = createRequestBusService("bus1-async");
   createAsyncHandler("bus1-async", bus1, results);
   await start();
@@ -443,14 +454,13 @@ test("async-nested-err", async () => {
   ]);
 });
 
-// === exclusive-lock
+// =============================================================================
 
 test("exclusive-lock-ok", async () => {
-  const { results, bus1, bus2, start, stop, TA } = await setupClientClient(
-    createMockSerializerSync,
-    undefined,
-    defaultExclusiveLock,
-  );
+  const { results, bus1, bus2, start, stop, TA } = await setupClientClient({
+    serializer: createMockSerializerSync,
+    lock: defaultExclusiveLock,
+  });
   const bus1SyncReq = createRequestBusService("bus1-sync");
   createSyncHandler("bus1-sync", bus1, results);
   await start();
@@ -488,6 +498,72 @@ test("exclusive-lock-ok", async () => {
     { key: "bus1-serializer-sync", opts: "sync-serialize-default" },
     { key: "bus1-transport", opts: "sync-transport-default" },
     { key: "bus1-sync-response-got", out: "bus1-simple-response-send" },
+    { key: "bus1-event", val: "disconnect" },
+    { key: "bus2-event", val: "disconnect" },
+  ]);
+});
+
+test("task-abort", async () => {
+  const { results, bus1, bus2, start, stop } = await setupClientClient();
+
+  createAbortableHandler("abortable-request", bus1, results);
+
+  await start();
+
+  const abort = new AbortController();
+  const reqPromise = bus2.request("abortable-request", 0, {
+    signal: abort.signal,
+  });
+
+  await sleep(0);
+  abort.abort("test-abort-reason");
+  await sleep(0);
+
+  await expect(reqPromise).rejects.toStrictEqual("test-abort-reason");
+  await sleep(0);
+
+  await stop();
+
+  expect(results).toStrictEqual([
+    { key: "bus1-event", val: "connect" },
+    { key: "bus2-event", val: "connect" },
+    { key: "bus2-transport", opts: undefined },
+    ["abortable-request", "started"],
+    { key: "bus2-transport", opts: undefined },
+    ["abortable-request", "rejected"],
+    { key: "bus1-event", val: "disconnect" },
+    { key: "bus2-event", val: "disconnect" },
+  ]);
+});
+
+test("task-timeout", async () => {
+  const { results, bus1, bus2, start, stop } = await setupClientClient({
+    timeouts: [10, 10],
+  });
+
+  createAbortableHandler("timeout-request", bus1, results);
+
+  await start();
+
+  await expect(bus2.request("timeout-request", 0)).rejects.toStrictEqual({
+    message: "Request timeout",
+    reqID: 0,
+  });
+
+  await Promise.resolve();
+  await sleep(0);
+  await sleep(0);
+
+  await stop();
+
+  await sleep(0);
+
+  expect(results).toStrictEqual([
+    { key: "bus1-event", val: "connect" },
+    { key: "bus2-event", val: "connect" },
+    { key: "bus2-transport", opts: undefined },
+    ["timeout-request", "started"],
+    ["timeout-request", "rejected"],
     { key: "bus1-event", val: "disconnect" },
     { key: "bus2-event", val: "disconnect" },
   ]);

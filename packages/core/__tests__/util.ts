@@ -5,7 +5,6 @@ import {
   type ShinkaDo,
   type SerializerRoot,
   type InternalHandlerThisArg,
-  ShinkaMeta,
 } from "../src";
 
 export const mkPipe = (delay = 0) => {
@@ -46,7 +45,7 @@ export const fakeTransportClient = (
     };
   }) satisfies TransportClient<any, any, any, any>;
 
-export const createMockSerializerAsync = <TO, B>(
+export const createMockSerializerAsync = <TO>(
   key: string,
   results: Record<string, any>[],
   setThisArg: (TA: InternalHandlerThisArg<any, any, any>) => void = () => {},
@@ -64,7 +63,7 @@ export const createMockSerializerAsync = <TO, B>(
     };
   }) as SerializerRoot<any, TO, any>;
 
-export const createMockSerializerSync = <TO, B>(
+export const createMockSerializerSync = <TO>(
   key: string,
   results: Record<string, any>[],
   setThisArg: (TA: InternalHandlerThisArg<any, any, any>) => void = () => {},
@@ -134,6 +133,25 @@ export const createAsyncHandler = (
           transport: "async-transport-default",
         }
       : undefined,
+  );
+
+export const createAbortableHandler = (
+  key: string,
+  bus: ShinkaOn<any, any, any>,
+  results: Record<string, any>[],
+) =>
+  bus.onRequest(
+    key,
+    async (_: void, thisArg, { signal }) => {
+      const { reject, promise } = Promise.withResolvers();
+      results.push([key, "started"]);
+      signal.addEventListener("abort", () => {
+        results.push([key, "rejected"]);
+        reject(signal.reason);
+      });
+      await promise;
+    },
+    { hint: "AsyncFunction" },
   );
 
 export const createSyncDataEventHandler = (

@@ -172,8 +172,6 @@ test("pool", async () => {
     await bus.ping();
     poolEventService(bus, "bus-server", true, false);
     bus.removeEventListener("connected", console.info);
-
-    await bus.start(); // nothing
   }
 
   expect(() =>
@@ -181,6 +179,7 @@ test("pool", async () => {
   ).toThrow();
 
   expect(busProxy.stop).toThrow();
+  expect(busProxy.start).toThrow();
   expect(busProxy.restart).toThrow();
   expect(busProxy.exclusiveLock.bind(0, 0)).toThrow();
 
@@ -201,7 +200,9 @@ test("pool", async () => {
 
   await sleep(0);
 
-  pool.size;
+  expect(pool.size).toStrictEqual(0);
+
+  expect(outscopeState.size).toStrictEqual(0);
 
   pool.removeEventListener("error", console.error);
 

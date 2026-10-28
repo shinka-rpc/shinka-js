@@ -6,17 +6,24 @@ import type {
   ShinkaDoDataEvent,
   ShinkaDoRequest,
 } from "./types";
-import { createEventRegistry } from "./registry";
+import { createEventRegistry } from "./registry-event";
 import { createHOReqRegistry } from "./high-order-registry";
-import { asOnRequest, asOnDataEvent } from "./util";
+import { handlerRegistriesFactory } from "./util";
 
 const { freeze: objectFreeze } = Object;
 
+const handlerRegistriesBase = handlerRegistriesFactory(
+  createHOReqRegistry,
+  createEventRegistry,
+);
+
 const createHOHandlerRegistries = <SO, TO, TA>() => {
-  const { 0: reqGet, 1: reqSet } = createHOReqRegistry<SO, TO, TA, any, any>();
-  const { 0: evGet, 1: evSet } = createEventRegistry<TA>();
-  const onRequest = asOnRequest(reqSet);
-  const onDataEvent = asOnDataEvent(evSet);
+  const {
+    0: evGet,
+    1: reqGet,
+    2: onRequest,
+    3: onDataEvent,
+  } = handlerRegistriesBase<SO, TO, TA>();
   return objectFreeze({
     evGet,
     reqGet,
@@ -46,14 +53,19 @@ const nestedRequest = (
     any
   >;
 
+const msgNoHandler = "Unable to find handler";
+
 export const highOrderShinka =
   ({
     onRequest: rootOnRequest,
     onDataEvent: rootOnDataEvent,
   }: ShinkaOn<any, any, any>) =>
   (requestIdentity: DataEventKey, eventIdentity: DataEventKey) => {
-    const { reqGet, evGet, onDataEvent, onRequest } =
-      createHOHandlerRegistries();
+    const { reqGet, evGet, onDataEvent, onRequest } = createHOHandlerRegistries<
+      any,
+      any,
+      any
+    >();
 
     const childShinkaOn: ShinkaOn<any, any, any> = objectFreeze({
       onDataEvent,
@@ -64,10 +76,11 @@ export const highOrderShinka =
 
     rootOnRequest(
       requestIdentity,
-      async ({ 0: key, 1: data }, thisArg) => {
-        const handler = reqGet(key);
-        if (handler) return await handler(data, taMap.get(thisArg));
-        throw thisArg.dispatchError(`Unable to find handler ${key}`);
+      async ({ 0: id, 1: data }, thisArg, taskCtl) => {
+        const handler = reqGet(id);
+        if (handler) return await handler(data, taMap.get(thisArg), taskCtl);
+        thisArg.dispatchError(`${msgNoHandler} ${id}`);
+        throw { error: msgNoHandler, id };
       },
       { hint: "AsyncFunction" },
     );
@@ -76,7 +89,7 @@ export const highOrderShinka =
       const handler = evGet(key);
       handler
         ? handler(data, taMap.get(thisArg), thisArg.dispatchError)
-        : thisArg.dispatchError(`Unable to find handler ${key}`);
+        : thisArg.dispatchError(`${msgNoHandler} ${key}`);
     });
 
     const associateThisArg = taMap.set.bind(taMap);

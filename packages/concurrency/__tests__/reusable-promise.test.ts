@@ -17,6 +17,7 @@ test("data-signal-void", async () => {
   expect(result.length).toStrictEqual(1);
   expect(reusablePromise).resolves;
   reusablePromise.reset();
+  reusablePromise.reset();
   expect(reusablePromise.isDone).toStrictEqual(false);
   reusablePromise.then(() => result.push("valPromise-2"));
   await sleep(50);

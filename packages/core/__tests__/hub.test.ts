@@ -75,7 +75,7 @@ const setupClientHub = async (
 };
 
 test("hub-classic", async () => {
-  const { results, client, hub, start } = await setupClientHub(
+  const { results, client, hub, start, outscopeState } = await setupClientHub(
     createMockSerializerSync,
   );
   createSyncHandler("bus1-sync", hub, results);
@@ -97,8 +97,9 @@ test("hub-classic", async () => {
   // await common.stop();
   await hub.dispose();
 
-  hub.size;
-  hub.isDisposing;
+  expect(hub.size).toStrictEqual(0);
+  expect(hub.isDisposing).toBeFalsy();
+  expect(outscopeState.size).toStrictEqual(0);
 
   expect(results).toStrictEqual([
     { key: "client1-event", val: "connect" },

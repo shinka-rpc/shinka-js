@@ -1,18 +1,27 @@
 import { reqrsp } from "./request-response";
 
-import { createEventRegistry, createReqRegistry } from "./registry";
-import { createDispatchRequest, asOnRequest, asOnDataEvent } from "./util";
+import { createReqRegistry } from "./registry-request";
+import { createEventRegistry } from "./registry-event";
+import { createDispatchRequest, handlerRegistriesFactory } from "./util";
 import type { MessageTypeGroup } from "./message-type";
 
 import type { DispatchMap, Shinka, ShinkaOn } from "./types";
+import { AbortFn } from "../types";
 
 const { freeze: objectFreeze } = Object;
 
+const handlerRegistriesBase = handlerRegistriesFactory(
+  createReqRegistry,
+  createEventRegistry,
+);
+
 export const createHandlerRegistries = <SO, TO, TA>() => {
-  const { 0: reqGet, 1: reqSet } = createReqRegistry<SO, TO, TA, any, any>();
-  const { 0: evGet, 1: evSet } = createEventRegistry<TA>();
-  const onRequest = asOnRequest(reqSet);
-  const onDataEvent = asOnDataEvent<SO, TO, TA, any>(evSet);
+  const {
+    0: evGet,
+    1: reqGet,
+    2: onRequest,
+    3: onDataEvent,
+  } = handlerRegistriesBase<SO, TO, TA>();
   const dispatchRequest = createDispatchRequest<SO, TO, TA>(reqGet);
   return objectFreeze({
     evGet,
@@ -45,13 +54,14 @@ export const completeShinka = <SO, TO, TA>(
   } = messageTypeGroup;
 
   const {
-    0: setVars,
-    1: request,
-    2: onSuccess,
-    3: onError,
-    4: onMessageRequest,
-    5: dispatchDataEvent,
-    6: dataEvent,
+    0: onAbort,
+    1: setVars,
+    2: request,
+    3: onSuccess,
+    4: onError,
+    5: onMessageRequest,
+    6: dispatchDataEvent,
+    7: dataEvent,
   } = reqrsp<SO, TO, TA, any>(
     REQUEST,
     EVENT,
@@ -68,6 +78,7 @@ export const completeShinka = <SO, TO, TA>(
     .set(EVENT, dispatchDataEvent);
 
   return [
+    onAbort,
     setVars,
     objectFreeze({
       onRequest,
@@ -75,7 +86,7 @@ export const completeShinka = <SO, TO, TA>(
       onDataEvent,
       dataEvent,
     }),
-  ] as [typeof setVars, Shinka<SO, TO, TA>];
+  ] as [AbortFn, typeof setVars, Shinka<SO, TO, TA>];
 };
 
 export const createOrCompleteShinka = <SO, TO, TA>(

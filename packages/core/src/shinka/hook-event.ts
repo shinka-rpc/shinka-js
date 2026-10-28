@@ -1,5 +1,8 @@
-import type { DispatchError } from "./types";
-import type { EventHooks } from "./util";
+import type {
+  DispatchError,
+  FnConstructorName,
+  ShinkaOnDataEventMeta,
+} from "./types";
 
 const eventRegistryHookSync =
   <TA, B>(cb: (body: B, thisArg: TA) => void) =>
@@ -16,7 +19,15 @@ const eventRegistryHookAsync =
   (body: B, thisArg: TA, dispatchError: DispatchError) =>
     cb(body, thisArg).catch(dispatchError);
 
+export type EventHooks = Record<
+  FnConstructorName,
+  (
+    cb: (body: any, thisArg: any) => any,
+    metadata?: ShinkaOnDataEventMeta,
+  ) => (body: any, thisArg: any, dispatchError: DispatchError) => any
+>;
+
 export default {
   Function: eventRegistryHookSync,
   AsyncFunction: eventRegistryHookAsync,
-} satisfies EventHooks;
+} as EventHooks;

@@ -2,7 +2,13 @@ import type { IQueue } from "@shinka-rpc/collections";
 import type { ReusablePromise } from "@shinka-rpc/concurrency";
 import type { NB_FIFOEntry, NBThisArg, NBShinka } from "../types";
 import type { ShinkaEventListener } from "../listeners/types";
-import type { Message, ShinkaMeta, SendFn, ShinkaDoDataEvent } from "../shinka";
+import type {
+  Message,
+  ShinkaMeta,
+  SendFn,
+  ShinkaDoDataEvent,
+  REQID,
+} from "../shinka";
 import { NBAcquire } from "./const-enums";
 import { busEvents } from "./handlers/bus";
 import { nbEvent } from "./handlers/non-blocking";

@@ -1,14 +1,19 @@
 import { Response } from "./response";
-import type { ShinkaMeta } from "./types";
+import type {
+  ShinkaOnRequestMeta,
+  ShinkaOnRequestHandlerBase,
+  TaskCTL,
+  FnConstructorName,
+} from "./types";
 
 const highOrderHookSync = <SO, TO, TA, B, R>(
-  cb: (body: B, thisArg: TA) => R | Response<SO, TO, R>,
-  metadata?: ShinkaMeta<SO, TO>,
+  cb: ShinkaOnRequestHandlerBase<TA, B, R>,
+  metadata?: ShinkaOnRequestMeta<SO, TO>,
 ) =>
   metadata
-    ? (body: B, thisArg: TA) => {
+    ? (body: B, thisArg: TA, taskCtl: TaskCTL) => {
         try {
-          const response = cb(body, thisArg);
+          const response = cb(body, thisArg, taskCtl);
           if (response instanceof Response)
             response.metadata = { ...metadata, ...response.metadata };
           return response;
@@ -21,13 +26,13 @@ const highOrderHookSync = <SO, TO, TA, B, R>(
     : cb;
 
 const highOrderHookAsync = <SO, TO, TA, B, R>(
-  cb: (body: B, thisArg: TA) => R,
-  metadata?: ShinkaMeta<SO, TO>,
+  cb: ShinkaOnRequestHandlerBase<TA, B, R>,
+  metadata?: ShinkaOnRequestMeta<SO, TO>,
 ) =>
   metadata
-    ? async (body: B, thisArg: TA) => {
+    ? ((async (body: B, thisArg: TA, taskCtl: TaskCTL) => {
         try {
-          const response = await cb(body, thisArg);
+          const response = await cb(body, thisArg, taskCtl);
           if (response instanceof Response)
             response.metadata = { ...metadata, ...response.metadata };
           return response;
@@ -36,10 +41,15 @@ const highOrderHookAsync = <SO, TO, TA, B, R>(
             e.metadata = { ...metadata, ...e.metadata };
           throw e;
         }
-      }
+      }) as ShinkaOnRequestHandlerBase<TA, B, R>)
     : cb;
+
+export type HighOrderHook = (
+  cb: ShinkaOnRequestHandlerBase<any, any, any>,
+  metadata?: ShinkaOnRequestMeta<any, any>,
+) => ShinkaOnRequestHandlerBase<any, any, any>;
 
 export default {
   Function: highOrderHookSync,
   AsyncFunction: highOrderHookAsync,
-};
+} as Record<FnConstructorName, HighOrderHook>;

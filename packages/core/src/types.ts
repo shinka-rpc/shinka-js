@@ -16,6 +16,7 @@ import type {
   ShinkaVarsSetter,
   ShinkaMeta,
   SendFn,
+  REQID,
 } from "./shinka";
 import type {
   EventListenerType,
@@ -57,6 +58,17 @@ export type InternalHandlerThisArg<SO, TO, STATE> = {
   exclusiveLock: (timeout: number) => Promise<AsyncDisposeContext>;
 };
 
+export type AbortFn = (id: REQID, reason?: any) => void;
+
+export type AbortCtl = {
+  U: AbortFn;
+  T: AbortFn;
+  S: AbortFn;
+  L: AbortFn;
+};
+
+export type AbortCtlKey = keyof AbortCtl;
+
 export type BusHandlerThisArg<SO, TO, STATE> = {
   bus: IBus<SO, TO>;
   shinka: Shinka<SO, TO, BusHandlerThisArg<SO, TO, STATE>>;
@@ -64,6 +76,7 @@ export type BusHandlerThisArg<SO, TO, STATE> = {
   dispatchError: (error: any) => void;
   exclusiveLock: (timeout: number) => Promise<AsyncDisposeContext>;
   byeReset: () => void;
+  abort: AbortCtl;
 };
 
 export type UserHandlerRegistries<SO, TO, B> = HandlerRegistries<SO, TO, B>;

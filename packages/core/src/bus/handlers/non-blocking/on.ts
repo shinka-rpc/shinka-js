@@ -7,20 +7,22 @@ import type { NBHandlerRegistries } from "../../../types";
 export const nbHandlerRegistries: NBHandlerRegistries<any, any, any> =
   createHandlerRegistries();
 
+const { onDataEvent /*, onRequest*/ } = nbHandlerRegistries;
+
 // === onRequest
 
 // === onDataEvent
 
-nbHandlerRegistries.onDataEvent(
+onDataEvent(
   NBEventKeys.ACQUIRE,
   ([target, timeout, ...nonces]: [NBAcquire, number, ...number[]], thisArg) =>
     thisArg.lock.on.acquire(thisArg, target, timeout, nonces),
 );
 
-nbHandlerRegistries.onDataEvent(NBEventKeys.ACCEPT, (_, thisArg) =>
+onDataEvent(NBEventKeys.ACCEPT, (_, thisArg) =>
   thisArg.lock.on.accept(thisArg),
 );
 
-nbHandlerRegistries.onDataEvent(NBEventKeys.RELEASE, (_, thisArg) =>
+onDataEvent(NBEventKeys.RELEASE, (_, thisArg) =>
   thisArg.lock.on.release(thisArg),
 );

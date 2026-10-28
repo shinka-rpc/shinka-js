@@ -1,9 +1,8 @@
 import hooksHighOrderRequest from "./high-order-hook-request";
-import { createRegistry, makeRequestRegistryHook } from "./util";
+import { createRegistry, makeRegistryHook } from "./util";
 
-const requestRegistryHook = makeRequestRegistryHook(hooksHighOrderRequest);
+const requestRegistryHook = makeRegistryHook(hooksHighOrderRequest);
 
-export const createHOReqRegistry = <SO, TO, TA, B, R>() =>
-  createRegistry(requestRegistryHook<SO, TO, TA, B, R>);
+export const createHOReqRegistry = () => createRegistry(requestRegistryHook);
 
 export type HOReqRegistryType = ReturnType<typeof createHOReqRegistry>;

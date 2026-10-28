@@ -1,52 +1,32 @@
 import type { Context } from "./context";
 import type {
   DataEventKey,
-  ShinkaMeta,
   FnConstructorName,
-  MetadataWithHint,
+  ShinkaOnRequestMeta,
   DispatchError,
   ReqRegEntry,
-  ReqRegEntryCb,
+  ShinkaOnRequestHandlerBase,
   EvRegEntry,
   MetaTypeHint,
   ShinkaOnDataEventHandler,
+  ShinkaOnRequestHandler,
+  ShinkaOnDataEventMeta,
+  MaybeReqHandler,
+  DisposeTimeout,
 } from "./types";
-
-const splitMetadataHint = <SO, TO>(
-  metadataWithHint: MetadataWithHint<SO, TO>,
-) => {
-  const hint = metadataWithHint.hint;
-  delete metadataWithHint.hint;
-  return [metadataWithHint, hint] as [ShinkaMeta<SO, TO>?, FnConstructorName?];
-};
-
-export const separateMetadataHint = <SO, TO>(
-  metadataWithHint?: MetadataWithHint<SO, TO>,
-) =>
-  (metadataWithHint ? splitMetadataHint(metadataWithHint) : [,]) as [
-    ShinkaMeta<SO, TO>?,
-    FnConstructorName?,
-  ];
 
 export const createRegistry = <K, V, H = V>(valHook?: (val: H) => V) => {
   const registry = new Map<K, V>();
   const get = registry.get.bind(registry);
   const set = valHook
-    ? (key: K, val: H) => registry.set(key, valHook(val))
+    ? (key: K, val: H) => {
+        registry.set(key, valHook(val));
+      }
     : (registry.set.bind(registry) as any as (key: K, val: H) => Map<K, V>);
   return [get, set] as [typeof get, typeof set];
 };
 
 export type AbstractRegistryType<K, V, H> = typeof createRegistry<K, V, H>;
-
-type MaybeReqHandler<SO, TO, TA> =
-  | ((
-      body: any,
-      ctx: Context<SO, TO>,
-      thisArg: TA,
-      dispatchError: DispatchError,
-    ) => any)
-  | undefined;
 
 export const createDispatchRequest =
   <SO, TO, TA>(
@@ -58,65 +38,74 @@ export const createDispatchRequest =
     ctx: Context<SO, TO>,
     thisArg: TA,
     dispatchError: DispatchError,
+    signal: AbortSignal,
+    dTimeout: DisposeTimeout,
   ) => {
     const cb = getRequest(key);
     cb
-      ? cb(body, ctx, thisArg, dispatchError)
+      ? cb(body, ctx, thisArg, signal, dTimeout)
       : dispatchError({ type: "no request handler", key });
   };
 
-export const asOnRequest =
-  <TO, SO, TA, B, R>(
+const asOnRequest =
+  <SO, TO, TA, B, R>(
     reqSet: (key: DataEventKey, val: ReqRegEntry<SO, TO, TA, B, R>) => void,
   ) =>
   (
     key: DataEventKey,
-    cb: (body: any, thisArg: TA) => any,
-    metadataWithHint?: MetadataWithHint<SO, TO>,
-  ) => {
-    const { 0: metadata, 1: hint } = separateMetadataHint(metadataWithHint);
-    reqSet(key, [cb, metadata, hint]);
-  };
+    cb: ShinkaOnRequestHandler<TA>,
+    metadata?: ShinkaOnRequestMeta<SO, TO>,
+  ) =>
+    reqSet(key, [cb, metadata]);
 
-export const asOnDataEvent =
-  <SO, TO, TA, B>(evSet: (key: DataEventKey, val: EvRegEntry<TA>) => void) =>
+const asOnDataEvent =
+  <TA>(evSet: (key: DataEventKey, val: EvRegEntry<TA>) => void) =>
   (
     key: DataEventKey,
     cb: ShinkaOnDataEventHandler<TA>,
-    { hint }: MetaTypeHint = {},
+    metadata?: ShinkaOnDataEventMeta,
   ) =>
-    evSet(key, [cb, hint]);
+    evSet(key, [cb, metadata]);
 
-export type Hooks = {
-  Function: <SO, TO, TA, B, R>(
-    cb: ReqRegEntryCb<TA, B, R>,
-    metadata?: ShinkaMeta<SO, TO>,
-  ) => any;
-  AsyncFunction: <SO, TO, TA, B, R>(
-    cb: ReqRegEntryCb<TA, B, R>,
-    metadata?: ShinkaMeta<SO, TO>,
-  ) => any;
-};
+export const makeRegistryHook =
+  <CB extends (...args: any) => any, M extends MetaTypeHint, R>(
+    hooks: Record<FnConstructorName, (cb: CB, metadata?: M) => R>,
+  ) =>
+  ({ 0: cb, 1: metadata }: [CB, M | undefined]) =>
+    hooks[metadata?.hint || (cb.constructor.name as FnConstructorName)](
+      cb,
+      metadata,
+    );
 
-export const makeRequestRegistryHook =
-  (hooks: Hooks) =>
-  <SO, TO, TA, B, R>({
-    0: cb,
-    1: metadata,
-    2: hint,
-  }: ReqRegEntry<SO, TO, TA, B, R>) =>
-    hooks[hint || (cb.constructor.name as FnConstructorName)](cb, metadata);
-
-export type EventHooks = {
-  Function: <TA, B>(
-    cb: (body: B, thisArg: TA) => void,
-  ) => (body: B, thisArg: TA, dispatchError: DispatchError) => void;
-  AsyncFunction: <TA, B>(
-    cb: (body: B, thisArg: TA) => Promise<void>,
-  ) => (body: B, thisArg: TA, dispatchError: DispatchError) => Promise<void>;
-};
-
-export const makeEventRegistryHook =
-  (hooks: EventHooks) =>
-  <TA>({ 0: cb, 1: hint }: EvRegEntry<TA>) =>
-    hooks[hint || (cb.constructor.name as FnConstructorName)](cb as any);
+export const handlerRegistriesFactory =
+  <RH extends (...args: any) => any, EH extends (...args: any) => any>(
+    createRequestRegistry: () => [
+      (key: unknown) => RH | undefined,
+      (
+        key: unknown,
+        val: [
+          ShinkaOnRequestHandlerBase<any, any, any>,
+          ShinkaOnRequestMeta<any, any> | undefined,
+        ],
+      ) => void,
+    ],
+    createEventRegistry: () => [
+      (key: unknown) => EH | undefined,
+      (
+        key: unknown,
+        val: [ShinkaOnDataEventHandler<any>, ShinkaOnDataEventMeta | undefined],
+      ) => void,
+    ],
+  ) =>
+  <SO, TO, TA>() => {
+    const { 0: reqGet, 1: reqSet } = createRequestRegistry();
+    const { 0: evGet, 1: evSet } = createEventRegistry();
+    const onRequest = asOnRequest<SO, TO, TA, any, any>(reqSet);
+    const onDataEvent = asOnDataEvent<TA>(evSet);
+    return [evGet, reqGet, onRequest, onDataEvent] as [
+      typeof evGet,
+      typeof reqGet,
+      typeof onRequest,
+      typeof onDataEvent,
+    ];
+  };

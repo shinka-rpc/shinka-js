@@ -41,6 +41,7 @@ import type {
   BusHandlerThisArg,
   CompleteFn,
   OutScope,
+  AbortFn,
 } from "../types";
 import type {
   ManageEventListener,
@@ -207,33 +208,40 @@ export class Bus<SO, TO, TC> implements IBus<SO, TO> {
       responseTimeout,
     );
 
-    const { 0: busSetVars, 1: busShinka } = createOrCompleteShinka<SO, TO, any>(
+    const { 1: busSetVars, 2: busShinka } = createOrCompleteShinka<SO, TO, any>(
       messageTypeBus,
       busHandlerRegistries,
     );
 
-    const { 0: nbSetVars, 1: nbShinka } = createOrCompleteShinka<SO, TO, any>(
+    const { 1: nbSetVars, 2: nbShinka } = createOrCompleteShinka<SO, TO, any>(
       messageTypeNB,
       nbHandlerRegistries,
     );
 
-    const { 0: serializerSetVars, 1: serializerShinka } =
-      createOrCompleteShinka(messageTypeSerializer, serializerRegistries);
+    const {
+      0: serializerOnAbort,
+      1: serializerSetVars,
+      2: serializerShinka,
+    } = createOrCompleteShinka(messageTypeSerializer, serializerRegistries);
 
-    const { 0: transportSetVars, 1: transportShinka } = createOrCompleteShinka(
-      messageTypeTransport,
-      transportRegistries,
-    );
+    const {
+      0: transportOnAbort,
+      1: transportSetVars,
+      2: transportShinka,
+    } = createOrCompleteShinka(messageTypeTransport, transportRegistries);
 
-    const { 0: userSetVars, 1: userShinka } = createOrCompleteShinka(
-      messageTypeUser,
-      userRegistries,
-    );
+    const {
+      0: userOnAbort,
+      1: userSetVars,
+      2: userShinka,
+    } = createOrCompleteShinka(messageTypeUser, userRegistries);
 
     this.exclusiveLock = (acquireMe<SO, TO>).bind(0, nbTA, NBAcquire.USER);
 
     const busTAState = {};
     this.#resetStatesQueue.push(curryClearObject(busTAState));
+
+    const limonAbortDelegate = delegate<AbortFn>(dummy);
 
     const busTA: BusHandlerThisArg<SO, TO, any> = objectFreeze({
       bus: this,
@@ -242,6 +250,12 @@ export class Bus<SO, TO, TC> implements IBus<SO, TO> {
       exclusiveLock: (acquireMe<SO, TO>).bind(0, nbTA, NBAcquire.BUS),
       dispatchError,
       byeReset: this.#resetBye,
+      abort: {
+        U: userOnAbort,
+        S: serializerOnAbort,
+        L: limonAbortDelegate.call,
+        T: transportOnAbort,
+      },
     });
 
     const serializerTAState = {};
@@ -312,9 +326,24 @@ export class Bus<SO, TO, TC> implements IBus<SO, TO> {
 
     busSetVars({ thisArg: busTA, dispatchError, send });
     nbSetVars({ thisArg: nbTA, dispatchError, send });
-    serializerSetVars({ thisArg: serializerTA, dispatchError, send });
-    transportSetVars({ thisArg: transportTA, dispatchError, send });
-    userSetVars({ thisArg: this, dispatchError, send });
+    serializerSetVars({
+      thisArg: serializerTA,
+      dispatchError,
+      send,
+      abort: busEvents.abortSerializer.bind(0, busShinka.dataEvent),
+    });
+    transportSetVars({
+      thisArg: transportTA,
+      dispatchError,
+      send,
+      abort: busEvents.abortTransport.bind(0, busShinka.dataEvent),
+    });
+    userSetVars({
+      thisArg: this,
+      dispatchError,
+      send,
+      abort: busEvents.abortUser.bind(0, busShinka.dataEvent),
+    });
 
     this.#sta = {
       transport: {
@@ -335,10 +364,13 @@ export class Bus<SO, TO, TC> implements IBus<SO, TO> {
 
     if (limonRF !== null) {
       const { 0: limonRegistries, 1: limonFactory } = limonRF;
-      const { 0: limonSetVars, 1: limonShinka } = createOrCompleteShinka(
-        messageTypeLimon,
-        limonRegistries,
-      );
+      const {
+        0: limonOnAbort,
+        1: limonSetVars,
+        2: limonShinka,
+      } = createOrCompleteShinka(messageTypeLimon, limonRegistries);
+
+      limonAbortDelegate.set(limonOnAbort);
 
       const limonTAState = {};
       this.#resetStatesQueue.push(curryClearObject(limonTAState));
@@ -352,7 +384,12 @@ export class Bus<SO, TO, TC> implements IBus<SO, TO> {
         exclusiveLock: (acquireMe<SO, TO>).bind(0, nbTA, NBAcquire.LIMON),
         dispatchError,
       });
-      limonSetVars({ thisArg: limonTA, dispatchError, send });
+      limonSetVars({
+        thisArg: limonTA,
+        dispatchError,
+        send,
+        abort: busEvents.abortLimon.bind(0, busShinka.dataEvent),
+      });
       this.#sta.limon = {
         shinka: limonShinka,
         TA: limonTA,
