@@ -233,8 +233,8 @@ const config = defineConfig({
               link: "/api-reference/scenarios/",
               items: [
                 {
-                  text: "WaitConnected",
-                  link: "/api-reference/scenarios/wait-connected",
+                  text: "ReadinessBarrier",
+                  link: "/api-reference/scenarios/readiness-barrier",
                 },
                 {
                   text: "ClientRegistry",

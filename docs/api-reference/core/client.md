@@ -63,13 +63,14 @@ A request sends data to the remote peer and waits for its response.
 
 ```ts
 type User = { /* ... */ };
-const result = await client.request<User>("get-user", { id: 42 });
+
+const user = await client.request<User>("get-user", { id: 42 });
 ```
 
 Requests are identified by a `key`. The payload can contain arbitrary
 application data supported by the configured serializer.
 
-The remote peer handles the request with `onRequest`:
+The remote peer handles the request with `onRequest()`:
 
 ```ts
 client.onRequest("get-user", async (data) => {
@@ -80,26 +81,114 @@ client.onRequest("get-user", async (data) => {
 The callback may return a value synchronously or asynchronously. Its result
 becomes the response to the request.
 
+### Request metadata
+
+The optional metadata argument allows you to configure an individual request:
+
+```ts
+const controller = new AbortController();
+
+const user = await client.request<User>(
+  "get-user",
+  { id: 42 },
+  {
+    timeout: 5_000,
+    signal: controller.signal,
+  },
+);
+```
+
+Request metadata supports the following properties:
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `timeout` | `number` | Overrides the default response timeout for this request. |
+| `signal` | `AbortSignal` | Allows the request to be cancelled through an `AbortController`. |
+| `transport` | `TO` | Transport-specific metadata. |
+| `serialize` | `SO` | Serializer-specific metadata. |
+
+All properties are optional.
+
+The `timeout` property configures the timeout for an individual request. If
+omitted, the `responseTimeout` configured on the `Client` is used, falling back
+to the package default when no instance-level timeout is configured.
+
+The `signal` property allows application code to cancel a request:
+
+```ts
+const controller = new AbortController();
+
+const pending = client.request<User>(
+  "get-user",
+  { id: 42 },
+  { signal: controller.signal },
+);
+
+// Cancel when the result is no longer needed.
+controller.abort();
+```
+
+Cancellation communicates that the caller no longer needs the result. It does
+not forcibly terminate arbitrary JavaScript execution on the remote peer.
+Request handlers can observe cancellation through the `AbortSignal` provided to
+them and stop unnecessary work cooperatively.
+
+Timeouts and cancellation are separate mechanisms: a timeout limits how long the
+caller waits for a response, while an abort signal allows the caller to request
+cancellation explicitly.
+
+See [Registering request handlers](#registering-request-handlers) for how
+handlers receive the cancellation signal.
+
 ### Registering request handlers
 
 ```ts
 client.onRequest(key, callback, metadata?)
 ```
 
-* `key` — application-defined request key.
-* `callback` — function called when a matching request is received.
-* `metadata` — optional transport and serialization metadata.
+Arguments:
 
-The callback receives the request data and the `Client` instance as its `thisArg`:
+- `key` — application-defined request key.
+- `callback` — function called when a matching request is received.
+- `metadata` — optional handler metadata, including transport and serialization
+  options, a type hint, and a timeout.
+
+The callback receives three arguments:
 
 ```ts
-client.onRequest("get-user", async (data, client) => {
-  return await getUser(data.id);
+client.onRequest("get-user", async (data, client, taskCtl) => {
+  taskCtl.signal.throwIfAborted();
+
+  return await getUser(data.id, {
+    signal: taskCtl.signal,
+  });
 });
 ```
 
-The `thisArg` is useful when a handler needs to access the client that received
-the request.
+The arguments are:
+
+- `data` — the request payload.
+- `client` — the `Client` instance that received the request, passed as `thisArg`.
+- `taskCtl` — an object containing the request's `AbortSignal` as `taskCtl.signal`.
+
+The signal allows a handler to observe cancellation and propagate it to APIs
+that support `AbortSignal`.
+
+For example, a handler can pass the signal to `fetch()` or another
+cancellation-aware operation. The handler is responsible for responding to
+cancellation; the signal does not automatically stop arbitrary work.
+
+The optional metadata argument has the following properties:
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `transport` | `TO` | Transport-specific metadata. |
+| `serialize` | `SO` | Serializer-specific metadata. |
+| `hint` | `FnConstructorName` | Optional function-constructor hint. |
+| `timeout` | `number` | Optional timeout configuration for requests handled by this registration. |
+
+See the request handler's API contract for the exact timeout semantics and
+metadata precedence.
 
 ## Data events
 
@@ -272,11 +361,65 @@ Sends a request and waits for its response.
 client.request<T>(key, data, metadata?)
 ```
 
-Returns:
+Returns `Promise<T>`.
+
+The optional metadata argument supports:
 
 ```ts
-Promise<T>
+type ShinkaDoRequestMeta<SO, TO> = {
+  transport?: TO;
+  serialize?: SO;
+  signal?: AbortSignal;
+  timeout?: number;
+};
 ```
+
+- `transport` — transport-specific metadata.
+- `serialize` — serializer-specific metadata.
+- `signal` — signal used to request cancellation.
+- `timeout` — per-request response timeout.
+
+When `timeout` is omitted, the configured `responseTimeout` or the package
+default applies.
+
+### `onRequest()`
+
+Registers a handler for incoming requests.
+
+```ts
+client.onRequest(key, callback, metadata?)
+```
+
+The handler receives the request data, the receiving `Client` as its `thisArg`,
+and a task control object:
+
+```ts
+type TaskCTL = {
+  signal: AbortSignal;
+};
+```
+
+The signal communicates cancellation to the handler. The handler can use it to
+stop cancellation-aware operations and avoid unnecessary work.
+
+The optional registration metadata supports:
+
+```ts
+type ShinkaOnRequestMeta<SO, TO> = {
+  transport?: TO;
+  serialize?: SO;
+  hint?: FnConstructorName;
+  timeout?: number;
+};
+```
+
+- `transport` — transport-specific metadata.
+- `serialize` — serializer-specific metadata.
+- `hint` — optional function-constructor hint.
+- `timeout` — timeout configuration for the registration.
+
+See the detailed request documentation for timeout behavior, cancellation
+semantics, and metadata precedence.
 
 ### `dataEvent()`
 
@@ -284,14 +427,6 @@ Sends a one-way data event.
 
 ```ts
 client.dataEvent(key, data, metadata?)
-```
-
-### `onRequest()`
-
-Registers a request handler.
-
-```ts
-client.onRequest(key, callback, metadata?)
 ```
 
 ### `onDataEvent()`

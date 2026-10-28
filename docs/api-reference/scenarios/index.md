@@ -9,7 +9,7 @@ manage connections on the application's behalf.
 
 Explore the scenarios:
 
-- [Wait for a connection](wait-connected.md)
+- [Wait for a bus readiness](readiness-barrier.md)
 - [Manage a client registry](client-registry.md)
 - [Pass through events and requests](pass-through.md)
 - [Coordinate resource acquisition](single-flight.md)

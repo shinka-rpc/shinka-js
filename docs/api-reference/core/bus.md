@@ -166,9 +166,9 @@ The lifecycle event sequence describes the `Bus` state transitions. It does not 
 
 ## Messaging API
 
-`Bus` also provides operations for application-level messaging:
+`Bus` provides operations for application-level messaging:
 
-- `request()` — sends a request and awaits its response.
+- `request()` — sends a request and returns a promise for its response.
 - `dataEvent()` — sends a data event.
 - `onRequest()` — registers request handlers.
 - `onDataEvent()` — registers data-event handlers.
@@ -176,13 +176,50 @@ The lifecycle event sequence describes the `Bus` state transitions. It does not 
 - `exclusiveLock()` — reserves exclusive access to the outgoing channel.
 - `extra` — exposes the additional data associated with the `Bus`.
 
-The precise behavior of these operations depends on the configured transport, serializer, and optional components.
+### Requests and cancellation
+
+Requests support per-call timeout configuration and cancellation through
+`AbortSignal`.
+
+The `request()` method accepts optional metadata that can configure the
+transport and serialization, specify a timeout, and provide an abort signal.
+This allows individual requests to override the default response timeout or to
+be cancelled in response to application events.
+
+The `onRequest()` method registers a handler that receives the request data, its
+`thisArg`, and a `taskCtl` object containing an `AbortSignal`. The handler can
+use this signal to observe cancellation initiated by the requesting side and
+stop work that is no longer needed.
+
+Request handlers can therefore cooperate with cancellation-aware APIs, including
+APIs that accept an `AbortSignal`.
+
+Timeouts and cancellation serve related but distinct purposes:
+
+- **Timeout** — limits how long a request waits for a response.
+- **Cancellation** — communicates that the caller no longer needs the result and
+allows the handler to stop unnecessary work.
+
+Cancellation is cooperative. Receiving an abort signal does not automatically
+terminate arbitrary JavaScript execution; the handler must observe the signal
+and respond appropriately.
+
+See the `request()` and `onRequest()` API documentation for their exact metadata
+contracts and cancellation behavior.
 
 ### Exclusive access
 
-An exclusive lock reserves the outgoing channel for a critical section. Messages produced while the lock is held can be buffered and sent when the lock is released.
+An exclusive lock reserves the outgoing channel for a critical section. Messages
+produced while the lock is held can be buffered and sent when the lock is
+released.
 
-The reservation concerns writing to the transport: it does not necessarily mean that no messages are pending in memory. This can be useful for operations such as rotating a serialization or encryption key without interleaving writes that use different configurations.
+The reservation concerns writing to the transport: it does not necessarily mean
+that no messages are pending in memory. This can be useful for operations such
+as rotating a serialization or encryption key without interleaving writes that
+use different configurations.
+
+The precise behavior of messaging operations depends on the configured
+transport, serializer, and optional components.
 
 ## Configuration
 

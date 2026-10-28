@@ -21,8 +21,8 @@ The package includes scenarios for waiting until a connection is ready, managing
 a registry of clients, forwarding Shinka events and requests, and coordinating
 asynchronous resource acquisition.
 
-- **`waitConnected(bus)`** — returns a reusable promise that resolves on
-  `connect` and becomes pending again on `disconnect`.
+- **`readinessBarrier`** creates a reusable asynchronous barrier that represents
+  the readiness of an `IBus`.
 - **`createSingleFlight(options)`** — coalesces concurrent resource
   acquisitions by identity key and coordinates invalidation.
 - **Client registry and pass-through scenarios** — provide additional
@@ -36,10 +36,13 @@ asynchronous resource acquisition.
 ## Example
 
 ```ts
-import { waitConnected } from "@shinka-rpc/scenarios";
+import { readinessBarrier } from "@shinka-rpc/scenarios";
 
-const connected = waitConnected(bus);
+const ready = readinessBarrier(client, async () => {
+  await authenticate(client);
+});
 
-await connected;
-await bus.request("some-request");
+await ready;
+
+const data = await client.request("get-data");
 ```
