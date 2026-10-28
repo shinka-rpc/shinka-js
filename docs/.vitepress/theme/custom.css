@@ -13,3 +13,16 @@ html.dark {
     }
   }
 }
+
+img[alt="diagram"] {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.VPHomeFeatures article.box > .icon {
+  font-size: 36px;
+}
+
+.VPHomeFeatures article.box > h2 > a {
+  color: var(--vp-home-hero-name-color);
+}
