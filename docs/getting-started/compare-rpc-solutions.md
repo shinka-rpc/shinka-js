@@ -1,31 +1,18 @@
 # 🚧 Shinka RPC Compared with Other RPC Solutions
 
-> **Status: Draft — October 12, 2026.** This comparison is a work in progress. Package sizes are based on Bundlephobia measurements supplied for specific versions. Other characteristics are documented only where sufficient information is available. Missing data is explicitly marked rather than inferred.
+## Introduction
 
-## 1. Introduction
+Shinka RPC is a modular TypeScript communication library for applications that need RPC, event-based messaging, and control over the underlying connection.
 
-Shinka RPC is a TypeScript RPC library designed around a modular architecture. It separates the connection abstraction, transport, serialization, and additional protocol components, allowing applications to choose and extend individual parts.
+Rather than tying communication to a particular transport or serialization format, `@shinka-rpc/core` separates the connection lifecycle, transport, serializer, and optional liveness monitoring. This makes it possible to adapt the same communication model to different runtimes and communication channels.
 
-This article compares Shinka RPC with several alternative approaches to remote procedure calls and bidirectional communication:
+Shinka RPC is not intended to replace every RPC framework. Some alternatives provide a higher-level developer experience, integrated runtime validation, generated clients, or a mature server ecosystem. Shinka RPC focuses on a composable communication foundation, explicit lifecycle management, and control over protocol overhead.
 
-- Comlink
-- tRPC
-- JSON-RPC 2.0
-- gRPC and gRPC-Web
-- Socket.IO
-- TSRPC
-- rpc-websockets
-- Connect RPC
-- Effect RPC
-- Metacom
+This article compares Shinka RPC with several alternatives across bundle size, transport flexibility, runtime compatibility, serialization, reliability, type safety, concurrency, extensibility, and network overhead.
 
-These projects do not all solve the same problem. Some provide an RPC programming model, some define a wire protocol, and others offer a complete communication framework.
+## Comparison methodology
 
-Consequently, this comparison does not attempt to establish a universal ranking. Its purpose is to identify architectural trade-offs, practical capabilities, and areas where Shinka RPC could improve.
-
-## 2. Comparison methodology
-
-We evaluate implementations using the following criteria:
+The comparison uses 14 criteria:
 
 1. Bundle size
 2. Transport flexibility
@@ -42,345 +29,319 @@ We evaluate implementations using the following criteria:
 13. Maturity and ecosystem
 14. Network overhead
 
-Three distinctions are important when interpreting the results.
+The comparison includes both RPC libraries and communication frameworks. These are not interchangeable categories: for example, JSON-RPC defines a protocol, Comlink provides an abstraction over message passing, and Socket.IO defines its own event-oriented protocol and connection behavior.
 
-**Specifications versus implementations.** JSON-RPC 2.0 is a protocol specification, not a single library. Its runtime compatibility, bundle size, and reconnect behavior depend on the implementation and transport.
+The package sizes below are version-specific published-package measurements reported by Bundlephobia. They are useful for an initial comparison, but they are not a perfect measure of the code a particular application will ship. Different packages have different responsibilities, and tree shaking, bundler configuration, adapters, and application usage can all affect the final result.
 
-**Client versus server.** Browser clients and Node.js servers have different requirements and bundle sizes. Their measurements must not be treated as interchangeable.
+Capabilities should also be distinguished from guarantees. A framework that supports reconnection, for example, does not necessarily guarantee that a request interrupted by disconnection will be executed exactly once.
 
-**Implemented versus verified.** A feature may exist in the source code without having adequate tests or documentation. Where verification is incomplete, this article does not assume that the feature is either present or absent.
+## 1. Bundle size
 
-## 3. Bundle size
+The following table records the reported package sizes for the selected versions.
 
-Bundle size is often one of the first characteristics developers examine when considering a browser library. It is not a complete measure of value, but it provides a useful, reproducible starting point.
+| Library or package | Version | Minified | Minified + gzip |
+|---|---:|---:|---:|
+| `@shinka-rpc/core` | `0.1.0-alpha.13` | 19.4 kB | 6.7 kB |
+| `comlink` | `4.4.2` | 4.2 kB | 1.9 kB |
+| `@trpc/client` | `11.19.0` | 32.5 kB | 10.2 kB |
+| `json-rpc-2.0` | `1.8.1` | 15.5 kB | 3.8 kB |
+| `@grpc/grpc-js` | `1.14.6` | 392.5 kB | 101.4 kB |
+| `grpc-web` | `2.1.1` | 26 kB | 10.2 kB |
+| `socket.io-client` | `4.8.4` | 41.1 kB | 12.7 kB |
+| `socket.io` | `4.8.4` | 265.9 kB | 54.5 kB |
+| `tsrpc-browser` | `3.4.18` | 172.4 kB | 49.1 kB |
+| `tsrpc` | `3.4.21` | 147.3 kB | 39.7 kB |
+| `rpc-websockets` | `10.0.1` | 34 kB | 10.3 kB |
+| `@connectrpc/connect` | `2.2.0` | 49.4 kB | 13.5 kB |
+| `@connectrpc/connect-web` | `2.2.0` | 8.6 kB | 2.4 kB |
+| `@effect/rpc` | `0.76.2` | 67.3 kB | 22.1 kB |
 
-The following figures are measurements reported by Bundlephobia for the specified package versions.
+These figures should not be interpreted as a strict ranking of efficiency. Some entries are browser-oriented clients, while others represent server implementations or broader framework packages. In particular, `@grpc/grpc-js` is a Node.js gRPC implementation, not a browser client directly comparable to `grpc-web`.
 
-| Package | Version | Minified | Minified + gzip |
-|---|---|---:|---:|
-| `comlink` | 4.4.2 | 4.2 kB | 1.9 kB |
-| `@connectrpc/connect-web` | 2.2.0 | 8.6 kB | 2.4 kB |
-| `json-rpc-2.0` | 1.8.1 | 15.5 kB | 3.8 kB |
-| `@shinka-rpc/core` | 0.1.0-alpha.12 | 17.4 kB | 6.0 kB |
-| `@trpc/client` | 11.19.0 | 32.5 kB | 10.2 kB |
-| `grpc-web` | 2.1.1 | 26.0 kB | 10.2 kB |
-| `rpc-websockets` | 10.0.1 | 34.0 kB | 10.3 kB |
-| `socket.io-client` | 4.8.4 | 41.1 kB | 12.7 kB |
-| `@connectrpc/connect` | 2.2.0 | 49.4 kB | 13.5 kB |
-| `@effect/rpc` | 0.76.2 | 67.3 kB | 22.1 kB |
-| `tsrpc` | 3.4.21 | 147.3 kB | 39.7 kB |
-| `tsrpc-browser` | 3.4.18 | 172.4 kB | 49.1 kB |
-| `socket.io` | 4.8.4 | 265.9 kB | 54.5 kB |
-| `@grpc/grpc-js` | 1.14.6 | 392.5 kB | 101.4 kB |
-| `metacom` | Unknown | Unknown | Unknown |
+The `@connectrpc/connect` and `@connectrpc/connect-web` packages also serve different roles, so their sizes should not simply be added or compared as if they were equivalent implementations.
 
-Sources: [Bundlephobia](https://bundlephobia.com/), with package versions fixed as shown in the table.
+For Shinka RPC, the reported size increased from **17.4 kB minified / 6.0 kB minified + gzip** in `0.1.0-alpha.12` to **19.4 kB / 6.7 kB** in `0.1.0-alpha.13`. The increase accompanies ongoing development, including lifecycle improvements, a reconnect scenario, and request cancellation support. The size figures alone do not establish how much each feature contributes.
 
-**Important limitations:**
+A separate minimal-bundle measurement previously reported 11.9 kB minified and 4.5 kB gzip for Shinka RPC. That measurement used a different methodology and should not be mixed into the Bundlephobia table.
 
-- These measurements are not all directly comparable. Some packages are browser clients, others are server implementations, and others are protocol or framework components.
-- Bundlephobia's package-level measurements do not necessarily represent the minimum application bundle after tree-shaking.
-- The figures for `@shinka-rpc/core` describe the published package measurement, not the minimum possible Shinka bundle.
+## 2. Transport flexibility
 
-A separate measurement using bundlejs gives a smaller Shinka bundle: **11.9 kB minified and 4.5 kB gzipped**. This is a different measurement methodology and should not be mixed into the Bundlephobia table.
+Transport choice determines where and how peers can communicate.
 
-For a meaningful comparison, future measurements should include both the published-package size and a reproducible minimal application build.
-
-### Preliminary observation
-
-Shinka's 6 kB gzipped package measurement is competitive with several established RPC clients and frameworks. It is larger than Comlink and the Connect browser package, but smaller than the measured tRPC, Socket.IO client, and Effect RPC packages.
-
-These figures alone do not establish which implementation offers the best value. That requires comparing equivalent capabilities and configurations.
-
-## 4. Transport flexibility
-
-Transport flexibility determines whether an application can use an existing communication mechanism or must adopt the framework's preferred transport.
-
-| Implementation | Available information |
+| Library | Transport model |
 |---|---|
-| Shinka RPC | Designed to separate transport from RPC logic. WebSocket, fetch, SSE, and message-port transports are among the relevant implementations in its ecosystem. Exact package-level support requires verification. |
-| Comlink | Uses `postMessage`-compatible endpoints, particularly Web Workers. |
-| tRPC | Uses HTTP-based links and supports WebSocket subscriptions and SSE in appropriate configurations. |
-| JSON-RPC 2.0 | Transport-independent specification. Transport support depends on the chosen implementation. |
-| gRPC | Typically uses HTTP/2. gRPC-Web enables browser communication through a compatible server or proxy. |
-| Socket.IO | Provides its own event protocol, generally over WebSocket with HTTP long-polling as a fallback. |
-| TSRPC | Supports HTTP and WebSocket. |
-| rpc-websockets | Built around WebSocket. |
-| Connect | Uses HTTP-based RPC with support for Connect, gRPC, and gRPC-Web protocols in appropriate configurations. |
-| Effect RPC | Supports multiple communication and serialization configurations; the exact supported transports need verification. |
-| Metacom | Associated with the Metarhia ecosystem and WebSocket-based communication; the exact scope of supported transports needs verification. |
+| **Shinka RPC** | Pluggable transport abstraction |
+| **Comlink** | Message-passing endpoints, typically `postMessage` |
+| **tRPC** | Configurable links and protocol adapters |
+| **JSON-RPC 2.0** | Transport-independent protocol |
+| **gRPC** | HTTP/2-based RPC |
+| **gRPC-Web** | Browser-compatible gRPC protocol over HTTP |
+| **Socket.IO** | Its own event-oriented protocol over supported underlying transports |
+| **TSRPC** | HTTP and WebSocket-oriented communication |
+| **rpc-websockets** | WebSocket-based RPC |
+| **Connect RPC** | Connect, gRPC, and gRPC-Web-compatible protocols |
+| **Effect RPC** | RPC abstraction with supported protocol and transport integrations |
 
-An important question for Shinka is not merely how many transports exist, but whether a developer can implement a new transport without changing application-level RPC handlers.
+Shinka RPC's transport abstraction is one of its central architectural decisions. The communication layer is not inherently tied to WebSocket or a single browser API. Transport implementations can adapt the library to different communication environments.
 
-That distinction should be verified with a small custom transport implementation before making a stronger comparative claim.
+This is useful when an application needs to communicate across different kinds of execution contexts, such as a page and a worker, or when the transport must change without rewriting application-level messaging.
 
-## 5. Runtime compatibility
+Comlink is especially natural when both peers expose objects through compatible message-passing endpoints. Socket.IO is more opinionated: its protocol, event semantics, and connection behavior are part of the solution rather than merely an interchangeable transport.
 
-Runtime compatibility is particularly important for applications that share code between browsers, Node.js, Bun, and workers.
+JSON-RPC is different again. It specifies a message format and interaction conventions but does not prescribe a transport implementation.
 
-| Implementation | Browser | Node.js | Bun |
-|---|---|---|---|
-| Shinka RPC | Intended use; exact compatibility matrix needed | Needs a versioned test matrix | Needs explicit verification |
-| Comlink | Yes, for supported endpoints | Supported endpoint scenarios depend on the environment | Needs explicit verification |
-| tRPC | Yes | Yes | Requires version-specific verification |
-| JSON-RPC 2.0 | Depends on the library | Depends on the library | Depends on the library |
-| gRPC (`@grpc/grpc-js`) | Not directly as a normal browser client | Yes | Needs verification |
-| gRPC-Web | Yes, with compatible server infrastructure | Depends on the role and implementation | Needs verification |
-| Socket.IO | Yes | Yes | Needs verification |
-| TSRPC | Browser client available | Server package available | Needs verification |
-| rpc-websockets | Browser and Node.js usage are relevant targets | Yes | Needs verification |
-| Connect | Browser support through `connect-web` | Yes | Needs verification |
-| Effect RPC | Depends on the selected transport and platform configuration | Relevant supported target; exact matrix needed | Needs verification |
-| Metacom | Needs verification | Node.js-oriented ecosystem | Needs verification |
+**Trade-off:** Shinka RPC's flexibility comes with a responsibility to configure compatible transports and serializers. A more opinionated framework may require less initial setup for a narrowly defined use case.
 
-This table is deliberately conservative. Compatibility with JavaScript APIs does not automatically establish official support for a runtime.
+## 3. Runtime compatibility
 
-A useful follow-up would be to run the same smoke tests on all three targets and record the exact package versions and runtime versions.
+Runtime compatibility depends on both the communication model and the actual transport implementation.
 
-## 6. Serialization
+- **Shinka RPC** separates the core communication layer from transport and serialization adapters, allowing implementations to target different runtimes.
+- **Comlink** is a strong fit for environments that support message passing, including Web Workers.
+- **tRPC** is primarily associated with TypeScript applications using its supported client and server adapters.
+- **JSON-RPC 2.0** can be implemented in virtually any runtime because it is a protocol rather than a complete runtime framework.
+- **gRPC** has a broad server ecosystem, while browser applications commonly use gRPC-Web or Connect-compatible alternatives.
+- **Socket.IO** provides browser and server implementations, with its own protocol and supported transport behavior.
+- **TSRPC**, **rpc-websockets**, **Connect RPC**, and **Effect RPC** each have their own runtime and adapter requirements.
 
-Serialization affects interoperability, performance, and the amount of data transferred over the network.
+It is important to distinguish protocol compatibility from implementation availability. A protocol may be suitable for a runtime even when a particular library package does not support that runtime directly.
 
-| Implementation | Serialization approach |
-|---|---|
-| Shinka RPC | Pluggable serializer architecture; JSON is available, with additional serializer packages in the ecosystem. |
-| Comlink | Uses structured cloning and transferable objects where supported by the endpoint. |
-| tRPC | Typically uses JSON, with configurable transformers for richer data types. |
-| JSON-RPC 2.0 | JSON message format by specification. |
-| gRPC | Protocol Buffers are the standard approach. |
-| gRPC-Web | Protocol Buffers in the usual binary configuration, with supported text mode as well. |
-| Socket.IO | Uses its own packet format and a configurable parser; binary attachments are supported. |
-| TSRPC | Provides its own serialization options, including binary-oriented formats. Exact configuration requires verification. |
-| rpc-websockets | JSON-RPC-style messages over WebSocket. |
-| Connect | Supports Protobuf and JSON in appropriate protocol configurations. |
-| Effect RPC | Supports JSON-oriented protocols and SchemaBinary; exact configuration should be verified. |
-| Metacom | Exact serialization format and customization points need verification. |
+For Shinka RPC, compatibility should be evaluated at the level of the selected transport and serializer, not inferred solely from the core package.
 
-Shinka's architectural approach is to keep serialization separate from the transport. This makes it possible to introduce transformations such as binary encoding, compression, or other serialization layers without redesigning the application-level communication model.
+## 4. Serialization
 
-The practical value of this separation depends on how easily a new serializer can be integrated and whether the chosen transport can accommodate its requirements.
+Serialization determines the representation of application data on the wire. It can affect bundle size, CPU usage, message size, and which values can be transmitted.
 
-## 7. Liveness detection
+Shinka RPC separates serialization from communication. Its serializer abstraction supports different implementations, including JSON and adapters for formats such as BSON, MessagePack, and YAML. Higher-order serializer utilities can also compose transformations such as compression or encoding.
 
-A live transport connection does not necessarily imply that the remote application is responsive. Liveness detection addresses how a system recognizes a dead or unresponsive peer.
+This separation makes it possible to choose a format according to the application's requirements rather than adopting one serialization format for every use case.
 
-| Implementation | Mechanism |
-|---|---|
-| Shinka RPC | Liveness monitoring is available through the LiMon component; exact timeout and threshold behavior should be documented alongside test results. |
-| Comlink | No general network heartbeat is inherent in its RPC abstraction. |
-| tRPC | Depends on the transport and application configuration; a universal heartbeat mechanism has not been established here. |
-| JSON-RPC 2.0 | Not specified by the protocol. |
-| gRPC | Supports keepalive mechanisms at the transport level. |
-| gRPC-Web | Browser-side liveness behavior depends on the protocol and server infrastructure. |
-| Socket.IO | Built-in heartbeat using ping/pong and timeout-based disconnection detection. |
-| TSRPC | Exact built-in heartbeat behavior needs verification. |
-| rpc-websockets | Exact heartbeat and timeout behavior needs verification. |
-| Connect | Exact built-in liveness behavior depends on the protocol and configuration; more verification is needed. |
-| Effect RPC | Depends on the transport and configuration; more verification is needed. |
-| Metacom | Exact timeout and heartbeat behavior needs verification. |
+Other libraries make different trade-offs:
 
-For this comparison, three mechanisms should be distinguished:
+- **Comlink** relies on the underlying structured-clone/message-passing model and supported transferable values rather than defining a general-purpose wire serializer.
+- **tRPC** uses its configured data transformer and link architecture.
+- **JSON-RPC 2.0** describes JSON messages and does not define a binary encoding.
+- **gRPC** commonly uses Protocol Buffers.
+- **gRPC-Web** uses the gRPC-Web protocol and its supported message encodings.
+- **Socket.IO** has its own packet protocol and parser, with support for serializing application data and binary attachments.
+- **TSRPC**, **Connect RPC**, and **Effect RPC** offer their own serialization and protocol options.
 
-1. Detecting an unresponsive peer.
-2. Detecting a broken transport connection.
-3. Re-establishing communication after a failure.
+There is no universally best format. JSON is easy to inspect and interoperates well with many systems. Binary formats can reduce payload size or parsing costs in some situations, but may require additional dependencies and tooling.
 
-A framework that supports one does not necessarily provide the others.
+Shinka RPC's advantage is that serialization is a replaceable component. Its trade-off is that users must select, configure, and test the serializer that fits their application.
 
-## 8. Connection lifecycle
+## 5. Liveness detection
 
-Connection lifecycle concerns how an implementation starts, stops, reconnects, and handles operations that are in progress during a failure.
+A working transport does not necessarily mean that the remote application is responsive. A connection may remain apparently open while one peer has stopped responding or become unreachable.
 
-Shinka exposes explicit lifecycle operations through its bus abstraction, including `start()`, `stop()`, and `restart()`. It also exposes connection-related events and request timeouts.
+Shinka RPC supports optional liveness monitoring through its LiMon integration. A monitor can use heartbeat messages and timeouts to detect a peer that no longer responds within the configured limits.
 
-For other implementations, the following behavior still needs systematic verification:
+This capability is distinct from transport-level connection status. For example, a WebSocket may still report itself as open even when useful communication with the other application is no longer progressing.
 
-- Is reconnect automatic or application-managed?
-- What happens to outstanding requests when a connection is lost?
-- Are pending messages buffered?
-- Is application state restored after reconnection?
-- Can a connection be restarted without reconstructing all application handlers?
+The alternatives vary:
 
-Socket.IO provides automatic reconnection and buffering facilities. Other frameworks have different lifecycle models, and the exact behavior depends on the selected transport and configuration.
+- **Socket.IO** has built-in heartbeat and connection-management behavior.
+- **gRPC** and **Connect RPC** have their own mechanisms and configuration options for connection and call behavior, but these should not be equated automatically with application-level liveness monitoring.
+- **JSON-RPC 2.0** does not define liveness detection.
+- **Comlink** does not, by itself, provide a general heartbeat-based connection monitor.
+- Other libraries may rely on transport events, request timeouts, framework-specific mechanisms, or application code.
 
-No complete, version-specific lifecycle matrix is available yet.
+Liveness detection does not guarantee that a failed request can be safely retried. It helps identify a communication problem; the application still needs a policy for handling in-flight work.
 
-## 9. Communication model
+## 6. Connection lifecycle
 
-RPC is often associated with request/response, but persistent application connections may also need events, notifications, and streaming.
+Connection lifecycle management is an important part of communication infrastructure. Applications may need to start and stop connections explicitly, recover after failures, or coordinate multiple asynchronous operations that affect the same connection.
 
-| Implementation | Communication model |
-|---|---|
-| Shinka RPC | Request/response and one-way data events; both directions can participate in communication. |
-| Comlink | Remote method calls over message passing. |
-| tRPC | Typed procedures, queries, mutations, and subscriptions. |
-| JSON-RPC 2.0 | Requests, responses, notifications, and batch requests as defined by the specification. |
-| gRPC | Unary RPC and client-, server-, and bidirectional-streaming RPC. |
-| Socket.IO | Bidirectional events, acknowledgements, rooms, and namespaces. |
-| TSRPC | Typed request/response and push/event mechanisms; exact streaming capabilities need verification. |
-| rpc-websockets | RPC calls and server-to-client events over WebSocket. |
-| Connect | Unary and streaming RPC modes, depending on protocol and runtime support. |
-| Effect RPC | Typed RPC with streaming-related capabilities; exact configuration needs verification. |
-| Metacom | RPC and streaming capabilities are associated with the ecosystem; details need verification. |
+Shinka RPC exposes an explicit lifecycle through operations such as `start`, `stop`, and `restart`. The latest lifecycle implementation is designed to make state transitions more predictable when operations overlap or are re-entered.
 
-Shinka's event model is important because it allows a connection to carry both request/response traffic and one-way application events. This should be compared against equivalent functionality in other libraries rather than treated as unique merely because the APIs differ.
+The distinction matters: concurrent or re-entrant lifecycle calls need not be treated as exceptional merely because they overlap. A lifecycle implementation can coordinate those calls so that callers observe consistent transitions instead of competing independent start/stop sequences.
 
-## 10. Type safety and validation
+Shinka RPC also includes a `reconnect` scenario, providing a reusable way to describe reconnection behavior rather than requiring every application to build that workflow from scratch.
 
-Type safety and runtime validation solve different problems.
+These are separate capabilities:
 
-TypeScript types help developers catch mistakes at compile time, but they do not automatically validate data received from an untrusted remote peer.
+- **Lifecycle coordination** defines how the connection responds to start and stop operations, including overlapping calls.
+- **Reconnection** defines how communication is restored after a connection becomes unavailable.
+- **Request recovery** determines what happens to requests that were in flight when the connection failed.
 
-- **Shinka RPC:** TypeScript-oriented API; the degree of end-to-end type safety depends on how application handlers and message types are defined. A general runtime validation layer has not been established in this comparison.
-- **Comlink:** TypeScript types can describe remote interfaces, but they do not inherently validate messages at runtime.
-- **tRPC:** End-to-end TypeScript inference is a central feature; runtime input validation can be integrated with schema libraries.
-- **JSON-RPC 2.0:** Defines message structure, not TypeScript inference or application-level validation.
-- **gRPC:** Protobuf schemas and generated code provide typed contracts and structured message decoding.
-- **gRPC-Web:** Uses generated client contracts in typical configurations.
-- **Socket.IO:** TypeScript event typing is available, but runtime validation is a separate concern.
-- **TSRPC:** Strongly typed API definitions and runtime validation are central to its approach.
-- **rpc-websockets:** Application-level TypeScript contracts and runtime validation depend on the surrounding code.
-- **Connect:** Generated Protobuf schemas provide typed contracts; validation capabilities depend on the selected schema and implementation.
-- **Effect RPC:** Uses Effect's schema and type system; exact validation behavior depends on the API configuration.
-- **Metacom:** The available evidence is insufficient for a reliable assessment.
+Supporting reconnection does not automatically imply request replay, exactly-once execution, or recovery of application state. Those guarantees depend on the scenario's implementation and the application's protocol.
 
-A more detailed comparison should evaluate the same failure case: a remote peer sends a structurally invalid request. Does the implementation reject it, report an error, or allow it to reach the application handler?
+Other frameworks offer varying degrees of lifecycle automation. Socket.IO provides built-in reconnection behavior. Other RPC clients may leave reconnect policy to the application, transport adapter, or surrounding runtime.
 
-## 11. Concurrency and delivery
+Shinka RPC's approach favors an explicit, composable lifecycle with a reusable reconnect scenario. This offers control over connection behavior, but it is worth documenting the exact guarantees of each scenario separately from the core lifecycle contract.
 
-Concurrency and delivery semantics determine what happens when many operations are active simultaneously or the connection fails.
+## 7. Communication model
 
-Shinka provides request correlation and timeout behavior. Its ecosystem also includes concurrency utilities, but those should be treated as separate packages rather than assumed to be part of the core bundle.
+The libraries compared here differ significantly in what they consider a communication primitive.
 
-Other implementations expose different combinations of:
+- **Shinka RPC** provides connection-level communication through `Bus`, with request/response messaging and event-based messaging. The `Client` abstraction represents a one-to-one communication endpoint; the word *client* does not necessarily imply a client/server role.
+- **Comlink** exposes remote objects and methods through a proxy-like abstraction.
+- **tRPC** centers on typed procedure calls, with support for subscriptions through configured links and adapters.
+- **JSON-RPC 2.0** defines requests, responses, notifications, and errors.
+- **gRPC** centers on service methods and supports unary and streaming RPC patterns.
+- **Socket.IO** centers on events and acknowledgements.
+- **TSRPC** provides typed RPC calls within its own framework.
+- **rpc-websockets** provides RPC calls over WebSocket.
+- **Connect RPC** focuses on service and procedure calls compatible with its supported protocols.
+- **Effect RPC** integrates RPC into the Effect programming model.
 
-- Concurrent requests over one connection.
-- Backpressure and buffering.
-- Request cancellation.
-- Retry behavior.
-- Duplicate suppression.
-- Ordering guarantees.
-- Handling of outstanding requests after disconnection.
+Shinka RPC is useful when an application needs a communication foundation that can support more than one higher-level interaction pattern. It does not force every interaction to be modeled as a remote method call.
 
-No complete cross-library test results are available yet. In particular, automatic reconnection must not be interpreted as guaranteed delivery: a request may have reached the server even if its response was lost.
+The flip side is that developers may need to build more application-specific abstractions themselves than they would with a framework that generates procedure clients and server handlers.
 
-A future benchmark should test these behaviors directly rather than infer them from API names.
+## 8. Type safety and validation
 
-## 12. Extensibility
+Type safety and runtime validation solve related but different problems.
 
-Shinka separates its bus, transport, serializer, and optional protocol components. This creates explicit integration points for extending its behavior.
+TypeScript can check that application code uses a declared API consistently at compile time. Runtime validation checks the actual data received from a remote peer, which may be running a different version or may not follow the expected contract.
 
-Other implementations have different extension mechanisms:
+**tRPC** is especially attractive for applications that want end-to-end TypeScript types across client and server code. Other frameworks provide generated service types, schemas, or runtime validation mechanisms, depending on the stack.
 
-- Comlink allows custom endpoint arrangements and transfer handlers.
-- tRPC supports links, adapters, and transformers.
-- JSON-RPC 2.0 permits different transports and application-defined methods while keeping the message format standardized.
-- gRPC and Connect support interceptors and middleware-like extension points.
-- Socket.IO supports custom parsers and middleware.
-- TSRPC and Effect RPC provide their own framework-specific extension mechanisms.
-- The exact extension points of rpc-websockets and Metacom need further investigation.
+**JSON-RPC 2.0** defines the message protocol but does not prescribe TypeScript types or runtime schemas. **gRPC** and **Connect RPC** commonly use service definitions and generated code. **TSRPC** emphasizes typed RPC contracts and runtime validation.
 
-The remaining question is how much code is required to add a feature without modifying the framework itself. A useful practical test would be implementing a custom serializer and transport for each library where the architecture permits it.
+Shinka RPC provides a communication layer rather than prescribing a complete service-definition and validation system. Application-level types and runtime validation therefore depend on how the application builds on the core and which additional libraries it uses.
 
-## 13. Dependencies and modularity
+This is an architectural trade-off, not a claim that one approach is universally safer. A typed API without runtime validation can still receive unexpected data across a network boundary; conversely, runtime validation does not by itself provide a convenient typed developer experience.
 
-Bundle size is affected by more than the core package. Runtime dependencies, optional components, tree-shaking, and the application's chosen transport can substantially change the final result.
+## 9. Concurrency, cancellation, and delivery
 
-Shinka's package architecture allows additional functionality to be distributed separately. This is useful when an application needs only the core communication model, but the actual benefit should be measured with a minimal production build.
+RPC behavior under concurrency is often more important than the happy path. Multiple requests may be in flight at once, a timeout may occur, a connection may close, or the caller may no longer need the result.
 
-For the alternatives, complete dependency and tree-shaking measurements are not yet available. Bundlephobia figures should therefore be interpreted as package-level reference points, not as definitive measurements of a complete application.
+Shinka RPC supports request/response correlation and now supports cancellation through the standard `AbortController` and `AbortSignal` APIs for `request` and `onRequest`.
 
-## 14. Unique features
+This gives application code a familiar way to signal that an operation should be cancelled, and to handle cancellation without inventing a separate cancellation API for every application-level request.
 
-This section describes potential differentiators, not a claim that equivalent functionality is absent from every alternative.
+Cancellation should not be confused with guaranteed rollback. Once a remote handler has started performing side effects, aborting the request does not automatically undo those effects. Applications should decide how handlers respond to cancellation and whether an operation is safe to retry.
+
+The `AbortSignal` integration is particularly useful for work tied to a UI lifecycle, deadlines, or a parent operation that may be cancelled. It can also help release resources associated with work that is no longer needed.
+
+Other frameworks differ in their cancellation models:
+
+- **gRPC** has established cancellation and deadline concepts.
+- **Connect RPC** supports cancellation through its request and call APIs.
+- **tRPC** behavior depends on the procedure type and configured transport; cancellation and termination semantics should be checked for the particular adapter.
+- **Comlink** does not automatically make arbitrary remote work cancellable; cancellation typically needs an explicit application-level mechanism.
+- **JSON-RPC 2.0** does not standardize request cancellation.
+- **Socket.IO** acknowledgements and connection behavior do not by themselves define general RPC cancellation semantics.
+
+Delivery guarantees must be considered separately from cancellation. None of these mechanisms should be assumed to provide exactly-once execution across disconnects unless the framework and application protocol explicitly implement that guarantee.
+
+## 10. Extensibility
+
+Shinka RPC is built around replaceable components. The core communication model is separated from transports, serializers, and optional liveness monitoring, while higher-order utilities can compose additional behavior.
+
+This makes it possible to extend the system without turning the core into a framework that must own every transport and encoding decision.
+
+Other libraries provide different extension points:
+
+- **tRPC** uses links and adapters.
+- **Comlink** works with compatible endpoints and supports custom transfer handlers for values that require special treatment.
+- **Socket.IO** has extension points around its client/server architecture and protocol integrations.
+- **Connect RPC** exposes transport and protocol configuration.
+- **gRPC** has a broad ecosystem of generated clients, interceptors, and middleware.
+- **JSON-RPC 2.0** is extensible at the application and transport level, but the protocol itself does not supply a plugin architecture.
+
+Extensibility is not automatically a benefit in every project. If an application needs one standard transport and a conventional RPC interface, a more opinionated library may be simpler. If the communication layer must be adapted to different environments or requirements, component-level extensibility becomes more valuable.
+
+## 11. Dependencies and modularity
+
+A modular architecture can keep the core focused, but it can also mean that the complete feature set is distributed across multiple packages.
+
+Shinka RPC follows this modular approach. The core handles communication and lifecycle behavior, while separate packages provide utilities and integrations, including transport and serializer building blocks.
+
+This can help applications select the pieces they need rather than adopting an entire framework. However, the actual dependency footprint must be measured for the selected configuration; a modular package design does not guarantee that every resulting bundle is smaller.
+
+Other solutions make different choices. Comlink is comparatively small because its scope is narrower. A protocol implementation such as `json-rpc-2.0` can also be small, but applications may need to supply the transport, reconnection, validation, and lifecycle policies separately.
+
+Conversely, a larger package may include valuable functionality that would otherwise need to be implemented and maintained by the application.
+
+A fair comparison should therefore ask both *how much code is included* and *which capabilities that code provides*.
+
+## 12. Unique features
+
+Shinka RPC's distinguishing features are best understood as a combination of architectural choices and reusable communication utilities:
+
+- **Connection-level `Bus` abstraction.** Communication is modeled independently of a particular client/server role.
+- **Explicit lifecycle management.** Start, stop, and restart behavior is managed centrally, with more predictable handling of overlapping transitions in the current implementation.
+- **Reusable reconnect scenario.** Applications can build on an existing reconnection workflow instead of duplicating the orchestration.
+- **Request cancellation.** `request` and `onRequest` support the standard `AbortController` / `AbortSignal` model.
+- **Replaceable transports and serializers.** Applications can choose how messages are transported and encoded.
+- **Optional liveness monitoring.** Heartbeats and timeout-based monitoring can detect an unresponsive peer.
+- **Extensible message handling.** Request/response and event-based communication can be used as building blocks for higher-level patterns.
+- **Exclusive communication lock.** The associated ecosystem provides a lock mechanism for coordinating protocol transitions while preventing writes to the transport during the lock.
+
+The exclusive lock is useful for operations that require a quiet transport, such as coordinating a protocol or encryption-key rotation. It should not be described as guaranteeing that no messages are pending: its purpose is to prevent writes while the lock is held, with buffered messages sent after release.
+
+These features do not make Shinka RPC a replacement for every higher-level framework. Rather, they define the kind of control it offers to applications that need to assemble their own communication architecture.
+
+## 13. Maturity and ecosystem
+
+Maturity includes more than package age or popularity. It can involve API stability, documentation, testing, compatibility guarantees, operational experience, and the availability of integrations.
+
+Shinka RPC's core package is still in the `0.1.0-alpha` series in the version measured here. Its architecture and feature set are evolving, so users should take that maturity level into account when choosing it for production-critical applications.
+
+Established projects such as Socket.IO, gRPC, and tRPC have broader adoption and more extensive surrounding ecosystems. Comlink has a focused role in JavaScript message passing. Connect RPC and Effect RPC serve developers with particular protocol or programming-model preferences.
+
+These projects are not all direct competitors in every use case. Their relative maturity should be evaluated alongside the application requirements rather than treated as a substitute for technical fit.
+
+For Shinka RPC, the modular design and growing set of reusable scenarios are strengths, while the pre-1.0 status is an important qualification for prospective users.
+
+## 14. Network overhead
+
+Protocol overhead is the extra data required to represent a message beyond the application's payload. Lower overhead can matter for frequent small messages, but it is only one factor in total communication cost.
+
+For a meaningful comparison, measurements need to use the same payload, serializer, transport framing, and definition of payload. The figures below are preliminary measurements from the Shinka RPC tests and a Socket.IO packet example; they should not be interpreted as a complete benchmark of every library in this article.
 
 ### Shinka RPC
 
-- A bus abstraction that separates connection management from transport and serialization.
-- Explicit lifecycle operations, including restart.
-- Bidirectional request/response and one-way events.
-- Pluggable serializers and transports.
-- Optional liveness monitoring.
-- An exclusive channel lock for coordinating operations that must not interleave with outgoing writes.
-- An ecosystem of additional packages for concurrency and higher-level communication patterns.
+The measured Shinka RPC overhead with the tested JSON serializer was:
 
-The exclusive lock is particularly worth investigating in more depth. It allows a section of outgoing communication to be reserved so that other messages are not written to the transport until the reservation is released. Buffered messages may still exist during the reservation; the guarantee concerns writes to the channel, not the absence of pending data.
+| Message type | Reported protocol overhead |
+|---|---:|
+| Event | 9 bytes |
+| Request | At least 11 bytes |
+| Successful response | 6 bytes |
+| Error response | 6 bytes |
 
-### Other implementations
+The application payload is excluded from these values. For example, an event's application data can be a key/value pair such as `"event"` and `"hello"`; the protocol overhead is the additional serialized structure required to transmit it.
 
-- **Comlink:** ergonomic remote method calls between JavaScript contexts.
-- **tRPC:** end-to-end TypeScript inference for application APIs.
-- **JSON-RPC 2.0:** a standardized, transport-independent message format.
-- **gRPC:** cross-language RPC contracts and streaming based on Protobuf.
-- **Socket.IO:** event-oriented communication, reconnection, buffering, rooms, and namespaces.
-- **TSRPC:** typed RPC with runtime validation and binary-oriented serialization options.
-- **rpc-websockets:** a familiar JSON-RPC programming model over persistent WebSocket connections.
-- **Connect:** an HTTP-based RPC ecosystem designed to interoperate with gRPC-style services.
-- **Effect RPC:** RPC integrated with the Effect ecosystem's abstractions.
-- **Metacom:** RPC and streaming capabilities within the broader Metarhia ecosystem.
+Request and response messages also carry a request identifier. Its decimal representation grows as the identifier grows, so the overhead of a request is not a single constant for all possible identifier values. The reported request overhead is therefore a minimum for the tested representation, not a universal fixed size.
 
-These descriptions should be expanded only where source code or official documentation confirms the relevant behavior.
+### Socket.IO
 
-## 15. Maturity and ecosystem
+A representative Socket.IO event packet is:
 
-Maturity cannot be reduced to a package's popularity or its number of downloads. Relevant factors include release history, API stability, test coverage, documentation, issue response, ecosystem integration, and compatibility guarantees.
+```text
+42["hello","world"]
+```
 
-Shinka RPC is currently distributed under an alpha version (`0.1.0-alpha.12` in this comparison). This should be disclosed prominently because users may reasonably expect more API changes than they would from a mature, stable release.
+Using the same payload definition—excluding the application values `"hello"` and `"world"`—the packet structure contributes approximately 5 bytes in this example.
 
-A complete maturity comparison has not yet been conducted for the alternatives. No unsupported ranking is provided here.
+This is a useful illustration, but not yet a complete apples-to-apples benchmark. A rigorous comparison would need to account for the exact Socket.IO packet type, namespace, acknowledgements, binary attachments where applicable, and the transport framing in the chosen test.
 
-## 16. Network overhead
+### Other protocols
 
-Network overhead is the amount of serialized protocol data required beyond the application's useful payload.
+Some protocols define additional framing or structured fields that affect their wire representation:
 
-For a fair comparison, this article defines the useful payload as the application-level key/value pair. For example, an event uses the key `event` and the value `hello`.
+- **JSON-RPC 2.0** uses fields such as `jsonrpc`, `method`, `params`, and `id`. The resulting overhead depends on the message type, property names, identifier representation, and JSON encoding.
+- **gRPC** uses a message framing prefix containing a compression flag and a four-byte message length, in addition to the encoded message and the surrounding transport protocol.
+- **Comlink** uses its own message conventions over structured-clone-compatible endpoints; the representation depends on the operation and transferred values.
+- **Connect RPC**, **TSRPC**, **tRPC**, and **rpc-websockets** have their own protocol fields, framing, and serialization choices, so exact overhead needs to be measured for a specific request or event.
 
-The measured message size should be divided into:
+A single overhead number cannot fairly represent a protocol across all message types. A useful benchmark should publish the exact wire messages, payload, serialization mode, and measurement method.
 
-- **Useful payload:** the application data in the agreed representation.
-- **Protocol overhead:** message type, request identifier, framing, separators, and other protocol-specific information.
-- **Total serialized size:** useful payload plus protocol overhead.
+### Interpretation
 
-The following initial results are available for Shinka's JSON serializer:
+The current measurements suggest that Shinka RPC can keep the protocol structure for small messages compact. They do not, on their own, prove that Shinka RPC has the lowest overhead among all the alternatives.
 
-| Message | Reported protocol overhead | Notes |
-|---|---:|---|
-| Event | 9 bytes | Based on the current test cases |
-| Request | At least 11 bytes | Includes a request identifier |
-| Success response | 6 bytes | Includes a response identifier |
-| Error response | 6 bytes | Includes a response identifier |
+To establish that, the same test harness should serialize equivalent event, request, success, and error messages for each candidate and report the resulting byte counts. Where a library requires transport framing or multiple protocol layers, those bytes should be measured separately and then included in an end-to-end total.
 
-These figures are preliminary and depend on the exact test messages and counter values. The request/response counter grows over time, so the serialized identifier length must be accounted for separately.
+## Summary
 
-For Socket.IO, a test-based observation suggests 5 bytes of protocol overhead for the example packet `42["hello","world"]`, when the two quoted strings are counted as the useful payload. This figure should be reproduced against the exact package version and test case before being treated as a final benchmark.
+Shinka RPC is best considered a modular communication foundation rather than a fully opinionated RPC framework.
 
-For the other implementations, comparable measurements have not yet been collected.
+Its strengths include a replaceable transport and serialization architecture, explicit connection lifecycle management, optional liveness monitoring, a reusable reconnect scenario, and request cancellation through standard abort APIs. These capabilities are useful when an application needs control over connection behavior and wants to compose its own communication patterns.
 
-### Measurement status
+Other libraries may be a better fit when the priority is a particularly small message-passing abstraction, end-to-end TypeScript procedure types, generated service definitions, a mature event platform, or a standardized RPC protocol.
 
-To avoid false precision, each result should eventually have one of these labels:
-
-- **Measured:** captured from the specified implementation and version.
-- **Derived from protocol:** calculated from a documented wire format.
-- **Not comparable:** no equivalent message or a different serialization model prevents a fair comparison.
-- **Unknown:** insufficient information.
-
-For JSON-RPC, Connect, gRPC, and other structured protocols, test messages must be equivalent at the application level. Binary Protobuf messages cannot be fairly compared with JSON messages by simply counting their framing bytes.
-
-Transport-level overhead such as TCP, TLS, HTTP, and WebSocket framing should be measured separately from the serialized RPC message.
-
-## 17. Summary
-
-The current evidence suggests that Shinka RPC has a competitive package size and a modular architecture that makes transport and serialization choices explicit.
-
-However, the available data is not sufficient to establish an overall winner. Several comparisons still require equivalent configurations, particularly for runtime support, lifecycle behavior, concurrency, and network overhead.
-
-The most valuable next steps are:
-
-1. Establish a reproducible minimum-bundle benchmark for each browser-compatible implementation.
-2. Verify browser, Node.js, and Bun compatibility with explicit runtime tests.
-3. Measure request, response, success, error, and event message sizes using equivalent payloads.
-4. Document connection lifecycle and liveness behavior with tests.
-5. Compare which features are built in, provided by optional packages, or left to application code.
-
-The goal is not to prove that Shinka RPC is superior in every category. It is to determine where its architecture provides practical advantages, where other solutions are a better fit, and which improvements would make Shinka more useful to developers.
+The right choice depends on which responsibilities the application wants the library to own. Bundle size and protocol overhead matter, but so do lifecycle guarantees, cancellation semantics, runtime support, validation, and the maintenance burden of integrating the missing pieces.
