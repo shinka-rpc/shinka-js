@@ -1,5 +1,3 @@
-import { ReusablePromise } from "@shinka-rpc/concurrency";
-
 import { Bus } from "./bus";
 import { createHandlerRegistries, type HandlerRegistries } from "./shinka";
 
@@ -14,28 +12,37 @@ const { freeze: objectFreeze } = Object;
 export class Hub<SO = any, TO = any, TC = any> {
   #userRegistries: HandlerRegistries<SO, TO, IBus<SO, TO>>;
   #eventListeners: ShinkaEventListeners<IBus<SO, TO>>;
-  #clients: Set<Bus<SO, TO, TC>>;
-  #disposing: ReusablePromise<void>;
+  #clientsAlive: Set<Bus<SO, TO, TC>>;
+  #bound: [
+    (bus: Bus<SO, TO, TC>) => void,
+    (bus: Bus<SO, TO, TC>) => void,
+    (bus: Bus<SO, TO, TC>) => void,
+  ];
 
+  public has: (bus: Bus<SO, TO, TC>) => boolean;
   public onRequest: ShinkaOnRequest<SO, TO, IBus<SO, TO>>;
   public onDataEvent: ShinkaOnDataEvent<IBus<SO, TO>>;
   public extra: Record<string | symbol, any>;
 
-  constructor() {
-    this.#eventListeners = createEventListeners();
+  constructor(eventListeners?: ShinkaEventListeners<IBus<SO, TO>>) {
+    this.#eventListeners = eventListeners ?? createEventListeners();
     this.#userRegistries = createHandlerRegistries<SO, TO, IBus<SO, TO>>();
-    this.#clients = new Set<Bus<SO, TO, TC>>();
-    this.#disposing = new ReusablePromise();
+    const clients = new Set<Bus<SO, TO, TC>>();
+    this.#clientsAlive = clients;
+    const clientsAll = new WeakSet<Bus<SO, TO, TC>>();
+    this.has = clientsAll.has.bind(clientsAll);
+    this.#bound = [
+      clients.add.bind(clients),
+      clients.delete.bind(clients),
+      clientsAll.add.bind(clientsAll),
+    ];
     this.extra = {};
     this.onRequest = this.#userRegistries.onRequest;
     this.onDataEvent = this.#userRegistries.onDataEvent;
     objectFreeze(this);
-    this.#disposing.resolve();
   }
 
-  #onClientDisconnected = (bus: Bus<SO, TO, TC>) => this.#clients.delete(bus);
-
-  public connect = async ({
+  public create = ({
     outscope,
     transport,
     lock,
@@ -44,40 +51,34 @@ export class Hub<SO = any, TO = any, TC = any> {
     responseTimeout,
     complete,
   }: BusProps<SO, TO, TC>) => {
-    await this.#disposing;
-
-    const bus = new Bus<SO, TO, TC>(
-      outscope,
-      transport,
-      serializer,
-      limon,
-      this.#userRegistries,
-      this.#eventListeners,
-      lock,
-      responseTimeout,
-      complete,
-    );
+    const { 0: boundAdd, 1: boundRm, 2: boundAllAdd } = this.#bound,
+      bus = new Bus<SO, TO, TC>(
+        outscope,
+        transport,
+        serializer,
+        limon,
+        this.#userRegistries,
+        this.#eventListeners,
+        lock,
+        responseTimeout,
+        complete,
+      ),
+      busAddEventListener = bus.addEventListener;
 
     objectFreeze(bus);
-    bus.addEventListener("disconnected", this.#onClientDisconnected);
 
-    await bus.start();
-    this.#clients.add(bus);
+    boundAllAdd(bus);
+
+    busAddEventListener("connecting", boundAdd);
+    busAddEventListener("connected", boundAdd);
+    busAddEventListener("disconnecting", boundRm);
+    busAddEventListener("disconnected", boundRm);
 
     return bus;
   };
 
-  public dispose = async () => {
-    this.#disposing.reset();
-    const clientStopPromises = Array<Promise<void>>(this.#clients.size);
-    let i = 0;
-    for (const client of this.#clients) clientStopPromises[i++] = client.stop();
-    try {
-      await Promise.all(clientStopPromises);
-    } finally {
-      this.#disposing.resolve();
-    }
-  };
+  public dispose = () =>
+    Promise.all([...this.#clientsAlive].map((client) => client.stop()));
 
   public addEventListener: ManageEventListener<IBus<SO, TO>> = (type, target) =>
     this.#eventListeners[type].add(target);
@@ -88,10 +89,6 @@ export class Hub<SO = any, TO = any, TC = any> {
   ) => this.#eventListeners[type].delete(target);
 
   public get size() {
-    return this.#clients.size;
-  }
-
-  public get isDisposing() {
-    return !this.#disposing.isDone;
+    return this.#clientsAlive.size;
   }
 }

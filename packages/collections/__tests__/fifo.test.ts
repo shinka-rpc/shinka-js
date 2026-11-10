@@ -39,4 +39,18 @@ test("fifo", () => {
   const truncated: number[] = [];
   while (q.length) truncated.push(q.pop()!);
   expect(input.slice(q.length - IDX)).toStrictEqual(truncated);
+
+  q.truncate();
+  expect(q.length).toStrictEqual(0);
+
+  expect(() => q.truncate(-1)).toThrow();
+
+  q.push(-1);
+  q.push(-2);
+  expect(q.length).toStrictEqual(2);
+  expect([...q]).toStrictEqual([-1, -2]);
+
+  q.truncate();
+  expect(q.length).toStrictEqual(0);
+  expect(q.map((i) => i)).toStrictEqual([]);
 });

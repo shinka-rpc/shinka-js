@@ -103,8 +103,8 @@ const config = defineConfig({
           },
           {
             text: "Concurrency",
-            link: "/api-reference/concurrency",
-            activeMatch: "^/api-reference/concurrency",
+            link: "/api-reference/concurrency/",
+            activeMatch: "^/api-reference/concurrency/",
           },
           {
             text: "OutScope",
@@ -266,6 +266,24 @@ const config = defineConfig({
             {
               text: "Concurrency",
               link: "/api-reference/concurrency",
+              items: [
+                {
+                  text: "ReusablePromise",
+                  link: "/api-reference/concurrency/reusable-promise",
+                },
+                {
+                  text: "Semaphore",
+                  link: "/api-reference/concurrency/semaphore",
+                },
+                {
+                  text: "Asynq",
+                  link: "/api-reference/concurrency/asynq",
+                },
+                {
+                  text: "CoalescingTransition",
+                  link: "/api-reference/concurrency/coalescing-transition",
+                },
+              ],
             },
             { text: "OutScope", link: "/api-reference/outscope" },
             { text: "Util", link: "/api-reference/util" },
@@ -306,7 +324,7 @@ const config = defineConfig({
 
   vite: {
     optimizeDeps: {
-      include: ["fastdom", "fastdom/extensions/fastdom-promised.js"],
+      include: ["elkjs", "elkjs/lib/elk.bundled.js"],
     },
   },
 });

@@ -42,6 +42,7 @@ export type IBus<SO, TO> = ShinkaDo<SO, TO> & {
   removeEventListener: ManageEventListener<IBus<SO, TO>>;
   extra: Record<string | symbol, any>;
   exclusiveLock: (timeout: number) => Promise<AsyncDisposeContext>;
+  alive: boolean;
 };
 
 export type IBusAgg<SO, TO> = {
@@ -224,17 +225,17 @@ export type TransportConnectFn<SO, TO, TS, TC> = (
   transport: TransportFactory<SO, TO, TS, TC>,
 ) => void;
 
-export type ServerEventType = "started" | "stopping" | "stopped";
+export type ServerTransportEventType = "started" | "stopping" | "stopped";
 
 export type ServerManageEventListener = BaseManageEventListener<
-  ServerEventType,
+  ServerTransportEventType,
   () => void
 >;
 
 export type TransportServer<SO, TO, TS, TC> = (
   shinkaOn: ShinkaOn<SO, TO, InternalHandlerThisArg<SO, TO, TS>>,
   connect: TransportConnectFn<SO, TO, TS, TC>,
-  eventListeners: ManageEventListenerPair<ServerEventType>,
+  eventListeners: ManageEventListenerPair<ServerTransportEventType>,
 ) => void;
 
 export type LiMonThisArg<SO, TO, LS> = InternalHandlerThisArg<SO, TO, LS> & {

@@ -5,7 +5,7 @@
 import { baseListenerFactory } from "./base-listener-factory";
 import type { ShinkaEventListener, EventListenerType } from "./types";
 
-const eventListenerTypes: EventListenerType[] = [
+export const eventListenerTypes: EventListenerType[] = [
   "connected",
   "connecting",
   "disconnected",

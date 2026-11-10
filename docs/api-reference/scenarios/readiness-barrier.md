@@ -30,11 +30,11 @@ The returned promise resolves only after the bus has connected and the
 ## API
 
 ```ts
-function readinessBarrier(
-  bus: IBus<any, any>,
-  complete?: () => void | Promise<void>,
-  onFailure?: (error: any) => void,
-): ReusablePromise<void>;
+function readinessBarrier<SO, TO>(
+  bus: IBus<SO, TO>,
+  complete?: (bus: IBus<SO, TO>) => void | Promise<void>,
+  onFailure?: (e: any, bus: IBus<SO, TO>) => void,
+) => ReusablePromise<void>;
 ```
 
 | Parameter | Description |

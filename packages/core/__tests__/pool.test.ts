@@ -1,3 +1,5 @@
+/// <reference types="node">
+
 import { expect, test } from "@jest/globals";
 import testOutScope from "../../outscope/src/tests";
 import { sequence, sleep } from "../../util";
@@ -154,7 +156,8 @@ test("pool", async () => {
   server.start();
 
   // use-case: grow the pool
-  await pool.setSize(5);
+  pool.size.target = 5;
+  pool.size.target;
 
   await sleep(0); // wait for server initialization
 
@@ -163,6 +166,9 @@ test("pool", async () => {
   {
     // use-case: pool -> server
     using bus = await pool.acquire();
+    expect(pool.size.acquired).toStrictEqual(1);
+    expect(pool.size.ready).toStrictEqual(4);
+    expect(pool.size.actual).toStrictEqual(5);
     bus.addEventListener("connected", console.info);
     busProxy = bus;
     results.push({
@@ -172,7 +178,17 @@ test("pool", async () => {
     await bus.ping();
     poolEventService(bus, "bus-server", true, false);
     bus.removeEventListener("connected", console.info);
+    bus.extra;
   }
+
+  await (async () => {
+    await pool.acquire();
+  })();
+
+  gc!();
+
+  // double-dispose is allowed and cheap
+  expect(busProxy.dispose()).toBeUndefined();
 
   expect(() =>
     serverSyncService(busProxy, "bus-server", true, true, true),
@@ -190,19 +206,27 @@ test("pool", async () => {
   });
 
   // use-case: shrink the pool
-  await pool.setSize(0);
+  pool.size.target = 0;
 
   await sleep(0);
 
-  await expect(() => pool.setSize(-1)).rejects.toThrow();
+  expect(() => (pool.size.target = -1)).toThrow();
 
-  pool.size = 0;
+  pool.size.target = 0;
 
   await sleep(0);
 
-  expect(pool.size).toStrictEqual(0);
-
+  expect(pool.size.acquired).toStrictEqual(0);
   expect(outscopeState.size).toStrictEqual(0);
+
+  pool.size.target = 5;
+  pool.size.target = 2;
+  pool.size.target = 10;
+  pool.size.target = 5;
+
+  await sleep(0);
+
+  expect(pool.size.actual).toStrictEqual(5);
 
   pool.removeEventListener("error", console.error);
 
@@ -261,8 +285,6 @@ test("pool", async () => {
       },
     },
     { key: "server-response", opts: "bus1-simple-response-send" },
-    { key: "client-1", opts: { value: [7, 0, 1], opts: undefined } },
-    { key: "client-1", opts: "closed" },
     { key: "client-2", opts: { value: [7, 0, 1], opts: undefined } },
     { key: "client-2", opts: "closed" },
     { key: "client-3", opts: { value: [7, 0, 1], opts: undefined } },
@@ -271,10 +293,55 @@ test("pool", async () => {
     { key: "client-4", opts: "closed" },
     { key: "client-0", opts: { value: [7, 0, 1], opts: undefined } },
     { key: "client-0", opts: "closed" },
-    { key: "bus-1", opts: "closed" },
+    { key: "client-1", opts: { value: [7, 0, 1], opts: undefined } },
+    { key: "client-1", opts: "closed" },
     { key: "bus-2", opts: "closed" },
     { key: "bus-3", opts: "closed" },
     { key: "bus-4", opts: "closed" },
     { key: "bus-0", opts: "closed" },
+    { key: "bus-1", opts: "closed" },
+    //
+    { key: "client-5", opts: { value: [7, 0, 0], opts: undefined } },
+    { key: "client-6", opts: { value: [7, 0, 0], opts: undefined } },
+    { key: "client-7", opts: { value: [7, 0, 0], opts: undefined } },
+    { key: "client-8", opts: { value: [7, 0, 0], opts: undefined } },
+    { key: "client-9", opts: { value: [7, 0, 0], opts: undefined } },
+    { key: "client-10", opts: { value: [7, 0, 0], opts: undefined } },
+    { key: "client-11", opts: { value: [7, 0, 0], opts: undefined } },
+    { key: "client-12", opts: { value: [7, 0, 0], opts: undefined } },
+    { key: "client-13", opts: { value: [7, 0, 0], opts: undefined } },
+    { key: "client-14", opts: { value: [7, 0, 0], opts: undefined } },
+    { key: "client-15", opts: { value: [7, 0, 0], opts: undefined } },
+    { key: "client-16", opts: { value: [7, 0, 0], opts: undefined } },
+    { key: "client-17", opts: { value: [7, 0, 0], opts: undefined } },
+    { key: "bus-5", opts: { value: [7, 0, 0], opts: undefined } },
+    { key: "bus-6", opts: { value: [7, 0, 0], opts: undefined } },
+    { key: "bus-7", opts: { value: [7, 0, 0], opts: undefined } },
+    { key: "bus-8", opts: { value: [7, 0, 0], opts: undefined } },
+    { key: "bus-9", opts: { value: [7, 0, 0], opts: undefined } },
+    { key: "bus-10", opts: { value: [7, 0, 0], opts: undefined } },
+    { key: "bus-11", opts: { value: [7, 0, 0], opts: undefined } },
+    { key: "bus-12", opts: { value: [7, 0, 0], opts: undefined } },
+    { key: "bus-13", opts: { value: [7, 0, 0], opts: undefined } },
+    { key: "bus-14", opts: { value: [7, 0, 0], opts: undefined } },
+    { key: "bus-15", opts: { value: [7, 0, 0], opts: undefined } },
+    { key: "bus-16", opts: { value: [7, 0, 0], opts: undefined } },
+    { key: "bus-17", opts: { value: [7, 0, 0], opts: undefined } },
+    { key: "client-5", opts: { value: [7, 0, 1], opts: undefined } },
+    { key: "client-5", opts: "closed" },
+    { key: "client-6", opts: { value: [7, 0, 1], opts: undefined } },
+    { key: "client-6", opts: "closed" },
+    { key: "client-7", opts: { value: [7, 0, 1], opts: undefined } },
+    { key: "client-7", opts: "closed" },
+    { key: "client-8", opts: { value: [7, 0, 1], opts: undefined } },
+    { key: "client-8", opts: "closed" },
+    { key: "client-9", opts: { value: [7, 0, 1], opts: undefined } },
+    { key: "client-9", opts: "closed" },
+    { key: "client-10", opts: { value: [7, 0, 1], opts: undefined } },
+    { key: "client-10", opts: "closed" },
+    { key: "client-11", opts: { value: [7, 0, 1], opts: undefined } },
+    { key: "client-11", opts: "closed" },
+    { key: "client-12", opts: { value: [7, 0, 1], opts: undefined } },
+    { key: "client-12", opts: "closed" },
   ]);
 });

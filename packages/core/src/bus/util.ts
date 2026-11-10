@@ -1,14 +1,7 @@
 import type { IQueue } from "@shinka-rpc/collections";
-import type { ReusablePromise } from "@shinka-rpc/concurrency";
 import type { NB_FIFOEntry, NBThisArg, NBShinka } from "../types";
 import type { ShinkaEventListener } from "../listeners/types";
-import type {
-  Message,
-  ShinkaMeta,
-  SendFn,
-  ShinkaDoDataEvent,
-  REQID,
-} from "../shinka";
+import type { Message, ShinkaMeta, SendFn, ShinkaDoDataEvent } from "../shinka";
 import { NBAcquire } from "./const-enums";
 import { busEvents } from "./handlers/bus";
 import { nbEvent } from "./handlers/non-blocking";
@@ -53,18 +46,6 @@ export type VarsBye = {
   closed: 0 | 1;
 };
 
-export const enum BusState {
-  STOPPED = 0,
-  STARTING = 1,
-  STARTED = 2,
-  STOPPING = 3,
-}
-
-export type TransitionVars = {
-  state: BusState;
-  transition: Promise<void> | null;
-};
-
 export function byeReset(this: VarsBye) {
   this.bye = 0;
 }
@@ -103,32 +84,3 @@ export function eventListenerCaller<B>(
 ) {
   listener(this, target);
 }
-
-export const createTransition = async (
-  vars: TransitionVars,
-  stateTarget: BusState,
-  statePending: BusState,
-  transitionFn: () => Promise<void>,
-  dispatchTransition: () => void,
-  rPromise: ReusablePromise<void>,
-) => {
-  while (vars.transition) {
-    if (vars.state === statePending) return await vars.transition;
-    else {
-      try {
-        await vars.transition;
-      } catch (e) {}
-    }
-  }
-  if (vars.state === stateTarget) return;
-  // Next works as critical section
-  // Rule: no `await` before `vars.transition` is set
-  rPromise.reset();
-  const transition = rPromise.then(transitionFn);
-  vars.transition = transition; // <== since here await is allowed
-  vars.state = statePending;
-  await Promise.resolve();
-  dispatchTransition();
-  rPromise.resolve();
-  return await transition;
-};

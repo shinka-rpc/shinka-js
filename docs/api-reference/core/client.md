@@ -523,9 +523,9 @@ and manages individual `Bus` instances:
 ```mermaid
 flowchart LR
     HUB([Hub])
-    B1([Bus]) --- P1([Peer])
-    B2([Bus]) --- P2([Peer])
-    B3([Bus]) --- P3([Peer])
+    B1([Bus]) -.- P1([Peer])
+    B2([Bus]) -.- P2([Peer])
+    B3([Bus]) -.- P3([Peer])
     
     HUB --- B1
     HUB --- B2

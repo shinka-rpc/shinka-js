@@ -1,6 +1,6 @@
 {
   "name": "@shinka-rpc/core",
-  "version": "0.1.0-alpha.13",
+  "version": "0.1.0-alpha.14",
   "publishConfig": {
     "access": "public",
     "tag": "alpha"
@@ -10,7 +10,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "postbuild": "node ../../util/post-build.mjs",
-    "test": "jest --coverage --collectCoverageFrom='src/**'"
+    "test": "node --expose-gc ../../node_modules/.bin/jest --coverage --collectCoverageFrom='src/**'"
   },
   "keywords": [
     "rpc",

@@ -5,7 +5,7 @@ import {
   type AsyncDisposeContext,
 } from "@shinka-rpc/util";
 import { FIFO, type IQueue } from "@shinka-rpc/collections";
-import { Semaphore, ReusablePromise } from "@shinka-rpc/concurrency";
+import { Semaphore, createCoalescingTransition } from "@shinka-rpc/concurrency";
 
 import { createSendData, createOnRawData } from "./serializer-strategy";
 import {
@@ -64,7 +64,6 @@ import {
 } from "./handlers/non-blocking";
 import { NBAcquire } from "./const-enums";
 import {
-  BusState,
   FIFOPush,
   drain,
   acquireMe,
@@ -75,9 +74,7 @@ import {
   nbEventAccept,
   nbEventRelease,
   eventListenerCaller,
-  createTransition,
   type VarsBye,
-  type TransitionVars,
 } from "./util";
 
 const { freeze: objectFreeze, seal: objectSeal, assign: objectAssign } = Object;
@@ -87,9 +84,15 @@ const transportNotInitialized = () => {
 };
 
 const dummy = () => {};
-const aDummy = async () => {};
 
-type BusVars = VarsBye & TransitionVars;
+const enum BusState {
+  STOPPED = 0,
+  STARTING = 1,
+  STARTED = 2,
+  STOPPING = 3,
+}
+
+type BusVars = VarsBye;
 
 type DispatchErrors = {
   send: (error: any) => void;
@@ -121,6 +124,7 @@ export class Bus<SO, TO, TC> implements IBus<SO, TO> {
   #resetBye: () => void;
   #complete: CompleteFn<SO, TO, TC>;
   #dispatchError: (error: any) => void;
+  #getState: () => BusState;
 
   public request: ShinkaDoRequest<SO, TO>;
   public dataEvent: ShinkaDoDataEvent<SO, TO>;
@@ -153,38 +157,42 @@ export class Bus<SO, TO, TC> implements IBus<SO, TO> {
     this.#dispatchMap = new Map();
     this.#lastDataAt = objectSeal({ sent: 0, received: 0 });
 
-    const vars: BusVars = objectSeal({
-      state: BusState.STOPPED,
-      bye: 0,
-      closed: 0,
-      transition: null,
-    });
+    const vars: BusVars = objectSeal({ bye: 0, closed: 0 });
 
     this.#vars = vars;
 
-    this.start = createTransition.bind(
-      0,
-      vars,
+    const { 0: getLFState, 1: lfTransition } =
+      createCoalescingTransition<BusState>(BusState.STOPPED);
+
+    this.#getState = getLFState;
+
+    const dispatchDisconnected = this.#callEventListeners.bind(
+      this,
+      "disconnected",
+      null,
+    );
+
+    this.start = lfTransition(
       BusState.STARTED,
       BusState.STARTING,
       this.#start,
       this.#callEventListeners.bind(this, "connecting", null),
-      new ReusablePromise(),
+      this.#callEventListeners.bind(this, "connected", null),
+      dispatchDisconnected,
     );
 
-    this.stop = createTransition.bind(
-      0,
-      vars,
+    this.stop = lfTransition(
       BusState.STOPPED,
       BusState.STOPPING,
       this.#stop,
       this.#callEventListeners.bind(this, "disconnecting", null),
-      new ReusablePromise(),
+      dispatchDisconnected,
+      dispatchDisconnected,
     );
 
     this.#resetBye = byeReset.bind(vars);
     this.#sendDelegate = delegate(transportNotInitialized as SendFn<any, any>);
-    this.#transportCloseDelegate = delegate(aDummy);
+    this.#transportCloseDelegate = delegate(dummy as any);
     this.#serializerStopDelegate = delegate(dummy);
     this.#limonStopDelegate = delegate(dummy);
     this.#onOutScopeDelegate = delegate(dummy);
@@ -537,8 +545,6 @@ export class Bus<SO, TO, TC> implements IBus<SO, TO> {
           try {
             this.#outscope.add(this.#onOutScopeDelegate.call);
             this.#onOutScopeDelegate.set(onOutScope);
-            this.#vars.state = BusState.STARTED;
-            this.#callEventListeners("connected", null);
           } catch (e4) {
             // outscope
             if (e4 !== dummy) {
@@ -595,8 +601,6 @@ export class Bus<SO, TO, TC> implements IBus<SO, TO> {
       }
       this.#cleanup();
       throw error;
-    } finally {
-      this.#vars.transition = null;
     }
   };
 
@@ -695,10 +699,9 @@ export class Bus<SO, TO, TC> implements IBus<SO, TO> {
     this.#vars.bye = 0;
     this.#lastDataAt.sent = 0;
     this.#lastDataAt.received = 0;
-
-    this.#vars.state = BusState.STOPPED;
-
-    this.#vars.transition = null;
-    this.#callEventListeners("disconnected", null);
   };
+
+  get alive() {
+    return this.#getState() === BusState.STARTED;
+  }
 }

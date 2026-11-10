@@ -102,10 +102,5 @@ export const handlerRegistriesFactory =
     const { 0: evGet, 1: evSet } = createEventRegistry();
     const onRequest = asOnRequest<SO, TO, TA, any, any>(reqSet);
     const onDataEvent = asOnDataEvent<TA>(evSet);
-    return [evGet, reqGet, onRequest, onDataEvent] as [
-      typeof evGet,
-      typeof reqGet,
-      typeof onRequest,
-      typeof onDataEvent,
-    ];
+    return [evGet, reqGet, onRequest, onDataEvent] as const;
   };

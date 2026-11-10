@@ -1,11 +1,12 @@
-import type { IBus } from "./types";
-import type { DisposeContext } from "@shinka-rpc/util";
+import type { IBus } from "../types";
+import type { DisposableIBus, DisposeCb } from "./types";
 
 const { freeze: objectFreeze, assign: objectAssign } = Object;
 
 const o_o = () => {
   throw new Error("disposed");
 };
+const dummy = () => {};
 
 const disposedBus: IBus<any, any> = objectFreeze({
   request: o_o,
@@ -18,27 +19,42 @@ const disposedBus: IBus<any, any> = objectFreeze({
   addEventListener: o_o,
   removeEventListener: o_o,
   exclusiveLock: o_o,
+  alive: false,
 });
 
 type BusProxyVars<SO, TO> = {
   bus: IBus<SO, TO>;
-  dispose: () => void;
+  dispose: DisposeCb;
 };
 
 const disposedVars: BusProxyVars<any, any> = objectFreeze({
   bus: disposedBus,
-  dispose: o_o,
+  dispose: dummy,
 });
 
-export type DisposableIBus<SO, TO> = IBus<SO, TO> & DisposeContext;
+function onceDispose(this: BusProxyVars<any, any>, dispose: DisposeCb) {
+  objectAssign(this, disposedVars);
+  dispose();
+}
+
+// Idea: no BusProxy reference, OK to put into FinalizationRegistry
+function wrapDispose(this: BusProxyVars<any, any>) {
+  this.dispose();
+}
 
 export class BusProxy<SO = any, TO = any> implements DisposableIBus<SO, TO> {
   #vars: BusProxyVars<SO, TO>;
-  extra: any;
+  dispose: DisposeCb;
+  [Symbol.dispose]!: DisposeCb;
 
-  constructor(bus: IBus<SO, TO>, dispose: () => void) {
-    this.#vars = { bus, dispose };
-    this.extra = bus.extra;
+  constructor(bus: IBus<SO, TO>, origDispose: DisposeCb) {
+    const vars: BusProxyVars<any, any> = { bus, dispose: dummy },
+      dispose = onceDispose.bind(vars, origDispose),
+      disposePublic = wrapDispose.bind(vars);
+    vars.dispose = dispose;
+    this.#vars = vars;
+    this.dispose = disposePublic;
+    this[Symbol.dispose] = disposePublic;
     objectFreeze(this);
   }
 
@@ -56,9 +72,12 @@ export class BusProxy<SO = any, TO = any> implements DisposableIBus<SO, TO> {
   removeEventListener = (
     ...args: Parameters<IBus<SO, TO>["removeEventListener"]>
   ) => this.#vars.bus.removeEventListener(...args);
-  dispose = () => {
-    this.#vars.dispose();
-    objectAssign(this.#vars, disposedVars);
-  };
-  [Symbol.dispose] = () => this.dispose();
+
+  get extra() {
+    return this.#vars.bus.extra;
+  }
+
+  get alive() {
+    return this.#vars.bus.alive;
+  }
 }

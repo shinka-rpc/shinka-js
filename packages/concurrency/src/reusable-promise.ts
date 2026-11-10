@@ -48,6 +48,9 @@ export class ReusablePromise<P> {
   public catch = (onrejected?: ((reason?: P) => void) | null | undefined) =>
     this.#state.promise.catch(onrejected);
 
+  public finally = (onfinally?: (() => void) | undefined | null) =>
+    this.#state.promise.finally(onfinally);
+
   public reset = () => {
     if (this.#state.done) this.#reset();
     return this;

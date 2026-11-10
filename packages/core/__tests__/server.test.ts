@@ -73,11 +73,11 @@ const setupClientServer = async (
   });
 
   client.addEventListener("connected", () =>
-    results.push({ key: "client1-event", val: "connect" }),
+    results.push({ key: "client1-event", val: "connected" }),
   );
 
   client.addEventListener("disconnected", () =>
-    results.push({ key: "client1-event", val: "disconnect" }),
+    results.push({ key: "client1-event", val: "disconnected" }),
   );
 
   const connectPromiseHandler: ConnectPromiseWrapped = {
@@ -96,14 +96,27 @@ const setupClientServer = async (
 
   server.addEventListener("connected", (bus) => {
     connectPromiseHandler.resolve(bus);
-    results.push({ key: "server-event", val: "connect" });
+    results.push({ key: "server-event", val: "connected" });
   });
 
   server.addEventListener("disconnected", () =>
-    results.push({ key: "server-event", val: "disconnect" }),
+    results.push({ key: "server-event", val: "disconnected" }),
   );
 
-  server.start();
+  server.addEventListener("disconnecting", (bus) => {
+    connectPromiseHandler.resolve(bus);
+    results.push({ key: "server-event", val: "disconnecting" });
+  });
+
+  server.addEventListener("enabled", () =>
+    results.push({ key: "server-event", val: "enabled" }),
+  );
+
+  await server.start();
+
+  results.push({ key: "prepared", val: "// =================" });
+
+  expect(server.enabled).toBeTruthy();
 
   await client.start();
   const bus = await connectPromise;
@@ -138,8 +151,10 @@ test("server", async () => {
   await server.stop();
 
   expect(results).toStrictEqual([
-    { key: "client1-event", val: "connect" },
-    { key: "server-event", val: "connect" },
+    { key: "server-event", val: "enabled" },
+    { key: "prepared", val: "// =================" },
+    { key: "server-event", val: "connected" },
+    { key: "client1-event", val: "connected" },
     { key: "client1-serializer-sync", opts: "server-sync-req-serialize" },
     { key: "client1-transport", opts: "server-sync-req-transport" },
     { key: "sync-request", arg: "client-sync" },
@@ -152,7 +167,8 @@ test("server", async () => {
     { key: "client1-serializer-sync", opts: "sync-serialize-default" },
     { key: "client1-transport", opts: "sync-transport-default" },
     { key: "bus-sync-response-got", out: "bus1-simple-response-send" },
-    { key: "client1-event", val: "disconnect" },
-    { key: "server-event", val: "disconnect" },
+    { key: "client1-event", val: "disconnected" },
+    { key: "server-event", val: "disconnecting" },
+    { key: "server-event", val: "disconnected" },
   ]);
 });

@@ -2,13 +2,9 @@
 
 `Hub` is a low-level container for multiple [`Bus`](./bus.md) instances.
 
-A `Hub` does not represent a connection itself. Instead, it groups multiple
-connections and provides shared request handlers, data-event handlers, event
-listeners, and lifecycle management for all connections it owns.
+A `Hub` does not represent a connection itself. Instead, it groups multiple connections and provides shared request handlers, data-event handlers, event listeners, and lifecycle management for all connections it creates.
 
-It is primarily intended as a building block for higher-level abstractions such
-as [`Server`](./server.md) and [`Pool`](./pool.md), or for advanced users
-implementing their own connection manager.
+It is primarily intended as a building block for higher-level abstractions such as [`Server`](./server.md) and [`Pool`](./pool.md), or for advanced users implementing their own connection manager.
 
 ## Connection model
 
@@ -17,17 +13,15 @@ A `Bus` represents exactly one connection:
 ```mermaid
 flowchart TD
     HUB([Hub])
-    B1([Bus A]) --- P1([Peer A])
-    B2([Bus B]) --- P2([Peer B])
-    B3([Bus C]) --- P3([Peer C])
-    
+    B1([Bus A]) -.- P1([Peer A])
+    B2([Bus B]) -.- P2([Peer B])
+    B3([Bus C]) -.- P3([Peer C])
     HUB --- B1
     HUB --- B2
     HUB --- B3
 ```
 
-The `Hub` does not replace these `Bus` instances. Each connection remains an
-independent `Bus`.
+The `Hub` does not replace these `Bus` instances. Each connection remains an independent `Bus`.
 
 ::: tip This distinction is important:
 `Bus` represents a connection. `Hub` represents a group of connections.
@@ -35,8 +29,7 @@ independent `Bus`.
 
 ## Shared handlers
 
-A `Hub` provides a single set of request and data-event handlers shared by all
-connections belonging to it.
+A `Hub` provides a single set of request and data-event handlers shared by all buses created by it.
 
 Register a request handler with `onRequest()`:
 
@@ -46,10 +39,9 @@ hub.onRequest("user", async (data, bus) => {
 });
 ```
 
-The handler receives the `Bus` associated with the request as `thisArg`.
+The handler receives the `Bus` associated with the request as its `thisArg`.
 
-This allows the same handler to serve multiple connections while still providing
-access to the connection that initiated the request.
+This allows the same handler to serve multiple connections while still providing access to the connection that initiated the request.
 
 For example:
 
@@ -75,16 +67,14 @@ hub.onDataEvent("message", (data, bus) => {
 
 The `bus` argument identifies the connection that delivered the event.
 
-This makes it possible to implement connection-independent application logic
-while still allowing handlers to distinguish between individual peers when
-necessary.
+This makes it possible to implement connection-independent application logic while still allowing handlers to distinguish between individual peers when necessary.
 
-## Connecting a `Bus`
+## Creating a `Bus`
 
-Use `connect()` to create a new connection owned by the hub.
+Use `create()` to create a new `Bus` owned by the hub.
 
 ```ts
-const bus = await hub.connect({
+const bus = hub.create({
   outscope,
   transport,
   serializer,
@@ -92,31 +82,31 @@ const bus = await hub.connect({
 });
 ```
 
-Unlike a [`Client`](./client.md), the `Hub` does not define connection
-configuration itself.
+Unlike a [`Client`](./client.md), the `Hub` does not define connection configuration itself.
 
-All properties required to construct the `Bus` are provided to `connect()`.
+All properties required to construct the `Bus` are provided to `create()`.
 
 This allows every connection to have its own:
 
-* execution scope;
-* transport;
-* serializer;
-* liveness monitor;
-* exclusive-lock implementation;
-* response timeout;
-* other connection-specific configuration.
+- execution scope;
+- transport;
+- serializer;
+- liveness monitor;
+- exclusive-lock implementation;
+- response timeout;
+- other connection-specific configuration.
 
-The resulting `Bus` is automatically registered with the hub and started before
-`connect()` resolves.
+`create()` is synchronous. It constructs and registers the `Bus`, but does not start it.
+
+The returned `Bus` can be started and stopped independently:
 
 ```ts
-const bus = await hub.connect(props);
+const bus = hub.create(props);
 
-console.log(bus);
+await bus.start();
 ```
 
-Once connected, the returned `Bus` can be used directly:
+Once started, the returned `Bus` can be used directly:
 
 ```ts
 await bus.request("user", { id: 42 });
@@ -126,15 +116,26 @@ bus.dataEvent("notification", {
 });
 ```
 
+The `Hub` does not proxy or abstract away the `Bus` API.
+
 ## Connection ownership
 
-A `Bus` created by `Hub.connect()` is owned by that hub.
+A `Bus` created by `Hub.create()` is owned by that hub.
 
-The hub keeps track of all connected buses and automatically removes a bus from
-its collection when the bus disconnects.
+The hub tracks buses participating in an active lifecycle. A bus enters this collection when it starts connecting and leaves it when it begins disconnecting or finishes disconnecting.
+
+Consequently, `hub.size` includes buses that are still connecting, not only fully established connections.
 
 ```ts
-const bus = await hub.connect(props);
+const bus = hub.create(props);
+
+console.log(hub.size); // 0
+
+const starting = bus.start();
+
+console.log(hub.size); // 1
+
+await starting;
 
 console.log(hub.size); // 1
 
@@ -143,25 +144,33 @@ await bus.stop();
 console.log(hub.size); // 0
 ```
 
-This also means that `Hub` does not require the caller to manually unregister
-connections.
+The hub automatically updates its collection as buses transition through their lifecycle. The caller does not need to manually register or unregister connections.
+
+### Checking ownership
+
+Use `has()` to check whether a `Bus` was created by a particular hub:
+
+```ts
+const bus = hub.create(props);
+
+console.log(hub.has(bus)); // true
+```
+
+This check concerns ownership, not the current lifecycle state. It remains `true` even after the bus has been stopped.
 
 ## Disposing the hub
 
-Use `dispose()` to stop all connections currently owned by the hub:
+Use `dispose()` to stop all buses currently participating in an active lifecycle:
 
 ```ts
 await hub.dispose();
 ```
 
-All active buses are stopped and the `dispose()` promise resolves after they
-have finished stopping.
+The returned promise resolves after all buses included in that disposal operation have finished stopping.
 
-While disposal is in progress, new connections are not started until disposal
-has completed.
+`dispose()` does not permanently disable the hub. It also does not prevent new buses from being created while disposal is in progress.
 
-This makes `dispose()` suitable for shutting down a whole group of connections
-as a single lifecycle unit.
+This means that controlling the overall shutdown sequence is the caller's responsibility. If no new connections should be created during shutdown, the application must enforce that restriction itself.
 
 ```ts
 await hub.dispose();
@@ -169,49 +178,41 @@ await hub.dispose();
 console.log(hub.size); // 0
 ```
 
+Assuming no new buses enter an active lifecycle during disposal, size becomes 0 after the returned promise resolves.
+
 A hub can be reused after disposal:
 
 ```ts
 await hub.dispose();
 
-const bus = await hub.connect(props);
+const bus = hub.create(props);
+await bus.start();
 ```
+
+The set of buses to stop is captured when `dispose()` is called. Buses created or started afterward are not included in that disposal operation.
 
 ## Connection count
 
-The `size` property returns the number of connections currently owned by the
-hub.
+The `size` property returns the number of buses currently participating in an active lifecycle.
 
 ```ts
 console.log(hub.size);
 ```
 
-The value changes automatically when buses are connected or disconnected.
+A bus is counted from the beginning of its connection transition until it starts disconnecting or finishes disconnecting.
 
-## Disposal state
-
-The `isDisposing` property indicates whether the hub is currently disposing its
-connections.
-
-```ts
-if (hub.isDisposing) {
-  // Hub is shutting down its connections
-}
-```
-
-It becomes `true` while `dispose()` is in progress and returns to `false` when
-disposal completes.
+The value changes automatically as buses transition through their lifecycle.
 
 ## Events
 
-A `Hub` provides event listeners that are shared by all buses it owns.
+A `Hub` provides event listeners shared by all buses it owns.
 
 ```ts
-hub.addEventListener("connect", (bus) => {
+hub.addEventListener("connected", (bus) => {
   console.log("Connection established", bus);
 });
 
-hub.addEventListener("disconnect", (bus) => {
+hub.addEventListener("disconnected", (bus) => {
   console.log("Connection closed", bus);
 });
 
@@ -222,22 +223,19 @@ hub.addEventListener("error", (bus, error) => {
 
 The listener receives the affected `Bus` as its first argument.
 
-The same listener can therefore observe the lifecycle of every connection
-managed by the hub.
+The same listener can therefore observe the lifecycle of every connection managed by the hub.
 
 Remove a listener with `removeEventListener()`:
 
 ```ts
-hub.removeEventListener("disconnect", onDisconnect);
+hub.removeEventListener("disconnected", onDisconnect);
 ```
 
-See the [`Bus` event documentation](./bus.md) for the available event types and
-their semantics.
+See the [`Bus` event documentation](./bus.md) for the available event types and their semantics.
 
 ## `extra`
 
-The `extra` property provides application-defined storage associated with the
-hub:
+The `extra` property provides application-defined storage associated with the hub:
 
 ```ts
 hub.extra.someValue = value;
@@ -245,31 +243,27 @@ hub.extra.someValue = value;
 
 `@shinka-rpc/core` does not assign any semantics to its contents.
 
-Unlike `Bus.extra`, which belongs to an individual connection, `Hub.extra`
-belongs to the hub itself and can be used for state shared by the connection
-manager.
+Unlike `Bus.extra`, which belongs to an individual connection, `Hub.extra` belongs to the hub itself and can be used for state shared by the connection manager.
 
 ## Hub and Bus
 
 The distinction between the two is fundamental:
 
-|                     | `Bus`             | `Hub`                       |
-| ------------------- | ----------------- | --------------------------- |
-| Represents          | One connection    | A group of connections      |
-| Request handlers    | Connection-facing | Shared by all buses         |
-| Data-event handlers | Connection-facing | Shared by all buses         |
-| Event listeners     | One connection    | All owned connections       |
-| Lifecycle           | One connection    | All owned connections       |
-| `extra`             | Per connection    | Per hub                     |
-| `size`              | —                 | Number of owned connections |
+| | `Bus` | `Hub` |
+| --- | --- | --- |
+| Represents | One connection | A group of connections |
+| Request handlers | Connection-facing | Shared by all buses |
+| Data-event handlers | Connection-facing | Shared by all buses |
+| Event listeners | One connection | All owned connections |
+| Lifecycle | One connection | Tracks all active connections |
+| `extra` | Per connection | Per hub |
+| `size` | — | Number of buses in an active lifecycle |
 
-A `Hub` does not proxy or abstract away the `Bus` API. `connect()` returns the
-actual `Bus` representing the newly created connection.
+A `Hub` does not proxy or abstract away the `Bus` API. `create()` returns the actual `Bus` representing the newly created connection.
 
 ## Why `Hub` exists
 
-Without a `Hub`, an application managing multiple connections would have to
-duplicate connection-level configuration and handler registration:
+Without a `Hub`, an application managing multiple connections would have to duplicate connection-level configuration and handler registration:
 
 ```mermaid
 flowchart TD
@@ -277,14 +271,12 @@ flowchart TD
     B1([Bus A]) --- H1[(Handlers A)]
     B2([Bus B]) --- H2[(Handlers B)]
     B3([Bus C]) --- H3[(Handlers C)]
-    
     A --- B1
     A --- B2
     A --- B3
 ```
 
-A `Hub` allows those connections to share the same application-level handlers
-and event listeners:
+A `Hub` allows those connections to share the same application-level handlers and event listeners:
 
 ```mermaid
 flowchart TD
@@ -298,13 +290,11 @@ flowchart TD
     HUB --- B3
 ```
 
-Each connection remains independent, while the logic responsible for handling
-connections can be defined once.
+Each connection remains independent, while the logic responsible for handling connections can be defined once.
 
 ## Typical use
 
-`Hub` is particularly useful when implementing abstractions where multiple
-independent connections belong to the same logical component.
+`Hub` is particularly useful when implementing abstractions where multiple independent connections belong to the same logical component.
 
 For example, a connection manager can create buses dynamically:
 
@@ -315,44 +305,44 @@ hub.onRequest("meta", async () => {
   return await getMetadata();
 });
 
-const busA = await hub.connect({
+const busA = hub.create({
   outscope,
   transport: transportA,
   serializer,
 });
 
-const busB = await hub.connect({
+const busB = hub.create({
   outscope,
   transport: transportB,
   serializer,
 });
+
+await Promise.all([
+  busA.start(),
+  busB.start(),
+]);
 ```
 
-Both connections now use the same request handlers, while each `Bus` retains
-its own connection-specific configuration and state.
+Both connections now use the same request handlers, while each `Bus` retains its own connection-specific configuration and state.
 
 ## Advanced API
 
 `Hub` is intentionally a relatively low-level abstraction.
 
-Most applications should use [`Client`](./client.md), [`Server`](./server.md),
-or [`Pool`](./pool.md) instead of constructing a `Hub` directly.
+Most applications should use [`Client`](./client.md), [`Server`](./server.md), or [`Pool`](./pool.md) instead of constructing a `Hub` directly.
 
-`Hub` is useful when the application needs to define its own
-connection-management semantics while retaining the common `@shinka-rpc/core`
-primitives.
+`Hub` is useful when the application needs to define its own connection-management semantics while retaining the common `@shinka-rpc/core` primitives.
 
 The library itself uses `Hub` as a building block:
 
 ```mermaid
 flowchart LR
-  S([Server]) --> H([Hub]) --> B([Bus])
-```
-```mermaid
-flowchart LR
-  P([Pool]) --> H([Hub]) --> B([Bus])
+    S([Server]) --> H([Hub]) --> B([Bus])
 ```
 
-In these abstractions, `Hub` is responsible for the common mechanics of owning
-multiple connections, while the higher-level object defines how those
-connections are created and used.
+```mermaid
+flowchart LR
+    P([Pool]) --> H([Hub]) --> B([Bus])
+```
+
+In these abstractions, `Hub` is responsible for the common mechanics of owning multiple connections, while the higher-level object defines how those connections are created and used.

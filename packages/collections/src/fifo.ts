@@ -36,11 +36,12 @@ export class FIFO<T> implements IQueue<T> {
 
   push = (value: T) => {
     const entry: Entry<T> = [value, null];
-    const { tail } = this.#state;
-    if (tail === null) this.#state.head = entry;
+    const state = this.#state;
+    const { tail } = state;
+    if (tail === null) state.head = entry;
     else tail[1] = entry;
-    this.#state.tail = entry;
-    this.#state.length++;
+    state.tail = entry;
+    state.length++;
   };
 
   pop = () => popFn<T, FIFOState<T>>(this.#state, restoreInitialFIFOState);

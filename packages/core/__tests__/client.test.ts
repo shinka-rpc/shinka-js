@@ -134,6 +134,8 @@ test("sync-simple-ok", async () => {
 
   await bus1.start();
 
+  expect(bus1.alive).toBeTruthy();
+
   bus1SyncEv(bus2, "event:bus2->bus1", true, false);
 
   // Yes, twice await 0
@@ -538,7 +540,7 @@ test("task-abort", async () => {
 
 test("task-timeout", async () => {
   const { results, bus1, bus2, start, stop } = await setupClientClient({
-    timeouts: [10, 10],
+    timeouts: [100, 100],
   });
 
   createAbortableHandler("timeout-request", bus1, results);

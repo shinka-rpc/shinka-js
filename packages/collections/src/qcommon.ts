@@ -67,12 +67,15 @@ export const popFn = <T, S extends HeadAndLength<T>>(
   state: S,
   resetState: (state: S) => void,
 ) => {
+  if (state.length === 0) return;
   const { head } = state;
-  if (head === null) return resetState(state) as undefined;
-  state.length--;
-  state.head = head[1];
-  const value = head[0];
-  head.fill(null);
+  const value = head![0];
+  if (state.length === 1) resetState(state);
+  else {
+    state.length--;
+    state.head = head![1];
+  }
+  head!.fill(null);
   return value;
 };
 
@@ -90,15 +93,7 @@ const nextFn = <T>(head: Entry<T> | null) => {
   };
 };
 
-function returnThis<T>(this: T) {
-  return this;
-}
-
 export const iteratorFn = <T, S extends HeadAndLength<T>>(state: S) => {
   const next = nextFn(state.head);
-  return { next, [Symbol.iterator]: returnThis } as IterableIterator<
-    T,
-    void,
-    void
-  >;
+  return { next } as Iterator<T, void, void>;
 };

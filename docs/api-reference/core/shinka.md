@@ -16,7 +16,7 @@ messaging infrastructure and an unexpected culinary coincidence.
 
 ## And where is this `shinka`?
 
-Short answer: under `Bus` hood. And it's not single:
+Short answer: it's isolated namespace under `Bus` hood. And it's not single:
 
 ![diagram](../../img/bus-shinka.svg "And where is this `shinka`?")
 
@@ -25,7 +25,7 @@ _bus_, special _non-blocking_ shinka (serving [ExclusiveLock](../exclusive-lock.
 _transport_, _serializer_,  and optionally _limon_. Your application defined `onRequest` /
 `onDataEvent` handlers and `request` / `dataEvent` methods are just `user shinka`
 
-::: tip BUT
+::: tip Single connection, but 6 isolated namespaces
 All 6 `shinka`s are handled by single connection. They are dispatched via
 internal leading `MessageType` field
 :::
@@ -77,4 +77,4 @@ It's independent communication channel:
 
 This allow building complex and powerful transports and serializers. For
 example, serializer may ask interlocutor to change encryption key. One of them,
-`bus shinka`, is used to handle `ping` request and 3 internal events
+`bus shinka`, is used to handle `ping` request and 6 internal events

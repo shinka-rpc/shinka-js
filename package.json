@@ -51,10 +51,9 @@
     "pako": "^2"
   },
   "devDependencies": {
-    "@jest/globals": "^29",
+    "@jest/globals": "^30",
     "@swc/jest": "^0.2",
     "jest": "^30",
-    "mermaid": "^11",
     "nx": "^23",
     "typescript": "^7",
     "vitepress": "next",
@@ -62,13 +61,14 @@
   },
   "overrides": {
     "vitepress-plugin-mermaid": {
-      "vitepress": "$vitepress"
+      "vitepress": "$vitepress",
+      "mermaid": "^12"
     }
   },
   "allowScripts": {
     "@parcel/watcher@2.6.0": true,
     "unrs-resolver@1.12.2": true,
-    "@swc/core@1.16.20": true,
-    "nx@23.3.1": true
+    "nx@23.3.1": true,
+    "@swc/core@1.16.22": true
   }
 }

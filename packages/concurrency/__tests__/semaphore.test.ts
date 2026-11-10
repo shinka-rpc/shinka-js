@@ -32,12 +32,12 @@ test("semaphore", async () => {
 
   expect(s.value).toStrictEqual(0);
 
-  await sleep(100);
+  await sleep(0);
   expect(slots.map(Boolean)).toStrictEqual([true, true, false, false, false]);
 
   slots[0]!.dispose();
 
-  await sleep(10);
+  await sleep(0);
 
   expect(s.value).toStrictEqual(0);
 
@@ -47,13 +47,13 @@ test("semaphore", async () => {
 
   slots[2]!.dispose();
 
-  await sleep(10);
+  await sleep(0);
 
   expect(slots.map(Boolean)).toStrictEqual([true, true, true, true, false]);
 
   slots[3]!.dispose();
 
-  await sleep(10);
+  await sleep(0);
 
   expect(slots.map(Boolean)).toStrictEqual([true, true, true, true, true]);
 
@@ -62,7 +62,7 @@ test("semaphore", async () => {
   expect(s.value).toStrictEqual(1);
 
   slots[1]!.dispose();
-  await sleep(10);
+  await sleep(0);
   expect(s.value).toStrictEqual(2);
 
   expect(slots[0]!.dispose).toThrow();
@@ -80,26 +80,56 @@ test("semaphore", async () => {
   slots.fill(null);
 
   acquireAll();
-  await sleep(100);
+  await sleep(0);
 
   // Check the state is not corrupted
   expect(slots.map(Boolean)).toStrictEqual([true, true, false, false, false]);
 
   expect(s.value).toStrictEqual(0);
   s.capacity = 1; // try shrink
+  await sleep(0);
   expect(s.value).toStrictEqual(-1);
   slots[0]!.dispose();
-  await sleep(10);
+  await sleep(0);
   expect(s.value).toStrictEqual(0);
 
   // same
   expect(slots.map(Boolean)).toStrictEqual([true, true, false, false, false]);
 
+  expect(() => (s.capacity = 0)).toThrow();
+
   s.capacity = 10; // try grow
-  await sleep(10);
+  s.capacity;
+  await sleep(0);
   expect(slots.map(Boolean)).toStrictEqual([true, true, true, true, true]);
 
   for (let i = 1; i < 5; i++) slots[i]!.dispose();
-  await sleep(10);
+  slots.fill(null);
+
+  await sleep(0);
   expect(s.value).toStrictEqual(10);
+
+  s.capacity = 2;
+
+  const promisesAll = Promise.allSettled([
+    s.acquire(),
+    s.acquire(),
+    s.acquire(),
+    s.acquire(),
+    s.acquire(),
+  ]);
+
+  s.rejectPending();
+
+  const resultsAll = await promisesAll;
+
+  expect(resultsAll.map((r) => r.status)).toStrictEqual([
+    "fulfilled",
+    "fulfilled",
+    "rejected",
+    "rejected",
+    "rejected",
+  ]);
+
+  for (const r of resultsAll) if (r.status === "fulfilled") r.value.dispose();
 });

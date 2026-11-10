@@ -1,30 +1,23 @@
 # Pool
 
-`Pool` is an advanced connection manager for maintaining a reusable set of
-one-to-one connections.
+`Pool` is an advanced connection manager for maintaining a reusable set of one-to-one connections.
 
-Unlike [`Hub`](./hub.md), which exposes and manages individual [`Bus`](./bus.md)
-instances, `Pool` manages a collection of connections and provides them to
-consumers on demand.
+Unlike [`Hub`](./hub.md), which exposes and manages individual [`Bus`](./bus.md) instances, `Pool` manages a collection of connections and provides them to consumers on demand.
 
 ```mermaid
 flowchart LR
-    HUB([Hub])
-    B1([Bus]) --- P1([Peer])
-    B2([Bus]) --- P2([Peer])
-    B3([Bus]) --- P3([Peer])
-    
+    P([Pool]) --- HUB([Hub])
+    B1([Bus]) -.- P1([Peer])
+    B2([Bus]) -.- P2([Peer])
+    B3([Bus]) -.- P3([Peer])
     HUB --- B1
     HUB --- B2
     HUB --- B3
 ```
 
-A connection acquired from the pool is exclusively owned by the caller until it
-is disposed. Once released, the connection becomes available for another consumer.
+A connection acquired from the pool is exclusively owned by the caller until it is disposed. Once released, the connection becomes available for another consumer.
 
-`Pool` is primarily intended for advanced use cases and as a building block for
-higher-level abstractions such as [`Server`](./server.md). Most applications
-should not need to use it directly.
+`Pool` is primarily intended for advanced use cases and as a building block for higher-level abstractions such as [`Server`](./server.md). Most applications should not need to use it directly.
 
 ## Installation
 
@@ -50,48 +43,54 @@ See [Serializer documentation](../serializers/) for serializers.
 
 See [LiMon documentation](../limons/) for liveness monitoring.
 
-See [Exclusive Lock documentation](../exclusive-lock.md) for exclusive
-locking.
+See [Exclusive Lock documentation](../exclusive-lock.md) for exclusive locking.
 
 ## Pool size
 
-The number of connections maintained by the pool is controlled by `size`.
+The pool size is controlled through the `size.target` property.
 
 ```ts
-await pool.setSize(5);
+pool.size.target = 5;
 ```
 
-This creates five connections and makes them available for acquisition.
+This requests a pool containing five connections.
 
-The size can be changed dynamically:
+The target can be changed dynamically:
 
 ```ts
-await pool.setSize(10);
+pool.size.target = 10;
+pool.size.target = 3;
 ```
 
-Connections are created when the new size is greater than the current size and
-stopped when it is smaller.
+Increasing the target creates additional connections. Decreasing it stops available connections until the actual pool size approaches the new target.
 
-The current size is available through the `size` property:
+Changing the target is asynchronous internally, but assigning it does not return a promise. The pool may temporarily contain more or fewer connections than requested while creation and shutdown operations are in progress.
+
+The `size` property exposes four values:
+
+| Property   | Description                                                                                    |
+| ---------- | ---------------------------------------------------------------------------------------------- |
+| `target`   | The requested number of connections. Can be assigned to change the pool size.                  |
+| `actual`   | The current number of created connections, including connections that are still transitioning. |
+| `ready`    | The number of connections currently available for acquisition.                                 |
+| `acquired` | The number of connections currently acquired by consumers.                                     |
+
+For example:
 
 ```ts
-console.log(pool.size);
+pool.size.target = 5;
+
+console.log(pool.size.target);
+console.log(pool.size.actual);
+console.log(pool.size.ready);
+console.log(pool.size.acquired);
 ```
 
-The property can also be assigned directly:
+`actual`, `ready`, and `acquired` are read-only.
 
-```ts
-await pool.setSize(5);
+A connection that is acquired is not counted as ready. A connection that is not currently started is also excluded from the ready count.
 
-// Equivalent to:
-// pool.size = 5;
-```
-
-However, assigning `size` returns a promise only through `setSize()`. The setter
-itself cannot be awaited.
-
-For code that needs to wait until the requested size has been reached, use
-`setSize()`.
+The pool converges toward the requested target as asynchronous operations complete and acquired connections are released.
 
 ## Acquiring a connection
 
@@ -103,11 +102,9 @@ const bus = await pool.acquire();
 await bus.request("get-data", {});
 ```
 
-If all connections are currently in use, `acquire()` waits until a connection is
-released.
+If all connections are currently in use or unavailable, `acquire()` waits until a connection becomes available.
 
-The returned object is a `BusProxy`, which exposes the same communication API as
-a `Bus` and additionally implements the disposal protocol.
+The returned object is a `BusProxy`, which exposes the same communication API as a `Bus` and additionally implements the disposal protocol.
 
 ## Releasing a connection
 
@@ -152,32 +149,33 @@ type IScheduler<T> = {
 };
 ```
 
-The scheduler controls which available connection is returned by `acquire()` and
-how callers wait when no connection is available.
+The scheduler controls which available connection is returned by `acquire()` and how callers wait when no connection is available.
 
 This makes the connection-selection strategy replaceable.
 
 For example, a scheduler can implement:
 
-* FIFO;
-* LIFO;
-* round-robin-like rotation;
-* priority-based selection;
-* custom scheduling policies.
+- FIFO;
+- LIFO;
+- round-robin-like rotation;
+- priority-based selection;
+- custom scheduling policies.
 
-A scheduler operates on pool entries containing the connection and its release
-function:
+A scheduler operates on pool entries containing the connection, its internal lifecycle callback, its release function, and state flags:
 
 ```ts
 type PoolEntry<SO, TO> = [
   IBus<SO, TO>,
+  (bus: IBus<SO, TO>) => void,
   () => void,
+  0 | 1,
+  0 | 1,
 ];
 ```
 
-The scheduler is therefore responsible only for scheduling available
-connections. The pool remains responsible for creating, stopping, acquiring, and
-releasing them.
+The tuple is an internal pool entry type. Its state flags are managed by the pool and should not be modified by the scheduler.
+
+The scheduler is responsible only for scheduling entries. The pool remains responsible for creating, stopping, acquiring, and releasing connections.
 
 ## Requests and data events
 
@@ -207,12 +205,20 @@ Handlers are shared by all connections managed by the pool.
 Connection lifecycle events are also shared across the pool:
 
 ```ts
-pool.addEventListener("connect", (bus) => console.log("Connected:", bus));
-pool.addEventListener("disconnect", (bus) => console.log("Disconnected:", bus));
+pool.addEventListener("connected", (bus) => {
+  console.log("Connected:", bus);
+});
+
+pool.addEventListener("disconnected", (bus) => {
+  console.log("Disconnected:", bus);
+});
+
 pool.addEventListener("error", console.error);
 ```
 
 These events are delegated to the underlying [`Hub`](./hub.md).
+
+The pool manages connection recovery internally. A disconnected connection is not available for acquisition until it has been started again.
 
 ## Communication through an acquired connection
 
@@ -238,27 +244,25 @@ await bus.restart();
 
 The proxy exposes:
 
-* `request()`
-* `dataEvent()`
-* `start()`
-* `stop()`
-* `restart()`
-* `ping()`
-* `exclusiveLock()`
-* `addEventListener()`
-* `removeEventListener()`
-* `extra`
-* `dispose()`
+- `request()`
+- `dataEvent()`
+- `start()`
+- `stop()`
+- `restart()`
+- `ping()`
+- `exclusiveLock()`
+- `addEventListener()`
+- `removeEventListener()`
+- `extra`
+- `dispose()`
 
-The communication methods operate on the specific connection acquired by the
-caller.
+The communication methods operate on the specific connection acquired by the caller.
 
 ## Bidirectional communication
 
 A pool does not restrict communication to requests initiated by the pool.
 
-Remote peers can send requests and data events to any connection managed by the
-pool, regardless of whether that connection is currently acquired.
+Remote peers can send requests and data events to any connection managed by the pool, regardless of whether that connection is currently acquired.
 
 For example:
 
@@ -270,8 +274,7 @@ pool.onRequest("message", async (data, bus) => {
 });
 ```
 
-This distinction is important: **acquisition controls local ownership of a
-connection, not whether the connection can receive remote messages.**
+This distinction is important: **acquisition controls local ownership of a connection, not whether the connection can receive remote messages.**
 
 ## Example
 
@@ -286,7 +289,7 @@ const pool = new Pool({
   scheduler: new Asynq({ items: FIFO, waiters: FIFO }),
 });
 
-await pool.setSize(5);
+pool.size.target = 5;
 
 using bus = await pool.acquire();
 
@@ -295,22 +298,17 @@ const result = await bus.request("get-data", { id: 42 });
 console.log(result);
 ```
 
-When the `using` block ends, the connection is returned to the pool and can be
-acquired by another consumer.
+When the `using` block ends, the connection is returned to the pool and can be acquired by another consumer.
 
 ## Configuration
 
 ```ts
-type PoolProps<SO, TO> = {
-  outscope: OutScope;
-  transport: TransportClient<SO, TO, any>;
-  scheduler: IScheduler<[IBus<SO, TO>, () => void]>;
-  serializer?: SerializerRoot<SO, TO, any>;
-  limon?: LiMonRF<SO, TO, any> | null;
-  lock?: ExclusiveLock<SO, TO, any>;
-  responseTimeout?: number;
+type PoolProps<SO, TO, TC> = ClientProps<SO, TO, TC> & {
+  scheduler: IScheduler<PoolEntry<SO, TO>>;
 };
 ```
+
+The pool accepts the connection configuration used to create its underlying buses, along with a required scheduler.
 
 ### `outscope`
 
@@ -332,8 +330,7 @@ See [Serializer documentation](../serializers/).
 
 ### `scheduler`
 
-Controls how available connections are selected and how pending `acquire()`
-calls are queued.
+Controls how available connections are selected and how pending `acquire()` calls are queued.
 
 This option is required.
 
@@ -345,8 +342,7 @@ See [LiMon documentation](../limons/).
 
 ### `lock`
 
-Configures the exclusive-lock implementation used by connections created by the
-pool.
+Configures the exclusive-lock implementation used by connections created by the pool.
 
 See [Exclusive Lock documentation](../exclusive-lock.md).
 
@@ -370,31 +366,34 @@ The promise remains pending until a connection becomes available.
 
 The returned proxy must be disposed after use.
 
-### `setSize()`
-
-Changes the number of connections maintained by the pool.
-
-```ts
-pool.setSize(size: number): Promise<void>
-```
-
-Increasing the size creates additional connections.
-
-Decreasing the size stops available connections until the requested size is
-reached.
-
-A negative size throws an error.
-
 ### `size`
 
-Gets or sets the configured pool size.
+Gets the pool size information and allows changing the target size.
 
 ```ts
-pool.size: number
+pool.size: PoolSize
 ```
 
-Use `setSize()` when the caller needs to wait for the resize operation to
-complete.
+The `PoolSize` interface is:
+
+```ts
+type PoolSize = {
+  target: number;
+  ready: number;
+  actual: number;
+  acquired: number;
+};
+```
+
+Assigning a new value to `target` requests a resize:
+
+```ts
+pool.size.target = 5;
+```
+
+The target must be a non-negative safe integer. Otherwise, the setter throws an error.
+
+Resizing is asynchronous. The setter does not return a promise, and the actual size may temporarily differ from the target.
 
 ### `onRequest()`
 
@@ -409,7 +408,7 @@ pool.onRequest(key, callback, metadata?)
 Registers a data-event handler shared by all connections.
 
 ```ts
-pool.onDataEvent(key, callback)
+pool.onDataEvent(key, callback);
 ```
 
 ### `addEventListener()`
@@ -417,7 +416,7 @@ pool.onDataEvent(key, callback)
 Registers a connection lifecycle event listener.
 
 ```ts
-pool.addEventListener(type, listener)
+pool.addEventListener(type, listener);
 ```
 
 ### `removeEventListener()`
@@ -425,7 +424,7 @@ pool.addEventListener(type, listener)
 Removes a connection lifecycle event listener.
 
 ```ts
-pool.removeEventListener(type, listener)
+pool.removeEventListener(type, listener);
 ```
 
 ### `extra`
@@ -440,8 +439,7 @@ pool.extra.someValue = value;
 
 ## Pool vs. Hub
 
-Both `Pool` and `Hub` manage multiple connections, but they solve different
-problems.
+Both `Pool` and `Hub` manage multiple connections, but they solve different problems.
 
 |                      | `Hub`                    | `Pool`               |
 | -------------------- | ------------------------ | -------------------- |
@@ -453,27 +451,21 @@ problems.
 | Release              | `Bus.stop()` / lifecycle | `dispose()`          |
 | Typical use          | Connection management    | Concurrent workloads |
 
-A `Hub` is appropriate when the application needs to manage individual
-connections directly.
+A `Hub` is appropriate when the application needs to manage individual connections directly.
 
-A `Pool` is appropriate when the application needs a bounded set of reusable
-connections and multiple consumers need access to them.
+A `Pool` is appropriate when the application needs a bounded set of reusable connections and multiple consumers need access to them.
 
 ## Advanced usage
 
-`Pool` is intentionally a low-level abstraction. It exposes scheduling and
-connection-management primitives rather than prescribing a particular pooling
-strategy.
+`Pool` is intentionally a low-level abstraction. It exposes scheduling and connection-management primitives rather than prescribing a particular pooling strategy.
 
-Most applications should use [`Client`](./client.md) for one-to-one
-communication or [`Server`](./server.md) for higher-level server-side
-connection management.
+Most applications should use [`Client`](./client.md) for one-to-one communication or [`Server`](./server.md) for higher-level server-side connection management.
 
 Use `Pool` directly when the application needs explicit control over:
 
-* pool size;
-* connection acquisition;
-* connection reuse;
-* scheduling policy;
-* connection-level ownership;
-* shared request and event handlers.
+- pool size;
+- connection acquisition;
+- connection reuse;
+- scheduling policy;
+- connection-level ownership;
+- shared request and event handlers.

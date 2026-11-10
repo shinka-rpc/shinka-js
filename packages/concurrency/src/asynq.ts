@@ -1,10 +1,6 @@
 import type { IQueue } from "@shinka-rpc/collections";
+import type { ResolveReject } from "./types";
 import { createOrUse, type MaybeConstructor } from "./util";
-
-type ResolveReject<T> = [
-  (value: T | PromiseLike<T>) => void,
-  (reason?: any) => void,
-];
 
 export type AsynqProps<T> = {
   items: MaybeConstructor<IQueue<T>>;

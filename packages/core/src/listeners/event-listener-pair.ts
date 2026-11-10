@@ -27,5 +27,5 @@ export const createEventListenerPair = <ET extends string | symbol>(
   // External API
   const all: ManageEventListenerPair<ET> = objectFreeze({ add, remove });
 
-  return [all, call] as [typeof all, typeof call];
+  return [all, call] as const;
 };

@@ -214,14 +214,5 @@ export const reqrsp = <SO, TO, TA, B>(
     onMessageRequest,
     dispatchEvent,
     eventSend,
-  ] as [
-    AbortFn,
-    typeof setVars,
-    typeof request,
-    typeof onSuccess,
-    typeof onError,
-    typeof onMessageRequest,
-    typeof dispatchEvent,
-    typeof eventSend,
-  ];
+  ] as const;
 };
