@@ -283,6 +283,10 @@ const config = defineConfig({
                   text: "CoalescingTransition",
                   link: "/api-reference/concurrency/coalescing-transition",
                 },
+                {
+                  text: "TransitionQueue",
+                  link: "/api-reference/concurrency/transition-queue",
+                },
               ],
             },
             { text: "OutScope", link: "/api-reference/outscope" },

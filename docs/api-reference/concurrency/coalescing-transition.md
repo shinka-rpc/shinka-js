@@ -188,4 +188,4 @@ Typical use cases include:
 - Reconnecting stateful services.
 - Asynchronous lifecycle management.
 
-For operations that must execute in strict invocation order without coalescing, use `TransitionQueue` instead.
+For operations that must execute in strict invocation order without coalescing, use [`TransitionQueue`](./transition-queue.md) instead.
