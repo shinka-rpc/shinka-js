@@ -29,6 +29,7 @@ const mockBus = (q: IQueue<Log>) =>
     request: noNoNo,
     dataEvent: noNoNo,
     exclusiveLock: noNoNo,
+    alive: false,
   }) as IBus<any, any>;
 
 export const createMockNBThisArg = (lock: ExclusiveLock<any, any, any>) => {
