@@ -265,7 +265,7 @@ const config = defineConfig({
             },
             {
               text: "Concurrency",
-              link: "/api-reference/concurrency",
+              link: "/api-reference/concurrency/",
               items: [
                 {
                   text: "ReusablePromise",

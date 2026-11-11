@@ -8,7 +8,9 @@ test("reusable-promise-void", async () => {
   expect(reusablePromise.isDone).toStrictEqual(false);
   const result: string[] = [];
   reusablePromise.then(() => result.push("valPromise-1"));
-  reusablePromise.finally(() => result.push("valPromise-finally"));
+  reusablePromise.finally(() => {
+    result.push("valPromise-finally");
+  });
   await sleep(0);
   expect(reusablePromise.isDone).toStrictEqual(false);
   expect(result.length).toStrictEqual(0);

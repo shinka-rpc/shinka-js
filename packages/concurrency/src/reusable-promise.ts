@@ -1,5 +1,5 @@
 type ResolveFn<P> = (value: P) => void;
-type RejectFn = (value?: any) => void;
+type RejectFn = (reason?: any) => void;
 
 type State<P> = {
   promise: Promise<P>;
@@ -22,7 +22,7 @@ const toResolver =
     state[key](value);
   };
 
-export class ReusablePromise<P> {
+export class ReusablePromise<P> implements PromiseLike<P> {
   #state: State<P>;
   #reset: () => void;
 
@@ -40,15 +40,17 @@ export class ReusablePromise<P> {
     objectFreeze(this);
   }
 
-  public then = (
-    onfulfilled?: ((value: P) => void) | null | undefined,
-    onrejected?: ((reason?: any) => void) | null | undefined,
-  ) => this.#state.promise.then(onfulfilled, onrejected);
+  public then = <TResult1 = P, TResult2 = never>(
+    onfulfilled?: ((value: P) => TResult1 | PromiseLike<TResult1>) | null,
+    onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null,
+  ): Promise<TResult1 | TResult2> =>
+    this.#state.promise.then(onfulfilled, onrejected);
 
-  public catch = (onrejected?: ((reason?: P) => void) | null | undefined) =>
-    this.#state.promise.catch(onrejected);
+  public catch = <TResult = never>(
+    onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | null,
+  ) => this.#state.promise.catch(onrejected);
 
-  public finally = (onfinally?: (() => void) | undefined | null) =>
+  public finally = (onfinally?: (() => void | PromiseLike<void>) | null) =>
     this.#state.promise.finally(onfinally);
 
   public reset = () => {
