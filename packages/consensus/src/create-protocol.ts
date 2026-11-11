@@ -23,7 +23,10 @@ export const createProtocol = ({
     }
     return Consensus.UNKNOWN;
   };
-  return [createNonces, consensusAll] as const;
+  return [createNonces, consensusAll] as [
+    typeof createNonces,
+    typeof consensusAll,
+  ];
 };
 
 export type ConsensusProtocol = ReturnType<typeof createProtocol>;
