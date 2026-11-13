@@ -1,10 +1,6 @@
-# MIME Type Utilities
+# `renderMimeType(structure)`
 
-Utilities for composing MIME type strings from structured components.
-
-## `renderMimeType(structure)`
-
-Serializes a `StructuredMimeType` object into a MIME type string.
+Serializes a `StructuredMimeType` object into a MIME media type string.
 
 ```typescript
 renderMimeType(structure: StructuredMimeType): string
@@ -12,11 +8,11 @@ renderMimeType(structure: StructuredMimeType): string
 
 The structure has the following properties:
 
-- `type` — required type token.
-- `subtype` — optional subtype token.
+- `type` — required media type token.
+- `subtype` — required media subtype token.
 - `parameters` — optional record of parameter names and string values.
 
-### Examples
+## Basic usage
 
 ```typescript
 renderMimeType({
@@ -25,6 +21,10 @@ renderMimeType({
 });
 // "text/plain"
 ```
+
+Both `type` and `subtype` are required. The resulting media type follows the `type "/" subtype` syntax defined by RFC 9110.
+
+## Parameters
 
 Parameters are appended as semicolon-separated name/value pairs:
 
@@ -40,7 +40,7 @@ renderMimeType({
 // 'text/plain; charset=utf-8; name="my document"'
 ```
 
-Parameter values are encoded using `RFC9110EncodeParameterValue`. Values that can be represented as tokens are emitted without quotes; other values are emitted as quoted strings with the required escaping.
+Parameter values are encoded using [`RFC9110EncodeParameterValue`](./rfc-9110-parameter-value.md). Values that can be represented as tokens are emitted without quotes; other values are emitted as quoted strings with the required escaping.
 
 ```typescript
 renderMimeType({
@@ -66,30 +66,17 @@ renderMimeType({
 // "application/json"
 ```
 
-### Validation
+## Validation
 
-The function validates the type, a supplied subtype, and parameter names using `RFC9110TokenRe`.
+The function validates `type`, `subtype`, and parameter names using `RFC9110TokenRe`.
 
 Parameter values are encoded using `RFC9110EncodeParameterValue`, which applies its own validation rules.
 
 Invalid type tokens, subtype tokens, parameter names, or parameter values cause a `TypeError` to be thrown.
 
-### Optional subtype
+## Notes
 
-The `subtype` property is optional. When omitted, the function returns the type token without a slash or subtype:
-
-```typescript
-renderMimeType({ type: "text" });
-// "text"
-```
-
-This is a partial representation, not a complete MIME media type. A complete media type requires both a type and a non-empty subtype, as defined by RFC 9110.
-
-If `subtype` is supplied as an empty string, validation fails rather than silently omitting it.
-
-### Notes
-
-- Type, subtype, and parameter names are validated as tokens.
+- Both `type` and `subtype` must be non-empty tokens.
 - Parameter values follow the ASCII profile supported by `RFC9110EncodeParameterValue`; this is not full support for every character permitted by RFC 9110.
 - Parameter order follows JavaScript's `Object.entries()` ordering for the supplied record.
 - The function does not normalize the casing of type, subtype, or parameter names.

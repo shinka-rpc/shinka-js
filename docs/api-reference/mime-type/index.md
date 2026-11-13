@@ -1,86 +1,32 @@
-# MIME Type Rendering
+# MIME Type
 
-Provides a utility for rendering structured MIME media types into strings.
+A lightweight collection of utilities for working with MIME media types and HTTP parameter values.
 
-## `renderMimeType(structure)`
+The package provides RFC 9110 parameter value encoding and decoding, as well as rendering structured MIME media types into strings.
 
-Serializes a `StructuredMimeType` object into a MIME media type string.
+## Utilities
 
-```typescript
-renderMimeType(structure: StructuredMimeType): string
-```
+### RFC 9110 Parameter Value
 
-The structure has the following properties:
+**[`rfc-9110-parameter-value`](./rfc-9110-parameter-value.md)** provides:
 
-- `type` — required media type token.
-- `subtype` — required media subtype token.
-- `parameters` — optional record of parameter names and string values.
+- `RFC9110EncodeParameterValue` — encodes a parameter value using token or quoted-string syntax.
+- `RFC9110DecodeParameterValue` — decodes token and quoted-string representations.
 
-### Basic usage
+The implementation supports a strict ASCII profile: horizontal tabs and printable ASCII characters are accepted, while other control characters, non-ASCII characters, and `obs-text` are rejected.
 
-```typescript
-renderMimeType({
-  type: "text",
-  subtype: "plain",
-});
-// "text/plain"
-```
+These functions operate on parameter values only; they do not parse or render complete HTTP fields.
 
-Both `type` and `subtype` are required. The resulting media type follows the `type "/" subtype` syntax defined by RFC 9110.
+### MIME Type Rendering
 
-### Parameters
+**[`render-mime-type`](./render-mime-type.md)** provides:
 
-Parameters are appended as semicolon-separated name/value pairs:
+- `renderMimeType` — renders a structured MIME media type, including its type, subtype, and optional parameters.
 
-```typescript
-renderMimeType({
-  type: "text",
-  subtype: "plain",
-  parameters: {
-    charset: "utf-8",
-    name: "my document",
-  },
-});
-// 'text/plain; charset=utf-8; name="my document"'
-```
+It validates type, subtype, and parameter names as HTTP tokens and uses `RFC9110EncodeParameterValue` to encode parameter values.
 
-Parameter values are encoded using [`RFC9110EncodeParameterValue`](./rfc-9110-parameter-value.md). Values that can be represented as tokens are emitted without quotes; other values are emitted as quoted strings with the required escaping.
+## Design
 
-```typescript
-renderMimeType({
-  type: "text",
-  subtype: "plain",
-  parameters: {
-    empty: "",
-    quoted: 'a"b',
-    escaped: "a\\b",
-  },
-});
-// 'text/plain; empty=""; quoted="a\\"b"; escaped="a\\\\b"'
-```
+The package focuses on small, dependency-free utilities with clearly defined responsibilities.
 
-An empty parameter record does not add a trailing semicolon:
-
-```typescript
-renderMimeType({
-  type: "application",
-  subtype: "json",
-  parameters: {},
-});
-// "application/json"
-```
-
-### Validation
-
-The function validates `type`, `subtype`, and parameter names using `RFC9110TokenRe`.
-
-Parameter values are encoded using `RFC9110EncodeParameterValue`, which applies its own validation rules.
-
-Invalid type tokens, subtype tokens, parameter names, or parameter values cause a `TypeError` to be thrown.
-
-### Notes
-
-- Both `type` and `subtype` must be non-empty tokens.
-- Parameter values follow the ASCII profile supported by `RFC9110EncodeParameterValue`; this is not full support for every character permitted by RFC 9110.
-- Parameter order follows JavaScript's `Object.entries()` ordering for the supplied record.
-- The function does not normalize the casing of type, subtype, or parameter names.
+Parameter value encoding and decoding can be used independently, while MIME type rendering builds on the encoder to produce complete media type strings.
