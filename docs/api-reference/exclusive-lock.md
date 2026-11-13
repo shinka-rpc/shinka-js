@@ -29,8 +29,6 @@ transport supported by `@shinka-rpc/core`.
 title: Exclusive Lock State Diagram
 ---
 stateDiagram-v2
-    direction LR
-
     [*] --> IDLE: START
 
     IDLE --> REQUESTED: LOCAL_ACQUIRE

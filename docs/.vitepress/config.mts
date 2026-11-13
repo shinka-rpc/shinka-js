@@ -117,6 +117,11 @@ const config = defineConfig({
             activeMatch: "^/api-reference/util/",
           },
           {
+            text: "MIME Type",
+            link: "/api-reference/mime-type/",
+            activeMatch: "^/api-reference/mime-type/",
+          },
+          {
             text: "Exclusive Lock",
             link: "/api-reference/exclusive-lock",
             activeMatch: "^/api-reference/exclusive-lock",
@@ -139,7 +144,7 @@ const config = defineConfig({
       "/getting-started/": [
         {
           items: [
-            { text: "Getting Started", link: "/getting-started/" },
+            { text: "🚧 Getting Started", link: "/getting-started/" },
             {
               text: "What is RPC?",
               link: "/getting-started/what-is-rpc",

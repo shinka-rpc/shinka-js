@@ -10,7 +10,7 @@ hero:
   tagline: Remote procedure call framework
   actions:
     - theme: brand
-      text: Getting started
+      text: 🚧 Getting started
       link: /getting-started
     - theme: alt
       text: API Reference
