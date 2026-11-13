@@ -1,0 +1,40 @@
+{
+  "name": "@shinka-rpc/mime-type",
+  "version": "0.0.1-alpha.0",
+  "publishConfig": {
+    "access": "public",
+    "tag": "alpha"
+  },
+  "description": "",
+  "main": "./src/index.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "postbuild": "node ../../util/post-build.mjs",
+    "test": "jest --coverage --collectCoverageFrom='src/**'"
+  },
+  "keywords": [
+    "rpc",
+    "background",
+    "worker",
+    "websocket",
+    "communication",
+    "remote"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shinka-rpc/shinka-js.git",
+    "directory": "packages/mime-type"
+  },
+  "author": "AI Kavalevich",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/shinka-rpc/shinka-js/issues"
+  },
+  "homepage": "https://github.com/shinka-rpc/shinka-js",
+  "exports": {
+    "default": "./src/index.ts"
+  },
+  "devDependencies": {
+    "@shinka-rpc/core": "^0.1.0-alpha.16"
+  }
+}

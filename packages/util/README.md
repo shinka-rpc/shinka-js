@@ -1,38 +1,39 @@
-# @shinka-rpc/util
+# `@shinka-rpc/util`
 
-Symmetric RPC bus
+A collection of small, dependency-free utilities used across the Shinka RPC ecosystem and beyond.
 
-This package implements auxiliary utilities
+The package provides lightweight helpers for common programming tasks, including asynchronous operations, object management, function composition, and data formatting. Each utility is independent and can be used on its own.
 
-## sequence
+## Utilities
 
-Simple factory function, returning database-like sequence -- the function
-returning auto-incrementing value
+### Asynchronous utilities
 
-```typescript
-import { sequence } from "@shinka-rpc/util/sequence";
+- **[`sleep`](https://shinka-rpc-js.readthedocs.io/0.1.x/api-reference/util/sleep.html)** — a Promise-based delay with support for `AbortSignal`.
+- **[`sequence`](https://shinka-rpc-js.readthedocs.io/0.1.x/api-reference/util/sequence.html)** — creates independent auto-incrementing sequence generators.
 
-const fromZero = sequence();
-const fromFive = sequence(5);
+### Function utilities
 
-// [fromZero(), fromZero(), fromZero()] === [0, 1, 2]
-// [fromFive(), fromFive(), fromFive()] === [5, 6, 7]
-```
+- **[`delegate`](https://shinka-rpc-js.readthedocs.io/0.1.x/api-reference/util/delegate.html)** — creates a stable function reference whose implementation can be assigned or replaced later.
 
-**API Reference**:
+### Resource management
 
-- **Optional** initialValue: `Number`
+- **[`disposeContext`](https://shinka-rpc-js.readthedocs.io/0.1.x/api-reference/util/dispose-context.html#synchronous-disposal)** — provides explicit disposal through `dispose()` and integration with `Symbol.dispose`.
+- **[`asyncDisposeContext`](https://shinka-rpc-js.readthedocs.io/0.1.x/api-reference/util/dispose-context.html#asynchronous-disposal)** — the asynchronous counterpart, supporting `aDispose()` and `Symbol.asyncDispose`.
 
-## sleep
+Both utilities provide a convenient compatibility layer for disposable resources.
 
-Simple wrapper over `setTimeout` and `Promise`
+### Object utilities
 
-```typescript
-import { sleep } from "@shinka-rpc/util/sleep";
+- **[`clearObject`](https://shinka-rpc-js.readthedocs.io/0.1.x/api-reference/util/clear-object.html)** — removes an object's own properties while preserving its identity.
+- **[`handleCache`](https://shinka-rpc-js.readthedocs.io/0.1.x/api-reference/util/handle-cache.html)** — retrieves a cached value or creates and stores one when the key is missing.
 
-await sleep(250);
-```
+These utilities implement a more specialized part of the package's functionality and may be extracted into a separate package in the future.
 
-**API Reference**:
+## Design principles
 
-- **Required** time: `Number` of milliseconds, passed directly to `setTimeout`
+`@shinka-rpc/util` is intentionally a small toolbox rather than a framework. Its utilities are designed to:
+
+- Solve narrowly scoped, reusable problems.
+- Avoid unnecessary dependencies.
+- Keep their interfaces and behavior straightforward.
+- Remain independent wherever possible, so individual helpers can be adopted without introducing unrelated functionality.
