@@ -1,8 +1,4 @@
-import type {
-  DisposeContext,
-  AsyncDisposeContext,
-  StructuredMimeType,
-} from "@shinka-rpc/util";
+import type { DisposeContext, AsyncDisposeContext } from "@shinka-rpc/util";
 import type { Semaphore } from "@shinka-rpc/concurrency";
 
 import type {
@@ -450,4 +446,12 @@ export type OutScopeListenerManager = (target: OutScopeEventListener) => void;
 export type OutScope = {
   add: OutScopeListenerManager;
   remove: OutScopeListenerManager;
+};
+
+export type StructuredMimeTypeParameters = Record<string, string>;
+
+export type StructuredMimeType = {
+  type: string;
+  subtype: string;
+  parameters?: StructuredMimeTypeParameters;
 };

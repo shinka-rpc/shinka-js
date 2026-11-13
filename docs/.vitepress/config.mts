@@ -91,11 +91,11 @@ const config = defineConfig({
             link: "/api-reference/integrations/",
             activeMatch: "^/api-reference/integrations/",
           },
-          {
-            text: "Schedulers",
-            link: "/api-reference/schedulers/",
-            activeMatch: "^/api-reference/schedulers/",
-          },
+          // {
+          //   text: "Schedulers",
+          //   link: "/api-reference/schedulers/",
+          //   activeMatch: "^/api-reference/schedulers/",
+          // },
           {
             text: "Collections",
             link: "/api-reference/collections",
@@ -113,8 +113,8 @@ const config = defineConfig({
           },
           {
             text: "Util",
-            link: "/api-reference/util",
-            activeMatch: "^/api-reference/util",
+            link: "/api-reference/util/",
+            activeMatch: "^/api-reference/util/",
           },
           {
             text: "Exclusive Lock",
@@ -254,11 +254,11 @@ const config = defineConfig({
                 },
               ],
             },
-            {
-              text: "Schedulers",
-              link: "/api-reference/schedulers/",
-              // items: [],
-            },
+            // {
+            //   text: "Schedulers",
+            //   link: "/api-reference/schedulers/",
+            //   // items: [],
+            // },
             {
               text: "Collections",
               link: "/api-reference/collections",
@@ -290,7 +290,50 @@ const config = defineConfig({
               ],
             },
             { text: "OutScope", link: "/api-reference/outscope" },
-            { text: "Util", link: "/api-reference/util" },
+            {
+              text: "Util",
+              link: "/api-reference/util/",
+              items: [
+                {
+                  text: "Sleep",
+                  link: "/api-reference/util/sleep",
+                },
+                {
+                  text: "Sequence",
+                  link: "/api-reference/util/sequence",
+                },
+                {
+                  text: "Delegate",
+                  link: "/api-reference/util/delegate",
+                },
+                {
+                  text: "DisposeContext",
+                  link: "/api-reference/util/dispose-context",
+                },
+                {
+                  text: "ClearObject",
+                  link: "/api-reference/util/clear-object",
+                },
+                {
+                  text: "HandleCache",
+                  link: "/api-reference/util/handle-cache",
+                },
+              ],
+            },
+            {
+              text: "MIME Type",
+              link: "/api-reference/mime-type/",
+              items: [
+                {
+                  text: "RFC 9110 Parameter Value Encoding",
+                  link: "/api-reference/mime-type/rfc-9110-parameter-value",
+                },
+                {
+                  text: "Render MIME Type",
+                  link: "/api-reference/mime-type/render-mime-type",
+                },
+              ],
+            },
             {
               text: "Exclusive Lock",
               link: "/api-reference/exclusive-lock",
@@ -329,6 +372,12 @@ const config = defineConfig({
   vite: {
     optimizeDeps: {
       include: ["elkjs", "elkjs/lib/elk.bundled.js"],
+    },
+  },
+
+  markdown: {
+    languageAlias: {
+      abnf: "txt",
     },
   },
 });

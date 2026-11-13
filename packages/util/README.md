@@ -1,166 +1,39 @@
-# @shinka-rpc/util
+# `@shinka-rpc/util`
 
-![minzip](https://badgen.net/bundlejs/minzip/@shinka-rpc%2Futil)
-[![install size](https://packagephobia.com/badge?p=@shinka-rpc/util@alpha)](https://packagephobia.com/result?p=@shinka-rpc/util@alpha)
+A collection of small, dependency-free utilities used across the Shinka RPC ecosystem and beyond.
 
-Symmetric RPC bus. [Documentation is here](https://shinka-rpc-js.readthedocs.io/0.1.x/api-reference/util.html)
+The package provides lightweight helpers for common programming tasks, including asynchronous operations, object management, function composition, and data formatting. Each utility is independent and can be used on its own.
 
-This package implements auxiliary utilities
+## Utilities
 
-## sequence
+### Asynchronous utilities
 
-Simple factory function, returning database-like sequence -- the function
-returning auto-incrementing value
+- **[`sleep`](https://shinka-rpc-js.readthedocs.io/0.1.x/api-reference/util/sleep.html)** — a Promise-based delay with support for `AbortSignal`.
+- **[`sequence`](https://shinka-rpc-js.readthedocs.io/0.1.x/api-reference/util/sequence.html)** — creates independent auto-incrementing sequence generators.
 
-```typescript
-import { sequence } from "@shinka-rpc/util";
+### Function utilities
 
-const fromZero = sequence();
-const fromFive = sequence(5);
+- **[`delegate`](https://shinka-rpc-js.readthedocs.io/0.1.x/api-reference/util/delegate.html)** — creates a stable function reference whose implementation can be assigned or replaced later.
 
-// [fromZero(), fromZero(), fromZero()] === [0, 1, 2]
-// [fromFive(), fromFive(), fromFive()] === [5, 6, 7]
-```
+### Resource management
 
-**API Reference**:
+- **[`disposeContext`](https://shinka-rpc-js.readthedocs.io/0.1.x/api-reference/util/dispose-context.html#synchronous-disposal)** — provides explicit disposal through `dispose()` and integration with `Symbol.dispose`.
+- **[`asyncDisposeContext`](https://shinka-rpc-js.readthedocs.io/0.1.x/api-reference/util/dispose-context.html#asynchronous-disposal)** — the asynchronous counterpart, supporting `aDispose()` and `Symbol.asyncDispose`.
 
-- **Optional** initialValue: `Number`
+Both utilities provide a convenient compatibility layer for disposable resources.
 
-## sleep
+### Object utilities
 
-Abortable wrapper over `setTimeout` and `Promise`
+- **[`clearObject`](https://shinka-rpc-js.readthedocs.io/0.1.x/api-reference/util/clear-object.html)** — removes an object's own properties while preserving its identity.
+- **[`handleCache`](https://shinka-rpc-js.readthedocs.io/0.1.x/api-reference/util/handle-cache.html)** — retrieves a cached value or creates and stores one when the key is missing.
 
-**API Reference**:
+These utilities implement a more specialized part of the package's functionality and may be extracted into a separate package in the future.
 
-- **Required** time: `Number` of milliseconds, passed directly to `setTimeout`
-- **Optional** opts: `Object`: `{ signal?: AbortSignal }`
+## Design principles
 
-### Import
+`@shinka-rpc/util` is intentionally a small toolbox rather than a framework. Its utilities are designed to:
 
-```typescript
-import { sleep } from "@shinka-rpc/util";
-```
-
-### Usage
-
-Simple case:
-
-```typescript
-await sleep(250);
-```
-
-Aborting:
-
-```typescript
-const abort = new AbortController();
-const sleepPromise = sleep(250, { signal: abort.signal });
-abort.abort("example");
-await sleepPromise; // throws "example"
-```
-
-Already aborted (lines 2 and 3 have been swapped):
-
-```typescript
-const abort = new AbortController();
-abort.abort("example");
-const sleepPromise = sleep(250, { signal: abort.signal });
-await sleepPromise; // throws "example"
-```
-
-## delegate
-
-Implements [delegate](https://en.wikipedia.org/wiki/Delegation_pattern) pattern
-in `forwardRef` manner to make possible late binding to resolve circular
-dependency problem
-
-```typescript
-import { delegate } from "@shinka-rpc/util";
-
-const defaultFn = () => console.error("Implementation is not ready!");
-const {call, set, reset} = delegate<(a1: any, a2: any /*, ...*/) => any>(defaultFn);
-const dependency1 = new Dependency1(call);
-const dependency2 = new Dependency2(dependency1);
-set(dependency2.someMethod.bind(dependency2));
-// now `dependency1` can use `dependency2.someMethod`
-```
-
-**API Reference**:
-
-- **Required** defaultFn: Any your placeholder function / null-object
-
-**Returns** object `Delegate`: `{ call, set, reset }`
-
-## `disposeContext` and `asyncDisposeContext`
-
-### Why?
-
-ECMAScript introduced the `Disposable` and `AsyncDisposable` protocols together
-with the `using` and `await using` syntax for deterministic resource cleanup.
-While the protocols are available in modern TypeScript, the language syntax is
-still not universally supported across JavaScript runtimes. In particular,
-Safari still lacks support for `using` / `await using`, and a significant
-percentage of users continue to rely on browsers without this feature.
-
-This package provides a tiny compatibility layer that lets you adopt the
-standardized disposal API today without depending on syntax support.
-
-It creates objects implementing `Disposable` and `AsyncDisposable` by exposing
-both the standard symbol (`Symbol.dispose` / `Symbol.asyncDispose`) and an
-explicit method pointing to the same cleanup function.
-
-### Usage
-
-#### Modern environments
-
-When `using` is available, use it as intended:
-
-```typescript
-using ctx = disposeContext(() => cleanup());
-
-// User-defined logic
-```
-
-```typescript
-await using ctx = asyncDisposeContext(async () => cleanup());
-
-// User-defined logic
-```
-
-#### Compatibility mode
-
-For environments that do not support `using`, call the cleanup method explicitly:
-
-```typescript
-const ctx = disposeContext(() => cleanup());
-
-try {
-  // User-defined logic
-} finally {
-  ctx.dispose();
-}
-```
-
-```typescript
-const ctx = asyncDisposeContext(async () => cleanup());
-
-try {
-  // User-defined logic
-} finally {
-  await ctx.aDispose();
-}
-```
-
-### How it works
-
-The library is intentionally minimal. It does not implement a disposal framework
-or manage resources on your behalf.
-
-It simply returns an object that exposes the same cleanup function through both:
-
-* the standard `Symbol.dispose` / `Symbol.asyncDispose` protocol;
-* an explicit `release()` / `aRelease()` method for environments where `using`
-is unavailable.
-
-This allows the same API to work with both modern `using` syntax and traditional
-`try`/`finally` blocks, making it easy to adopt the standard today and
-transition seamlessly as runtime support improves.
+- Solve narrowly scoped, reusable problems.
+- Avoid unnecessary dependencies.
+- Keep their interfaces and behavior straightforward.
+- Remain independent wherever possible, so individual helpers can be adopted without introducing unrelated functionality.

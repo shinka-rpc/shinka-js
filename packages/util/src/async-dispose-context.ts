@@ -1,5 +1,6 @@
-// @ts-expect-error: 2503
-if (!Symbol.asyncDispose) Symbol.dispose = Symbol.for("Symbol.asyncDispose");
+if (!Symbol.asyncDispose)
+  // @ts-expect-error: 2503
+  Symbol.asyncDispose = Symbol.for("Symbol.asyncDispose");
 
 export type AsyncDisposeContext = AsyncDisposable & {
   aDispose: () => Promise<void>;

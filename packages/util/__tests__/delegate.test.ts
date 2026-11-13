@@ -49,3 +49,30 @@ test("delegate-4-args", () => {
     ["default", 8, 9, 0, 1],
   ]);
 });
+
+test("delegate-return-value", () => {
+  const defaultFn = (n: number) => n + 1;
+  const otherFn = (n: number) => n * 2;
+
+  const { call, set, reset } = delegate(defaultFn);
+
+  expect(call(5)).toBe(6);
+
+  set(otherFn);
+  expect(call(5)).toBe(10);
+
+  reset();
+  expect(call(5)).toBe(6);
+});
+
+test("delegate-stable-reference", () => {
+  const { call, set, reset } = delegate(() => 1);
+
+  const ref = call;
+
+  set(() => 2);
+  expect(call).toBe(ref);
+
+  reset();
+  expect(call).toBe(ref);
+});

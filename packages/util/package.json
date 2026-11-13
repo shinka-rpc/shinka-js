@@ -1,6 +1,6 @@
 {
   "name": "@shinka-rpc/util",
-  "version": "0.0.3-alpha.7",
+  "version": "0.0.3-alpha.8",
   "publishConfig": {
     "access": "public",
     "tag": "alpha"

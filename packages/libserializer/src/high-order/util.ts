@@ -5,7 +5,7 @@ import type {
   InternalHandlerThisArg,
 } from "@shinka-rpc/core";
 
-import { joinMimeSubtype } from "@shinka-rpc/util";
+import { joinMimeSubtype } from "./mime-subtype";
 
 import type {
   HighOrderDeserialize,

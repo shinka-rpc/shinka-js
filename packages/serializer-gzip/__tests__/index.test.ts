@@ -8,18 +8,21 @@ import serializerBson from "../../serializer-bson";
 
 import { simpleGzip, streamGzip } from "../src";
 
-import type { SerializerInstance, SerializerRoot } from "../../core";
+import type {
+  SerializerInstance,
+  SerializerRoot,
+  StructuredMimeType,
+  TransportInitOpts,
+} from "../../core";
 
-const serializersTxt = [serializerJSON, serializerYAML] as SerializerRoot<
-  any,
-  any,
-  any
->[];
-const serializersBin = [serializerMsgPack, serializerBson] as SerializerRoot<
-  any,
-  any,
-  any
->[];
+const serializersTxt = [
+  [serializerJSON, { type: "application", subtype: "gzip+json" }],
+  [serializerYAML, { type: "application", subtype: "gzip+yaml" }],
+] as [SerializerRoot<any, any, any>, StructuredMimeType][];
+const serializersBin = [
+  [serializerMsgPack, { type: "application", subtype: "gzip+vnd.msgpack" }],
+  [serializerBson, { type: "application", subtype: "gzip+bson" }],
+] as [SerializerRoot<any, any, any>, StructuredMimeType][];
 
 const seed: any = [
   0,
@@ -52,7 +55,18 @@ const makeSerializer = async (serializer: SerializerRoot<any, any, any>) => {
   return serializerInstance;
 };
 
-const doTest = (s1: SerializerInstance<any>, s2: SerializerInstance<any>) => {
+const getMime = (opts: TransportInitOpts) => {
+  if (opts.mode === "not-serialized") throw new Error();
+  return opts.mime!;
+};
+
+const doTest = async (
+  create: () => Promise<SerializerInstance<any>>,
+  mime: StructuredMimeType,
+) => {
+  const { 0: s1, 1: s2 } = await Promise.all([create(), create()]);
+  expect(getMime(s1.transportInitOpts)).toStrictEqual(mime);
+
   for (let i = 0; i < 10; i++) {
     expect(s2.deserialize(s1.serialize(data))).toStrictEqual(data);
   }
@@ -66,37 +80,25 @@ const doTest = (s1: SerializerInstance<any>, s2: SerializerInstance<any>) => {
 };
 
 test("gzip-simple-txt", async () => {
-  for (const serializerTxt of serializersTxt) {
-    doTest(
-      await makeSerializer(simpleGzip(serializerTxt)),
-      await makeSerializer(simpleGzip(serializerTxt)),
-    );
+  for (const { 0: serializerTxt, 1: mime } of serializersTxt) {
+    doTest(() => makeSerializer(simpleGzip(serializerTxt)), mime);
   }
 });
 
 test("gzip-simple-bin", async () => {
-  for (const serializerBin of serializersBin) {
-    doTest(
-      await makeSerializer(simpleGzip(serializerBin)),
-      await makeSerializer(simpleGzip(serializerBin)),
-    );
+  for (const { 0: serializerBin, 1: mime } of serializersBin) {
+    doTest(() => makeSerializer(simpleGzip(serializerBin)), mime);
   }
 });
 
 test("gzip-stream-txt", async () => {
-  for (const serializerTxt of serializersTxt) {
-    doTest(
-      await makeSerializer(streamGzip(serializerTxt)),
-      await makeSerializer(streamGzip(serializerTxt)),
-    );
+  for (const { 0: serializerTxt, 1: mime } of serializersTxt) {
+    doTest(() => makeSerializer(streamGzip(serializerTxt)), mime);
   }
 });
 
 test("gzip-stream-bin", async () => {
-  for (const serializerBin of serializersBin) {
-    doTest(
-      await makeSerializer(streamGzip(serializerBin)),
-      await makeSerializer(streamGzip(serializerBin)),
-    );
+  for (const { 0: serializerBin, 1: mime } of serializersBin) {
+    doTest(() => makeSerializer(streamGzip(serializerBin)), mime);
   }
 });

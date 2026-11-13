@@ -1,4 +1,4 @@
-type AnyFn = (...args: any) => any;
+type AnyFn = (...args: any[]) => any;
 
 export const delegate = <T extends AnyFn>(defaultFn: T) => {
   let current = defaultFn;
