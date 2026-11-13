@@ -82,7 +82,7 @@ const config = defineConfig({
             activeMatch: "^/api-reference/scenarios/",
           },
           {
-            text: "<b>LiMon</b>s",
+            text: "Liveness Monitors",
             link: "/api-reference/limons/",
             activeMatch: "^/api-reference/limons/",
           },
@@ -214,7 +214,7 @@ const config = defineConfig({
               ],
             },
             {
-              text: "<b>LiMon</b>s",
+              text: "Liveness Monitors",
               link: "/api-reference/limons/",
               items: [
                 {
