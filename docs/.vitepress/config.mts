@@ -144,18 +144,27 @@ const config = defineConfig({
       "/getting-started/": [
         {
           items: [
-            { text: "🚧 Getting Started", link: "/getting-started/" },
+            { text: "Getting Started", link: "/getting-started/" },
             {
-              text: "What is RPC?",
-              link: "/getting-started/what-is-rpc",
+              text: "Introduction",
+              items: [
+                {
+                  text: "What is RPC?",
+                  link: "/getting-started/what-is-rpc",
+                },
+                {
+                  text: "🚧 Shinka RPC Compared with Other RPC Solutions",
+                  link: "/getting-started/compare-rpc-solutions",
+                },
+                {
+                  text: "🚧 Usage Example",
+                  link: "/getting-started/usage-example",
+                },
+              ],
             },
             {
-              text: "🚧 Shinka RPC Compared with Other RPC Solutions",
-              link: "/getting-started/compare-rpc-solutions",
-            },
-            {
-              text: "Usage Example",
-              link: "/getting-started/usage-example",
+              text: "Choosing a Component",
+              link: "/getting-started/choosing-a-component",
             },
           ],
         },

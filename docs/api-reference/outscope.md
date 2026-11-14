@@ -124,3 +124,7 @@ const client = new Client({
 This separation keeps reusable code independent from platform-specific
 lifecycle APIs and allows the same library to work across different
 environments without knowing how a particular scope is implemented.
+
+## See also
+
+[React](./integrations/react) integration implements own outscope
