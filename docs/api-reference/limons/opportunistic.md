@@ -4,9 +4,23 @@ Instead of sending heartbeat messages at fixed intervals, it uses the existing c
 
 The behavior can be adjusted with timeout and threshold options.
 
+## Installation
+
+```bash
+npm install @shinka-rpc/limon-opportunistic
+```
+
+## Usage
+
+```ts
+import limonOpportunistic from "@shinka-rpc/limon-opportunistic";
+
+const limon = limonOpportunistic({ /* options */ })
+```
+
 ## Options
 
-`LiMonOpportunistic` accepts the following options:
+`limonOpportunistic` accepts the following options:
 
 | Option      | Type             | Default | Description                                                                                                  |
 | ----------- | ---------------- | ------: | ------------------------------------------------------------------------------------------------------------ |
@@ -22,7 +36,7 @@ The monitor tracks the time since the last data was received. If no data is rece
 The same value is also used when negotiating the timing of opportunistic heartbeat messages with the remote LiMon. Therefore, increasing `timeout` makes the monitor less aggressive: connections may remain silent for longer before a heartbeat is required or the connection is terminated.
 
 ```ts
-LiMonOpportunistic({
+limonOpportunistic({
   timeout: 30_000,
 })
 ```
@@ -46,7 +60,7 @@ For example, with the default `timeout` of `15_000` ms, the automatically calcul
 Set `threshold` explicitly when the default tolerance is not appropriate for the environment:
 
 ```ts
-LiMonOpportunistic({
+limonOpportunistic({
   timeout: 15_000,
   threshold: 50,
 })
@@ -55,7 +69,7 @@ LiMonOpportunistic({
 Set it to `0` to disable the tolerance:
 
 ```ts
-LiMonOpportunistic({
+limonOpportunistic({
   threshold: 0,
 })
 ```
