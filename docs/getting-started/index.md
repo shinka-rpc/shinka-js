@@ -36,3 +36,7 @@ Learn how [Liveness Monitors](../api-reference/limons/) help detect unresponsive
 ## 7. [Serializers](../api-reference/serializers/)
 
 Understand how Shinka-RPC represents and serializes messages exchanged between peers.
+
+## [Building Blocks](./building-blocks.md)
+
+A collection of general-purpose primitives and utilities used to build Shinka-RPC Core. These tools are independent of the RPC layer and can be used in any application.

@@ -166,6 +166,10 @@ const config = defineConfig({
               text: "Choosing a Component",
               link: "/getting-started/choosing-a-component",
             },
+            {
+              text: "Building Blocks",
+              link: "/getting-started/building-blocks",
+            },
           ],
         },
       ],
