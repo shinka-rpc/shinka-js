@@ -2,8 +2,8 @@
 
 Ironically the `core` know how to do everything but it is made so abstract that
 as it unable to do anything. So to make `@shinka-rpc` be able to do things, you
-have to pass the **transport** and (often) **serializer** &mdash; commonly very
-small functions.
+have to configure **outscope**, **transport**, (often) **serializer** and you
+also may need in **limon**.
 
 ![diagram](../../img/how-shinka-rpc-works.svg "How `@shinka-rpc` works")
 
@@ -26,3 +26,8 @@ small functions.
   - `any` payload passed by interlocutor. Need to pass more arguments?
   ~~Buy premium version for $4.99~~ Use `Array` or `Object` to pack them
   - `thisArg`. In `user shinka` case it's `Client` as is or `Bus` for `Server`
+
+## Barrier to Entry
+
+The only unique thing of ShinkaRPC is [OutScope](../outscope.md). In very simple
+words it's mandatory environment integration, converted into dependency.

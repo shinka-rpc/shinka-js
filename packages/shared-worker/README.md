@@ -9,8 +9,6 @@ This package implements the transport implementation of
 [@shinka-rpc/core](https://www.npmjs.com/package/@shinka-rpc/core) for
 [SharedWorker](https://developer.mozilla.org/en-US/docs/Web/API/SharedWorker)
 
-# Usage
-
 ## `client` / `page` case
 
 ```typescript
