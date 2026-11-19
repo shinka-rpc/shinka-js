@@ -1,37 +1,18 @@
-import type { FactoryData, ClientBus } from "@shinka-rpc/core";
+import type { TransportClient } from "@shinka-rpc/core";
+import makeSendRawFn from "@shinka-rpc/libtransport/message-port-send";
 
-/**
- * Creates a factory data object for handling communication with a Shared Worker.
- * This function sets up message handling through the worker's port and provides methods for sending messages and closing the connection.
- *
- * @param instance - The Shared Worker instance to communicate with
- * @param bus - The client bus instance that handles message processing
- * @param binary - Optional flag to enable binary message transfer. When true, messages are sent as Uint8Array
- * @returns A FactoryData object containing:
- *   - send: Function to send messages to the worker's port (either as string or binary)
- *   - close: Async function to close the worker's port connection
- *
- * @example
- * ```typescript
- *  const factory: FactoryClient<ClientBus> = async (bus) =>
- *    SharedWorker2FactoryData(
- *      new SharedWorker(new URL("../server", import.meta.url)),
- *      bus,
- *    );
- *
- *  export const myBus = new ClientBus({ factory, serializer });
- * ```
- */
-export const SharedWorker2FactoryData = (
-  instance: SharedWorker,
-  bus: ClientBus,
-  binary = false,
-) => {
-  const _onmessage = (e: MessageEvent) => bus.onMessage(e.data);
-  instance.port.onmessage = _onmessage;
-  const close = async () => instance.port.close();
-  const send = binary
-    ? (data: Uint8Array) => instance.port.postMessage(data, [data.buffer])
-    : (data: string) => instance.port.postMessage(data);
-  return { send, close } as FactoryData;
-};
+export const sharedWorkerClient = (create: () => SharedWorker) =>
+  ((shinkaOn) => (thisArg, onRawData, onClosed, opts) => {
+    if (opts.mode === "not-serialized") throw new Error("invalid mode");
+    const instance = create();
+    instance.port.onmessage = (ev) => onRawData(ev.data);
+    instance.port.onmessageerror = onClosed;
+    const close = async () => instance.port.close();
+    const send = makeSendRawFn[opts.mode](instance.port);
+    return {
+      send,
+      close,
+      instruction: { hi: true, bye: true },
+      context: instance,
+    };
+  }) satisfies TransportClient<any, undefined, any, SharedWorker>;

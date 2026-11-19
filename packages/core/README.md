@@ -1,141 +1,40 @@
 # @shinka-rpc/core
 
-Symmetric RPC bus. This page explains basic concepts only.
-[Documentation is here](https://shinka-rpc-js.readthedocs.io/latest/core/)
+![minzip](https://badgen.net/bundlejs/minzip/@shinka-rpc%2Fcore)
 
-This package implements the main functionality of `@shinka-rpc`. Ironically the
-`core` know how to do everything but it is made so abstract that as is unable to
-do anything. So to make `@shinka-rpc` be able to do things, you have to pass the
-**transport** -- commonly very small function, returning 2 functions: `send` and
-`close`, and subscribing the `bus` instance to `onMessage`. Here you are able to
-implement the custom one (or more) or use any already existing:
+**The core communication layer of Shinka-RPC.**
 
-- [@shinka-rpc/browser-extension](https://www.npmjs.com/package/@shinka-rpc/browser-extension)
-implements the RPC bus between the page and browser extension environment
+`@shinka-rpc/core` provides a transport-independent foundation for building symmetric RPC communication channels. It handles message exchange, remote procedure calls, event delivery, and connection lifecycle management.
 
-- TODO: [@shinka-rpc/iframe](https://www.npmjs.com/package/@shinka-rpc/iframe)
-implements the RPC bus between the main page and the page inside
-[iframe](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/iframe)
+The core deliberately abstracts away the underlying communication environment. Instead, its dependencies are supplied through independent components, allowing the same communication logic to work across different platforms and communication channels.
 
-- [@shinka-rpc/dedicated-worker](https://www.npmjs.com/package/@shinka-rpc/dedicated-worker)
-implements the RPC bus between the page and
-[Worker](https://developer.mozilla.org/en-US/docs/Web/API/Worker)
+![How @shinka-rpc works](https://raw.githubusercontent.com/shinka-rpc/shinka-js/66e1552e57d63c30b2122387f06c4bb354c7e87f/docs/img/shinka-structure.svg)
 
-- [@shinka-rpc/shared-worker](https://www.npmjs.com/package/@shinka-rpc/shared-worker)
-implements the RPC bus between the page and
-[SharedWorker](https://developer.mozilla.org/en-US/docs/Web/API/SharedWorker)
+## Architecture
 
-- [@shinka-rpc/web-socket](https://www.npmjs.com/package/@shinka-rpc/web-socket)
-implements the RPC bus over the
-[WebSocket](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket)
+The main building block is `Bus` — a connection-level primitive responsible for communication between two endpoints. `Hub` provides low-level management of multiple `Bus` instances.
 
-- TODO: [@shinka-rpc/webrtc-data](https://www.npmjs.com/package/@shinka-rpc/webrtc)
-implements the RPC bus over the
-[RTCDataChannel](https://developer.mozilla.org/en-US/docs/Web/API/RTCDataChannel)
+On top of `Bus` and `Hub`, the package provides higher-level abstractions:
 
-Also there are some default serializers available:
+- **Client** — a one-to-one communication endpoint.
+- **Server** — manages multiple client connections through a `Hub`.
+- **Pool** — manages a collection of reusable connections through a `Hub`.
 
-- [@shinka-rpc/serializer-json](https://www.npmjs.com/package/@shinka-rpc/serializer-json)
+Communication is symmetric: either endpoint can initiate a connection, send requests and events, and register handlers to receive them.
 
-- [@shinka-rpc/serializer-bson](https://www.npmjs.com/package/@shinka-rpc/serializer-bson)
+## Environment Integration
 
-- [@shinka-rpc/serializer-msgspec](https://www.npmjs.com/package/@shinka-rpc/serializer-msgspec)
+The distinctive feature of ShinkaRPC is **Outscope** — a mandatory environment integration mechanism designed as a dependency rather than an implicit runtime assumption.
 
-The main advantage of `@shinka-rpc` is in re-using of the same `core` with all
-transports. And when you decided to build many RPC communication buses, your
-bundle would contain only one `core`
+To make the core operational, you need to provide:
 
-# Symmetricity
+- **Outscope** — integrates the core with its execution environment.
+- **Transport** — defines how messages are exchanged between endpoints.
+- **Serializer** *(optional)* — defines how messages are encoded and decoded.
+- **LiMon** *(optional)* — provides additional connection monitoring capabilities.
 
-It means **both** server and client may register **request** and **event**
-handlers, and then send *requests* and *events* to each other, and **both** may
-initialize connections
+This separation keeps the core independent of specific environments, communication mechanisms, and serialization formats.
 
-# `request` and `event`
+## Documentation
 
-Scopes are **separated**. The difference is that `request` **requires** for the
-response and **waits** for it, and the `event` does not support response and
-does not wait for any feedback from other side -- shoot and forget
-
-# Usage
-
-There are 2 scenarios: `server` and `client` usage. The only difference is
-`server` handles N `client`s. There are some strange cases: dedicated
-[Worker](https://developer.mozilla.org/en-US/docs/Web/API/Worker) or
-[iframe](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/iframe).
-Who is a server and client if each of them are alone? Simple answer -- both of
-them are `client`s, it's OK to make RPC bus for `client`-`client` case
-
-The first thing what we have to do is a bus initialization. I'll use as an
-example `@shinka-rpc/shared-worker` package
-
-## `client` initialization
-
-```typescript
-import { ClientBus, FactoryClient } from "@shinka-rpc/core";
-import { SharedWorker2FactoryData } from "@shinka-rpc/shared-worker/client";
-import serializer from "@shinka-rpc/serializer-json";  // for example
-
-const factory: FactoryClient<ClientBus> = async (bus) =>
-  SharedWorker2FactoryData(
-    new SharedWorker(new URL("./worker.ts", import.meta.url)),
-    bus,
-  );
-
-export const bus = new ClientBus({ factory, serializer });
-
-bus.start();
-```
-
-## `server` initialization
-
-```typescript
-// @ts-nocheck
-declare let onconnect: (event: MessageEvent) => void;
-
-import { ServerBus } from "@shinka-rpc/core";
-import { SharedWorkerServer } from "@shinka-rpc/shared-worker/server";
-import serializer from "@shinka-rpc/serializer-json";  // for example
-
-export const server = new ServerBus({ serializer });
-
-onconnect = SharedWorkerServer(server);
-```
-
-## Register `event` and `request` handlers
-
-Both `server` and `client` provide the same API:
-
-- **1-st** handler arg: `any` payload. Use `Object` and `Array` to pass multiple
-args, and then unpack them
-
-- **2nd** handler arg: `thisArg`
-  - In `client` case it's `ClientBus` itself
-  - In `server` case it's `CommonBus` -- `client`'s representation
-
-```typescript
-server.onRequest("load-meta", async () => {
-  const response = await fetch("/meta.json", { cache: "no-store" });
-  return await response.json();
-});
-
-let token: string | null = null;
-
-server.onDataEvent("set-token", ([newToken]: [string]) => {
-  token = newToken;
-});
-```
-
-**IMPORTANT**: `request` handler can **NOT** return
-[Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise).
-If you need to something `async`ronous, just use `async` function as a handler
-
-## Call registered `event` and `request` handlers
-
-Both `server` and `client` provide the same API:
-
-```typescript
-type Meta = {};
-const loadMeta = () => bus.request<Meta>("load-meta");  // returns Promise<Meta>
-const setToken = (token: string) => bus.event("set-token", [token]);
-```
+See the [full documentation](https://shinka-rpc-js.readthedocs.io/0.1.x/api-reference/core/) for architecture details, API reference, lifecycle behavior, and usage examples.

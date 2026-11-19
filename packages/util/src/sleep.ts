@@ -1,18 +1,28 @@
-/**
- * Creates a Promise that resolves after the specified time delay.
- * This is a simple wrapper around setTimeout that returns a Promise.
- *
- * @param time - The delay time in milliseconds
- * @returns A Promise that resolves after the specified time
- *
- * @example
- * ```typescript
- * // Wait for 1 second
- * await sleep(1000);
- *
- * // Wait for 250ms
- * await sleep(250);
- * ```
- */
-export const sleep = (time: number) =>
-  new Promise((resolve) => setTimeout(resolve, time));
+export type SleepOpts = { signal?: AbortSignal };
+
+export const sleep = (
+  time: number,
+  { signal }: SleepOpts = {},
+): Promise<void> =>
+  new Promise((resolve, reject) => {
+    if (signal?.aborted) return reject(signal.reason);
+
+    let timeoutId: ReturnType<typeof setTimeout>;
+
+    const cleanup = () => {
+      clearTimeout(timeoutId);
+      signal?.removeEventListener("abort", onAbort);
+    };
+
+    const onAbort = () => {
+      cleanup();
+      reject(signal!.reason);
+    };
+
+    signal?.addEventListener("abort", onAbort, { once: true });
+
+    timeoutId = setTimeout(() => {
+      cleanup();
+      resolve();
+    }, time);
+  });

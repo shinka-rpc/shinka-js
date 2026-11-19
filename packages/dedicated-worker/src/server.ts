@@ -1,33 +1,19 @@
-import type { ClientBus } from "@shinka-rpc/core";
+/// <reference lib="webworker" />
 
-/**
- * Creates a server implementation for a Dedicated Web Worker.
- * This function sets up message handling and provides send/close functionality
- * for communication with the main thread.
- *
- * @param binary - Whether to use binary message format (defaults to false)
- * @param targetOrigin - The target origin for postMessage (defaults to "/")
- * @returns An object containing send and close functions for the worker
- *
- * @example
- * ```typescript
- * // In a Web Worker
- * const server = DedicatedWorkerServer();
- *
- * // Send a message to the main thread
- * server.send(data);
- *
- * // Close the worker when done
- * await server.close();
- * ```
- */
-export const DedicatedWorkerServer = (binary = false, targetOrigin = "/") => {
-  const send = binary
-    ? (data: Uint8Array) => postMessage(data, targetOrigin, [data.buffer])
-    : (data: string) => postMessage(data, targetOrigin);
-  const close = async () => {};
-  return { send, close };
-};
+import type { TransportClient } from "@shinka-rpc/core";
+import makeSendRawFn from "@shinka-rpc/libtransport/message-port-send";
 
-export const createOnMessage = (bus: ClientBus) => (e: MessageEvent) =>
-  bus.onMessage(e.data);
+export const dedicatedWorkerServer: TransportClient<any, any, any, null> =
+  (shinkaOn) => (thisArg, onRawData, onClosed, opts) => {
+    if (opts.mode === "not-serialized") throw new Error("invalid mode");
+    const messageHandler = (event: MessageEvent) => onRawData(event.data);
+    addEventListener("message", messageHandler);
+    addEventListener("messageerror", onClosed);
+    const send = makeSendRawFn[opts.mode](self);
+    const _close = async () => {
+      removeEventListener("message", messageHandler);
+      removeEventListener("messageerror", onClosed);
+      close();
+    };
+    return { send, close: _close, instruction: {}, context: null };
+  };
