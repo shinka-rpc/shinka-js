@@ -183,6 +183,10 @@ const config = defineConfig({
               items: [
                 { text: "Shinka", link: "/api-reference/core/shinka" },
                 { text: "Bus", link: "/api-reference/core/bus" },
+                {
+                  text: "Transport Context",
+                  link: "/api-reference/core/transport-context",
+                },
                 { text: "Client", link: "/api-reference/core/client" },
                 { text: "Hub", link: "/api-reference/core/hub" },
                 { text: "Pool", link: "/api-reference/core/pool" },

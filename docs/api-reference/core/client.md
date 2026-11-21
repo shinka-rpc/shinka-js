@@ -2,22 +2,18 @@
 
 `Client` is a one-to-one communication endpoint in `@shinka-rpc/core`.
 
-It represents a communication relationship between exactly two peers. The term
-*client* does not imply a client/server role: both sides of a connection may be
-represented by a `Client`.
+It represents a communication relationship between exactly two peers. The term *client* does not imply a client/server role: both sides of a connection may be represented by a `Client`.
 
-For example, when communicating with a `DedicatedWorker`, both the page and the
-worker can use `Client`:
+For example, when communicating with a `DedicatedWorker`, both the page and the worker can use `Client`:
 
 ```mermaid
 flowchart LR
-    A([Client]) -- "one-to-one" --- B([Client])
+    A([Client]) <-->|"one-to-one"| B([Client])
 ```
 
-For one-to-many communication, `@shinka-rpc/core` provides [`Hub`](#hub),
-which manages a collection of [`Bus`](#bus) instances. A `Bus` represents an
-individual connection, while `Client` provides the user-facing one-to-one
-endpoint built on top of it.
+`Client` extends [`Bus`](./bus.md), inheriting its connection lifecycle and messaging capabilities while providing a user-facing abstraction for one-to-one communication.
+
+For one-to-many communication, `@shinka-rpc/core` provides [`Hub`](./hub.md), which manages a collection of `Bus` instances.
 
 ## Installation
 
@@ -27,8 +23,7 @@ npm install @shinka-rpc/core
 
 ## Quick start
 
-A `Client` requires an `OutScope` and a transport. Serialization, liveness
-monitoring, and exclusive locking can be configured independently.
+A `Client` requires an `OutScope` and a transport. Serialization, liveness monitoring, and exclusive locking can be configured independently.
 
 ```ts
 import { Client } from "@shinka-rpc/core";
@@ -57,6 +52,8 @@ See [LiMon documentation](../limons/) for liveness monitoring.
 
 See [Exclusive Lock documentation](../exclusive-lock.md) for exclusive locking.
 
+See [Transport Context](./transport-context.md) for accessing transport-specific context.
+
 ## Requests
 
 A request sends data to the remote peer and waits for its response.
@@ -67,8 +64,7 @@ type User = { /* ... */ };
 const user = await client.request<User>("get-user", { id: 42 });
 ```
 
-Requests are identified by a `key`. The payload can contain arbitrary
-application data supported by the configured serializer.
+Requests are identified by an application-defined `key`. The payload can contain arbitrary application data supported by the configured serializer.
 
 The remote peer handles the request with `onRequest()`:
 
@@ -78,8 +74,7 @@ client.onRequest("get-user", async (data) => {
 });
 ```
 
-The callback may return a value synchronously or asynchronously. Its result
-becomes the response to the request.
+The callback may return a value synchronously or asynchronously. Its result becomes the response to the request.
 
 ### Request metadata
 
@@ -109,9 +104,7 @@ Request metadata supports the following properties:
 
 All properties are optional.
 
-The `timeout` property configures the timeout for an individual request. If
-omitted, the `responseTimeout` configured on the `Client` is used, falling back
-to the package default when no instance-level timeout is configured.
+When `timeout` is omitted, the `responseTimeout` configured on the `Client` is used, falling back to the package default when no instance-level timeout is configured.
 
 The `signal` property allows application code to cancel a request:
 
@@ -128,17 +121,14 @@ const pending = client.request<User>(
 controller.abort();
 ```
 
-Cancellation communicates that the caller no longer needs the result. It does
-not forcibly terminate arbitrary JavaScript execution on the remote peer.
-Request handlers can observe cancellation through the `AbortSignal` provided to
-them and stop unnecessary work cooperatively.
+Cancellation communicates that the caller no longer needs the result. It does not forcibly terminate arbitrary JavaScript execution on the remote peer.
 
-Timeouts and cancellation are separate mechanisms: a timeout limits how long the
-caller waits for a response, while an abort signal allows the caller to request
-cancellation explicitly.
+Request handlers can observe cancellation through the `AbortSignal` provided to them and stop unnecessary work cooperatively.
 
-See [Registering request handlers](#registering-request-handlers) for how
-handlers receive the cancellation signal.
+Timeouts and cancellation are separate mechanisms:
+
+- **Timeout** limits how long the caller waits for a response.
+- **Cancellation** allows the caller to explicitly request that the remote handler stop unnecessary work.
 
 ### Registering request handlers
 
@@ -150,8 +140,7 @@ Arguments:
 
 - `key` — application-defined request key.
 - `callback` — function called when a matching request is received.
-- `metadata` — optional handler metadata, including transport and serialization
-  options, a type hint, and a timeout.
+- `metadata` — optional handler metadata, including transport and serialization options, a type hint, and a timeout.
 
 The callback receives three arguments:
 
@@ -168,27 +157,23 @@ client.onRequest("get-user", async (data, client, taskCtl) => {
 The arguments are:
 
 - `data` — the request payload.
-- `client` — the `Client` instance that received the request, passed as `thisArg`.
+- `client` — the receiving `Client` instance, passed as the callback's `thisArg`.
 - `taskCtl` — an object containing the request's `AbortSignal` as `taskCtl.signal`.
 
-The signal allows a handler to observe cancellation and propagate it to APIs
-that support `AbortSignal`.
+The signal allows a handler to observe cancellation and propagate it to APIs that support `AbortSignal`.
 
-For example, a handler can pass the signal to `fetch()` or another
-cancellation-aware operation. The handler is responsible for responding to
-cancellation; the signal does not automatically stop arbitrary work.
+For example, a handler can pass the signal to `fetch()` or another cancellation-aware operation. The handler is responsible for responding to cancellation; the signal does not automatically stop arbitrary work.
 
-The optional metadata argument has the following properties:
+The optional registration metadata has the following properties:
 
 | Property | Type | Description |
 | --- | --- | --- |
 | `transport` | `TO` | Transport-specific metadata. |
 | `serialize` | `SO` | Serializer-specific metadata. |
 | `hint` | `FnConstructorName` | Optional function-constructor hint. |
-| `timeout` | `number` | Optional timeout configuration for requests handled by this registration. |
+| `timeout` | `number` | Timeout configuration for requests handled by this registration. |
 
-See the request handler's API contract for the exact timeout semantics and
-metadata precedence.
+See the detailed request documentation for timeout behavior, cancellation semantics, and metadata precedence.
 
 ## Data events
 
@@ -212,67 +197,68 @@ Unlike requests, data events do not produce a response.
 client.onDataEvent(key, callback)
 ```
 
-* `key` — application-defined event key.
-* `callback` — function called when a matching data event is received.
+Arguments:
+
+- `key` — application-defined event key.
+- `callback` — function called when a matching data event is received.
 
 ## Connection lifecycle
 
-`Client` inherits its connection lifecycle from `Bus`.
+`Client` inherits its connection lifecycle from [`Bus`](./bus.md).
 
-### `start()`
+The following methods are available:
 
-Starts the client and initializes its communication stack.
+| Method | Description |
+| --- | --- |
+| `start()` | Initializes the communication stack and starts the client. |
+| `stop()` | Stops the client and releases its connection resources. |
+| `restart()` | Stops and starts the client again. |
+| `ping()` | Measures the request round-trip time and returns it in milliseconds. |
+
+All lifecycle methods return `Promise<void>`, except `ping()`, which returns `Promise<number>`.
 
 ```ts
 await client.start();
-```
 
-Calling `start()` while the client is already started has no effect.
+const latency = await client.ping();
+console.log(`Latency: ${latency} ms`);
 
-### `stop()`
+await client.restart();
 
-Stops the client and releases its connection resources.
-
-```ts
 await client.stop();
 ```
 
-### `restart()`
+Lifecycle transitions are serialized. Concurrent calls requesting the same pending transition share its outcome, while opposite transitions wait for the current transition to settle.
 
-Stops and starts the client again.
+A failed startup attempts cleanup and restores the client to the `STOPPED` state. The instance can subsequently be started again.
 
-```ts
-await client.restart();
-```
-
-### `ping()`
-
-Sends a ping request to the remote peer and returns the elapsed round-trip time
-in milliseconds.
-
-```ts
-const latency = await client.ping();
-
-console.log(`Latency: ${latency} ms`);
-```
+See [Bus lifecycle](./bus.md#lifecycle) for details about lifecycle states, transition behavior, error handling, and restart semantics.
 
 ## Connection events
 
 A client can subscribe to connection lifecycle events with `addEventListener()`.
 
 ```ts
-client.addEventListener("connect", () => console.log("Connected"));
-client.addEventListener("disconnect", () => console.log("Disconnected"));
+client.addEventListener("connecting", () => console.log("Connecting"));
+client.addEventListener("connected", () => console.log("Connected"));
+
+client.addEventListener("disconnecting", () => console.log("Disconnecting"));
+client.addEventListener("disconnected", () => console.log("Disconnected"));
+
 client.addEventListener("error", (error) => console.error(error));
 ```
 
 The supported event types are:
 
-| Event        | Description                                                                         |
-| ------------ | ----------------------------------------------------------------------------------- |
-| `connect`    | The client has successfully started and is ready for communication.                 |
-| `disconnect` | The client has stopped or its connection has terminated.                            |
-| `error`      | An error occurred while starting, stopping, sending, receiving, or processing data. |
+| Event | Description |
+| --- | --- |
+| `connecting` | A transition to `STARTING` has begun. |
+| `connected` | Initialization succeeded and the client reached `STARTED`. |
+| `disconnecting` | A transition to `STOPPING` has begun. |
+| `disconnected` | Shutdown or failed-start cleanup has completed and the client reached `STOPPED`. |
+| `error` | An error occurred during initialization or cleanup. |
+
+Lifecycle events are dispatched asynchronously using `queueMicrotask`. Event listeners should not be treated as synchronous callbacks of `start()` or `stop()`.
 
 Listeners can be removed with `removeEventListener()`:
 
@@ -280,35 +266,45 @@ Listeners can be removed with `removeEventListener()`:
 client.removeEventListener("error", onError);
 ```
 
-Event listeners are invoked asynchronously.
+See [Bus events](./bus.md#events) for additional details.
 
 ## Exclusive lock
 
 `Client` provides `exclusiveLock()` through its underlying communication bus.
 
+An exclusive lock reserves the outgoing channel for a critical section. Messages produced while the lock is held can be buffered and sent when the lock is released.
+
+```ts
+const release = await client.exclusiveLock();
+
+// Perform an exclusive operation.
+
+release();
+```
+
 See [Exclusive Lock documentation](../exclusive-lock.md) for details.
 
 ## Configuration
 
-The constructor accepts the following options:
+The constructor accepts `ClientProps<SO, TO, TC>`.
 
-```ts
-type BusProps<SO, TO> = {
-  outscope: OutScope;
-  transport: TransportSubscribe<SO, TO, any>;
-  lock?: ExclusiveLock<SO, TO, any>;
-  serializer?: SerializerRoot<SO, TO, any>;
-  limon?: LiMon<SO, TO, any> | null;
-  responseTimeout?: number;
-};
-```
+The configuration includes:
+
+| Property | Required | Description |
+| --- | --- | --- |
+| `outscope` | Yes | Defines the execution scope associated with the client. |
+| `transport` | Yes | Provides the underlying communication mechanism. |
+| `serializer` | No | Configures message serialization. |
+| `limon` | No | Configures optional liveness monitoring. |
+| `lock` | No | Configures exclusive-channel coordination. |
+| `responseTimeout` | No | Configures the default response timeout. |
+| `complete` | No | Provides access to the transport context after transport and serializer initialization. |
 
 ### `outscope`
 
 Defines the lifetime of the execution scope in which the client operates.
 
-The client subscribes to the scope's termination and automatically stops when
-the scope ends.
+The client subscribes to the scope's termination and automatically stops when the scope ends.
 
 See [`@shinka-rpc/outscope`](../outscope.md).
 
@@ -316,8 +312,7 @@ See [`@shinka-rpc/outscope`](../outscope.md).
 
 Provides the underlying communication mechanism.
 
-The transport is independent of the `Client` abstraction and can represent any
-suitable communication channel.
+The transport is independent of the `Client` abstraction and can represent any suitable communication channel.
 
 See [Transport documentation](../transports/).
 
@@ -325,7 +320,7 @@ See [Transport documentation](../transports/).
 
 Defines how messages are serialized and deserialized.
 
-The default serializer is used when this option is omitted.
+The default serializer is used when this option is omitted. Its default configuration uses an array root.
 
 See [Serializer documentation](../serializers/).
 
@@ -347,190 +342,76 @@ See [Exclusive Lock documentation](../exclusive-lock.md).
 
 ### `responseTimeout`
 
-Specifies the timeout used for requests that require a response.
+Specifies the default timeout used for requests that require a response.
 
-If omitted, the package default is used.
+If omitted, the package default is used. Individual requests can override this value through their request metadata.
 
-## Public API
+### `complete`
 
-### `request()`
+An optional callback that provides access to the transport context and the associated `IBus` instance.
 
-Sends a request and waits for its response.
+It is invoked after transport and serializer initialization has completed, but before LiMon initialization.
 
-```ts
-client.request<T>(key, data, metadata?)
-```
+The callback is invoked on every transport initialization, including subsequent initializations after a restart.
 
-Returns `Promise<T>`.
+See [Transport Context](./transport-context.md) for its signature, invocation order, context lifetime, and transport-specific behavior.
 
-The optional metadata argument supports:
+## Additional data
 
-```ts
-type ShinkaDoRequestMeta<SO, TO> = {
-  transport?: TO;
-  serialize?: SO;
-  signal?: AbortSignal;
-  timeout?: number;
-};
-```
-
-- `transport` — transport-specific metadata.
-- `serialize` — serializer-specific metadata.
-- `signal` — signal used to request cancellation.
-- `timeout` — per-request response timeout.
-
-When `timeout` is omitted, the configured `responseTimeout` or the package
-default applies.
-
-### `onRequest()`
-
-Registers a handler for incoming requests.
-
-```ts
-client.onRequest(key, callback, metadata?)
-```
-
-The handler receives the request data, the receiving `Client` as its `thisArg`,
-and a task control object:
-
-```ts
-type TaskCTL = {
-  signal: AbortSignal;
-};
-```
-
-The signal communicates cancellation to the handler. The handler can use it to
-stop cancellation-aware operations and avoid unnecessary work.
-
-The optional registration metadata supports:
-
-```ts
-type ShinkaOnRequestMeta<SO, TO> = {
-  transport?: TO;
-  serialize?: SO;
-  hint?: FnConstructorName;
-  timeout?: number;
-};
-```
-
-- `transport` — transport-specific metadata.
-- `serialize` — serializer-specific metadata.
-- `hint` — optional function-constructor hint.
-- `timeout` — timeout configuration for the registration.
-
-See the detailed request documentation for timeout behavior, cancellation
-semantics, and metadata precedence.
-
-### `dataEvent()`
-
-Sends a one-way data event.
-
-```ts
-client.dataEvent(key, data, metadata?)
-```
-
-### `onDataEvent()`
-
-Registers a data-event handler.
-
-```ts
-client.onDataEvent(key, callback)
-```
-
-### `start()`
-
-Starts the client.
-
-```ts
-client.start(): Promise<void>
-```
-
-### `stop()`
-
-Stops the client.
-
-```ts
-client.stop(): Promise<void>
-```
-
-### `restart()`
-
-Restarts the client.
-
-```ts
-client.restart(): Promise<void>
-```
-
-### `ping()`
-
-Measures the request round-trip time.
-
-```ts
-client.ping(): Promise<number>
-```
-
-### `addEventListener()`
-
-Registers a lifecycle event listener.
-
-```ts
-client.addEventListener(type, listener)
-```
-
-### `removeEventListener()`
-
-Removes a lifecycle event listener.
-
-```ts
-client.removeEventListener(type, listener)
-```
-
-### `exclusiveLock()`
-
-Acquires an exclusive communication lock.
-
-```ts
-client.exclusiveLock(timeout)
-```
-
-See [Exclusive Lock documentation](../exclusive-lock.md).
-
-### `extra`
-
-An application-defined object for attaching additional data to the client.
+`Client` exposes an `extra` object for attaching application-defined data.
 
 ```ts
 client.extra.someValue = value;
 ```
 
-`extra` is not interpreted by `@shinka-rpc/core`.
+`extra` is not interpreted by `@shinka-rpc/core`. It provides a place to associate additional metadata or application state with the client.
+
+The `Client` instance itself is frozen after construction using `Object.freeze()`. This prevents adding, removing, or replacing its own properties, while still allowing the contents of `extra` to be modified.
+
+## Public API
+
+The following methods and properties are available on `Client`. Methods inherited from `Bus` are included.
+
+| Member | Description |
+| --- | --- |
+| `request<T>(key, data, metadata?)` | Sends a request and returns `Promise<T>`. |
+| `onRequest(key, callback, metadata?)` | Registers a request handler. |
+| `dataEvent(key, data, metadata?)` | Sends a one-way data event. |
+| `onDataEvent(key, callback)` | Registers a data-event handler. |
+| `start()` | Starts the client. Returns `Promise<void>`. |
+| `stop()` | Stops the client. Returns `Promise<void>`. |
+| `restart()` | Restarts the client. Returns `Promise<void>`. |
+| `ping()` | Measures round-trip time. Returns `Promise<number>`. |
+| `addEventListener(type, listener)` | Registers a lifecycle event listener. |
+| `removeEventListener(type, listener)` | Removes a lifecycle event listener. |
+| `exclusiveLock(timeout?)` | Acquires an exclusive communication lock. |
+| `extra` | Application-defined data object. |
 
 ## Client vs. Bus vs. Hub
 
-These types represent different communication relationships:
+These types represent different communication abstractions:
 
-| Type     | Relationship   | Represents                     |
-| -------- | -------------- | ------------------------------ |
-| `Client` | one-to-one     | A communication endpoint       |
-| `Bus`    | one connection | A connection between two peers |
-| `Hub`    | one-to-many    | A collection of connections    |
+| Type | Relationship | Represents |
+| --- | --- | --- |
+| `Client` | one-to-one | A user-facing communication endpoint. |
+| `Bus` | one connection | A connection between two peers. |
+| `Hub` | one-to-many | A manager of multiple connections. |
 
-A `Client` is a specialized user-facing form of `Bus` for one-to-one communication.
+A `Client` is a specialized form of `Bus` for one-to-one communication.
 
-A `Hub`, on the other hand, does not represent a connection itself. It creates
-and manages individual `Bus` instances:
+A `Hub`, on the other hand, does not represent a connection itself. It manages individual `Bus` instances:
 
 ```mermaid
 flowchart LR
     HUB([Hub])
+
     B1([Bus]) -.- P1([Peer])
     B2([Bus]) -.- P2([Peer])
     B3([Bus]) -.- P3([Peer])
-    
+
     HUB --- B1
     HUB --- B2
     HUB --- B3
 ```
 
-This distinction is independent of the underlying transport and of which peer is
-considered a "server" or "client" by the application.
+This distinction is independent of the underlying transport and of which peer is considered a "server" or "client" by the application.

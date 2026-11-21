@@ -44,6 +44,8 @@ test("asynq", async () => {
   q.push(1);
   q.push(2);
 
+  expect([...q]).toStrictEqual([1, 2]);
+
   expect(q.map((i) => i)).toStrictEqual([1, 2]);
 
   const forEachResults: number[] = [];

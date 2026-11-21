@@ -8,7 +8,7 @@
 
 The core deliberately abstracts away the underlying communication environment. Instead, its dependencies are supplied through independent components, allowing the same communication logic to work across different platforms and communication channels.
 
-![How @shinka-rpc works](https://raw.githubusercontent.com/shinka-rpc/shinka-js/66e1552e57d63c30b2122387f06c4bb354c7e87f/docs/img/shinka-structure.svg)
+![How @shinka-rpc works](https://raw.githubusercontent.com/shinka-rpc/shinka-js/822ca1cc46de414e28596211552d746ba67f6a44/docs/img/how-shinka-rpc-works.svg)
 
 ## Architecture
 

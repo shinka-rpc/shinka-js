@@ -1,4 +1,4 @@
-export const enum MessageType {
+const enum MessageType {
   // USER
   USER_REQUEST = 0,
   USER_SUCCESS = 1,
@@ -30,6 +30,8 @@ export const enum MessageType {
   LIMON_ERROR = 22,
   LIMON_EVENT = 23,
 }
+
+export type { MessageType };
 
 export type MessageTypeAllRequest =
   | MessageType.USER_REQUEST

@@ -9,8 +9,9 @@ export const sharedWorkerServer = ((shinkaOn, connect, eventListeners) => {
     connect((thisArg, onRawData, onClosed, opts) => {
       if (opts.mode === "not-serialized") throw new Error("invalid mode");
       const send = makeSendRawFn[opts.mode](port);
-      port.onmessage = (ev) => onRawData(ev.data);
-      port.onmessageerror = onClosed;
+      const portAddEventListener = port.addEventListener.bind(port);
+      portAddEventListener("message", (ev) => onRawData(ev.data));
+      portAddEventListener("messageerror", onClosed);
       return { send, close, instruction: {}, context: port };
     });
   };

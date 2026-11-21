@@ -1,9 +1,8 @@
+
+
 # Bus
 
-`Bus` is the connection-level primitive of `@shinka-rpc/core`. It provides the
-lifecycle and messaging operations used by higher-level components such as
-[`Client`](./client.md), [`Server`](./server.md), [`Pool`](./pool.md), and
-[`Hub`](./hub.md).
+`Bus` is the connection-level primitive of `@shinka-rpc/core`. It provides the lifecycle and messaging operations used by higher-level components such as [`Client`](./client.md), [`Server`](./server.md), [`Pool`](./pool.md), and [`Hub`](./hub.md).
 
 A `Bus` represents a connection, not an endpoint role. Both sides of a connection—for example, two dedicated workers—can use a `Bus`-based abstraction.
 
@@ -16,20 +15,18 @@ flowchart LR
     A([Bus A]) <--> B([Bus B])
 ```
 
-The objects on both sides are peers. `Bus` does not distinguish between a
-"client" and a "server".
+The objects on both sides are peers. `Bus` does not distinguish between a "client" and a "server".
 
 Higher-level abstractions determine how connections are organized:
 
-| Type     | Relationship                       |
-| -------- | ---------------------------------- |
-| `Client` | one-to-one                         |
-| `Server` | one-to-many                        |
-| `Hub`    | one-to-many connection manager     |
-| `Pool`   | reusable collection of connections |
+| Type | Relationship |
+| --- | --- |
+| `Client` | one-to-one |
+| `Server` | one-to-many |
+| `Hub` | one-to-many connection manager |
+| `Pool` | reusable collection of connections |
 
-See the respective documentation for [`Client`](./client.md),
-[`Server`](./server.md), [`Hub`](./hub.md) and [`Pool`](./pool.md).
+See the respective documentation for [`Client`](./client.md), [`Server`](./server.md), [`Hub`](./hub.md) and [`Pool`](./pool.md).
 
 ## Responsibilities
 
@@ -178,48 +175,30 @@ The lifecycle event sequence describes the `Bus` state transitions. It does not 
 
 ### Requests and cancellation
 
-Requests support per-call timeout configuration and cancellation through
-`AbortSignal`.
+Requests support per-call timeout configuration and cancellation through `AbortSignal`.
 
-The `request()` method accepts optional metadata that can configure the
-transport and serialization, specify a timeout, and provide an abort signal.
-This allows individual requests to override the default response timeout or to
-be cancelled in response to application events.
+The `request()` method accepts optional metadata that can configure the transport and serialization, specify a timeout, and provide an abort signal. This allows individual requests to override the default response timeout or to be cancelled in response to application events.
 
-The `onRequest()` method registers a handler that receives the request data, its
-`thisArg`, and a `taskCtl` object containing an `AbortSignal`. The handler can
-use this signal to observe cancellation initiated by the requesting side and
-stop work that is no longer needed.
+The `onRequest()` method registers a handler that receives the request data, its `thisArg`, and a `taskCtl` object containing an `AbortSignal`. The handler can use this signal to observe cancellation initiated by the requesting side and stop work that is no longer needed.
 
-Request handlers can therefore cooperate with cancellation-aware APIs, including
-APIs that accept an `AbortSignal`.
+Request handlers can therefore cooperate with cancellation-aware APIs, including APIs that accept an `AbortSignal`.
 
 Timeouts and cancellation serve related but distinct purposes:
 
 - **Timeout** — limits how long a request waits for a response.
-- **Cancellation** — communicates that the caller no longer needs the result and
-allows the handler to stop unnecessary work.
+- **Cancellation** — communicates that the caller no longer needs the result and allows the handler to stop unnecessary work.
 
-Cancellation is cooperative. Receiving an abort signal does not automatically
-terminate arbitrary JavaScript execution; the handler must observe the signal
-and respond appropriately.
+Cancellation is cooperative. Receiving an abort signal does not automatically terminate arbitrary JavaScript execution; the handler must observe the signal and respond appropriately.
 
-See the `request()` and `onRequest()` API documentation for their exact metadata
-contracts and cancellation behavior.
+See the `request()` and `onRequest()` API documentation for their exact metadata contracts and cancellation behavior.
 
 ### Exclusive access
 
-An exclusive lock reserves the outgoing channel for a critical section. Messages
-produced while the lock is held can be buffered and sent when the lock is
-released.
+An exclusive lock reserves the outgoing channel for a critical section. Messages produced while the lock is held can be buffered and sent when the lock is released.
 
-The reservation concerns writing to the transport: it does not necessarily mean
-that no messages are pending in memory. This can be useful for operations such
-as rotating a serialization or encryption key without interleaving writes that
-use different configurations.
+The reservation concerns writing to the transport: it does not necessarily mean that no messages are pending in memory. This can be useful for operations such as rotating a serialization or encryption key without interleaving writes that use different configurations.
 
-The precise behavior of messaging operations depends on the configured
-transport, serializer, and optional components.
+The precise behavior of messaging operations depends on the configured transport, serializer, and optional components.
 
 ## Configuration
 
@@ -232,7 +211,14 @@ A `Bus` is configured through `BusProps`:
 | `serializer` | No | Configures message serialization. |
 | `limon` | No | Configures optional liveness monitoring. |
 | `lock` | No | Configures optional exclusive-channel coordination. |
-| `responseTimeout` | No | Configures the response timeout. |
+| `responseTimeout` | No | Configures the default response timeout. |
+| `complete` | No | Receives the transport context after transport and serializer initialization. |
+
+The `complete` callback provides access to the context returned by the configured transport. It is invoked after the transport and serializer have been initialized, before LiMon initialization.
+
+The context is transport-specific and may expose capabilities that are not part of the common `Bus` API. Its lifetime is tied to the corresponding transport initialization.
+
+See [Transport Context](./transport-context.md) for the callback signature, invocation timing, and context lifetime.
 
 The default serializer configuration uses an array root. Transport and serializer implementations can provide additional configuration options.
 
@@ -249,3 +235,4 @@ The lifecycle implementation is designed to provide the following guarantees:
 - Lifecycle events describe the transition and resulting state; they do not guarantee ordering relative to unrelated application-level continuations.
 
 These guarantees concern the `Bus` lifecycle and its internal state. They do not guarantee that a failing external transport or integration has successfully released every resource.
+

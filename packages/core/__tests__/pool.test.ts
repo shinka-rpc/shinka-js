@@ -3,11 +3,11 @@
 import { expect, test } from "@jest/globals";
 import testOutScope from "../../outscope/src/tests";
 import { sequence, sleep } from "../../util";
-import { Asynq } from "../../concurrency";
-import { FIFO } from "../../collections";
+import { roundRobin, leastUsed, leastBusy } from "../../schedulers";
 import {
   Server,
   Pool,
+  PoolExtraSym,
   type ShinkaOn,
   type TransportConnectFn,
   type TransportFactory,
@@ -112,6 +112,7 @@ const fakeTransportClient = <SO>(
   >;
 
 test("pool", async () => {
+  expect(PoolExtraSym).toBeDefined();
   const results: Record<string, any>[] = [];
   const busSeq = sequence();
   const clientSeq = sequence();
@@ -134,7 +135,7 @@ test("pool", async () => {
   const clientTransport = fakeTransportClient(token, results);
   const pool = new Pool({
     outscope,
-    scheduler: new Asynq<any>({ items: FIFO, waiters: FIFO }),
+    scheduler: roundRobin(),
     transport: clientTransport,
   });
 
@@ -166,9 +167,9 @@ test("pool", async () => {
   {
     // use-case: pool -> server
     using bus = await pool.acquire();
-    expect(pool.size.acquired).toStrictEqual(1);
-    expect(pool.size.ready).toStrictEqual(4);
-    expect(pool.size.actual).toStrictEqual(5);
+    expect(pool.size.acquired).toBe(1);
+    expect(pool.size.ready).toBe(4);
+    expect(pool.size.actual).toBe(5);
     bus.addEventListener("connected", console.info);
     busProxy = bus;
     results.push({
@@ -216,8 +217,8 @@ test("pool", async () => {
 
   await sleep(0);
 
-  expect(pool.size.acquired).toStrictEqual(0);
-  expect(outscopeState.size).toStrictEqual(0);
+  expect(pool.size.acquired).toBe(0);
+  expect(outscopeState.size).toBe(0);
 
   pool.size.target = 5;
   pool.size.target = 2;
@@ -226,7 +227,7 @@ test("pool", async () => {
 
   await sleep(0);
 
-  expect(pool.size.actual).toStrictEqual(5);
+  expect(pool.size.actual).toBe(5);
 
   pool.removeEventListener("error", console.error);
 
@@ -344,4 +345,52 @@ test("pool", async () => {
     { key: "client-12", opts: { value: [7, 0, 1], opts: undefined } },
     { key: "client-12", opts: "closed" },
   ]);
+});
+
+test("pool-adaptive", async () => {
+  for (const createScheduler of [roundRobin, leastUsed, leastBusy]) {
+    const results: Record<string, any>[] = [];
+    const busSeq = sequence();
+    const clientSeq = sequence();
+    const token: Token = {
+      busKeyFn: () => `bus-${busSeq()}`,
+      clientKeyFn: () => `client-${clientSeq()}`,
+    };
+    const { outscope, outscopeState } = testOutScope();
+    const serverBus: IBus<any, any>[] = [];
+    const server = new Server({
+      outscope,
+      transport: fakeTransportServer(token),
+    });
+
+    server.addEventListener("connected", (bus) => serverBus.push(bus));
+
+    const clientTransport = fakeTransportClient(token, results);
+    const pool = new Pool({
+      outscope,
+      scheduler: createScheduler(),
+      transport: clientTransport,
+    });
+
+    pool.addEventListener("connected", (bus) =>
+      bus.addEventListener("error", console.error),
+    );
+
+    pool.addEventListener("disconnected", (bus) =>
+      bus.removeEventListener("error", console.error),
+    );
+
+    server.start();
+
+    pool.size.target = 5;
+
+    for (let i = 0; i < 50; i++) {
+      using bus = await pool.acquire();
+      await bus.ping();
+    }
+
+    expect(results.length).toBeGreaterThan(0);
+
+    pool.size.target = 0;
+  }
 });

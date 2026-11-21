@@ -40,6 +40,7 @@
   "dependencies": {
     "@kai3341/bsonfy": "^1",
     "@msgpack/msgpack": "^3",
+    "@tylerbu/sorted-btree-es6": "^2.1.1",
     "@types/chrome": "*",
     "@types/js-yaml": ">=4",
     "@types/node": "*",
@@ -69,6 +70,6 @@
     "@parcel/watcher@2.6.0": true,
     "unrs-resolver@1.12.2": true,
     "@swc/core@1.16.22": true,
-    "nx@23.3.2": true
+    "nx@23.3.3": true
   }
 }

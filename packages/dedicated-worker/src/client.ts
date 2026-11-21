@@ -5,8 +5,9 @@ export const dedicatedWorkerClient = (create: () => Worker) =>
   ((shinkaOn) => (thisArg, onRawData, onClosed, opts) => {
     if (opts.mode === "not-serialized") throw new Error("invalid mode");
     const instance = create();
-    instance.onmessage = (ev) => onRawData(ev.data);
-    instance.onmessageerror = onClosed;
+    const instanceAddEventListener = instance.addEventListener.bind(instance);
+    instanceAddEventListener("message", (ev) => onRawData(ev.data));
+    instanceAddEventListener("messageerror", onClosed);
     const close = async () => instance.terminate();
     const send = makeSendRawFn[opts.mode](instance);
     return {

@@ -8,6 +8,7 @@ export const webSocketServer = (wss: WebSocketServer) =>
       const send = ws.send.bind(ws);
       connect((thisArg, onRawData, onClosed, opts) => {
         if (opts.mode === "not-serialized") throw new Error("invalid mode");
+        ws.binaryType = "arraybuffer";
         ws.on("message", onRawData);
         ws.on("close", onClosed);
         return { send, close, instruction: {}, context: ws };

@@ -5,27 +5,20 @@ import { Hub } from "../hub";
 import { defaultSerializerRoot } from "../defaults";
 import { setupHandlerRegistries } from "../shinka";
 import { BusProxy } from "./bus-proxy";
-import { busProxyFR } from "./const";
-import { IScheduler } from "./types";
+import { busProxyFR, PoolExtraSym } from "./const";
+import type { AbstractScheduler, IScheduler, PoolEntry } from "./types";
 
 const enum ENTRY {
-  BUS = 0,
-  BROKEN_SET = 1,
-  DISPOSE = 2,
-  QUEUED = 3,
-  ACQUIRED = 4,
+  EXTRA = 0,
+  BUS = 1,
+  BROKEN_SET = 2,
+  DISPOSE = 3,
+  QUEUED = 4,
+  ACQUIRED = 5,
 }
 
-type Entry<SO, TO> = [
-  IBus<SO, TO>,
-  (bus: IBus<SO, TO>) => void,
-  () => void,
-  0 | 1,
-  0 | 1,
-];
-
 export type PoolProps<SO, TO, TC> = ClientProps<SO, TO, TC> & {
-  scheduler: IScheduler<Entry<SO, TO>>;
+  scheduler: AbstractScheduler<any>; // any is used for practical reason
 };
 
 type PoolVars = {
@@ -41,17 +34,18 @@ const reconnectImmediately = (bus: IBus<any, any>) => bus.start().catch();
 
 const makeEntry = <SO, TO>(
   vars: PoolVars,
-  brokenMap: Map<IBus<SO, TO>, Entry<SO, TO>>,
-  scheduler: IScheduler<Entry<SO, TO>>,
+  brokenMap: Map<IBus<SO, TO>, PoolEntry<SO, TO>>,
+  scheduler: IScheduler<SO, TO, any>,
   bus: IBus<SO, TO>,
 ) => {
-  const entry = [
+  const entry: PoolEntry<SO, TO> = [
+    scheduler[PoolExtraSym]?.(),
     bus,
     (bus: IBus<SO, TO>) => brokenMap.set(bus, entry),
-    null,
+    null as any,
     0,
     0,
-  ] as any as Entry<SO, TO>;
+  ];
   const dispose = () => {
     entry[ENTRY.ACQUIRED] = 0;
     vars.acquired--;
@@ -65,8 +59,8 @@ const makeEntry = <SO, TO>(
 
 const onReady =
   <SO, TO>(
-    brokenMap: Map<IBus<SO, TO>, Entry<SO, TO>>,
-    scheduler: IScheduler<Entry<SO, TO>>,
+    brokenMap: Map<IBus<SO, TO>, PoolEntry<SO, TO>>,
+    scheduler: IScheduler<SO, TO, any>,
   ) =>
   (bus: IBus<SO, TO>) => {
     const entry = brokenMap.get(bus)!;
@@ -93,10 +87,11 @@ export class Pool<SO = any, TO = any, TC = any> implements ShinkaOn<
 > {
   #hub: Hub<SO, TO, TC>;
   #connectProps: BusProps<SO, TO, TC>;
-  #scheduler: IScheduler<Entry<SO, TO>>;
-  #brokenMap: Map<IBus<SO, TO>, Entry<SO, TO>>; // except STARTED
+  #scheduler: IScheduler<SO, TO, any>;
+  #brokenMap: Map<IBus<SO, TO>, PoolEntry<SO, TO>>; // except STARTED
   #onBusReady: OnBusReady<SO, TO>;
   #vars: PoolVars;
+  #makeEntry: (bus: IBus<SO, TO>) => PoolEntry<SO, TO, any>;
 
   public onRequest: ShinkaOnRequest<SO, TO, IBus<SO, TO>>;
   public onDataEvent: ShinkaOnDataEvent<IBus<SO, TO>>;
@@ -118,10 +113,12 @@ export class Pool<SO = any, TO = any, TC = any> implements ShinkaOn<
   }: PoolProps<SO, TO, TC>) {
     this.#hub = new Hub();
     this.#scheduler = scheduler;
-    const brokenMap = new Map<IBus<SO, TO>, Entry<SO, TO>>();
+    const brokenMap = new Map<IBus<SO, TO>, PoolEntry<SO, TO>>();
+    const vars: PoolVars = { actualSize: 0, targetSize: 0, acquired: 0 };
     this.#onBusReady = onReady(brokenMap, scheduler);
     this.#brokenMap = brokenMap;
-    this.#vars = { actualSize: 0, targetSize: 0, acquired: 0 };
+    this.#vars = vars;
+    this.#makeEntry = (makeEntry<SO, TO>).bind(0, vars, brokenMap, scheduler);
 
     this.#connectProps = {
       outscope,
@@ -174,12 +171,7 @@ export class Pool<SO = any, TO = any, TC = any> implements ShinkaOn<
         busAddEventListener = bus.addEventListener;
       busAddEventListener("disconnected", reconnectImmediately);
       busAddEventListener("connected", this.#onBusReady);
-      const entry = makeEntry(
-        this.#vars,
-        this.#brokenMap,
-        this.#scheduler,
-        bus,
-      );
+      const entry = this.#makeEntry(bus);
       const { [ENTRY.BROKEN_SET]: brokenSetEntry } = entry;
       busAddEventListener("disconnected", brokenSetEntry);
       busAddEventListener("disconnecting", brokenSetEntry);
@@ -193,7 +185,7 @@ export class Pool<SO = any, TO = any, TC = any> implements ShinkaOn<
   #stopEntry = async ({
     [ENTRY.BUS]: bus,
     [ENTRY.BROKEN_SET]: brokenSet,
-  }: Entry<SO, TO>) => {
+  }: PoolEntry<SO, TO>) => {
     this.#vars.actualSize--;
     const { removeEventListener, stop } = bus;
     removeEventListener("disconnected", reconnectImmediately);

@@ -68,12 +68,12 @@ Changing the target is asynchronous internally, but assigning it does not return
 
 The `size` property exposes four values:
 
-| Property   | Description                                                                                    |
-| ---------- | ---------------------------------------------------------------------------------------------- |
-| `target`   | The requested number of connections. Can be assigned to change the pool size.                  |
-| `actual`   | The current number of created connections, including connections that are still transitioning. |
-| `ready`    | The number of connections currently available for acquisition.                                 |
-| `acquired` | The number of connections currently acquired by consumers.                                     |
+| Property | Description |
+| --- | --- |
+| `target` | The requested number of connections. Can be assigned to change the pool size. |
+| `actual` | The current number of created connections, including connections that are still transitioning. |
+| `ready` | The number of connections currently available for acquisition. |
+| `acquired` | The number of connections currently acquired by consumers. |
 
 For example:
 
@@ -138,44 +138,159 @@ Its methods will throw instead of accessing the underlying connection.
 
 ## Scheduler
 
-The pool does not define how available connections are selected.
+The pool does not prescribe how available connections are selected or how pending acquisition requests are handled.
 
-Instead, it receives a scheduler:
+Instead, it delegates these responsibilities to a scheduler implementing `IScheduler`:
 
 ```ts
-type IScheduler<T> = {
+export type IScheduler<T> = {
   push: (value: T) => void;
   pop: () => Promise<T>;
+  [PoolExtraSym]?: () => any;
 };
 ```
 
-The scheduler controls which available connection is returned by `acquire()` and how callers wait when no connection is available.
+The scheduler provides two operations:
+
+- `push()` adds an available connection to the scheduling mechanism.
+- `pop()` asynchronously retrieves the next connection according to the scheduling policy.
+
+`pop()` must wait when no entries are available, rather than returning an unavailable value.
 
 This makes the connection-selection strategy replaceable.
 
-For example, a scheduler can implement:
+### Scheduling policies
 
-- FIFO;
-- LIFO;
-- round-robin-like rotation;
-- priority-based selection;
-- custom scheduling policies.
+A scheduler can implement different scheduling policies, including:
 
-A scheduler operates on pool entries containing the connection, its internal lifecycle callback, its release function, and state flags:
+- FIFO (First In, First Out);
+- LIFO (Last In, First Out);
+- round-robin;
+- priority-based scheduling;
+- least-used scheduling;
+- load-aware scheduling;
+- weighted scheduling;
+- custom adaptive scheduling policies.
+
+The scheduler can use either the order in which connections become available or additional metadata associated with individual connections.
+
+### PoolEntry
+
+The scheduler operates on `PoolEntry` objects:
 
 ```ts
-type PoolEntry<SO, TO> = [
-  IBus<SO, TO>,
-  (bus: IBus<SO, TO>) => void,
-  () => void,
-  0 | 1,
-  0 | 1,
+export type PoolEntry<SO, TO, E = any> = [
+  extra: E,
+  bus: IBus<SO, TO>,
+  setBroken: (bus: IBus<SO, TO>) => void,
+  dispose: () => void,
+  queued: 0 | 1,
+  acquired: 0 | 1,
 ];
 ```
 
-The tuple is an internal pool entry type. Its state flags are managed by the pool and should not be modified by the scheduler.
+The tuple contains the following elements:
 
-The scheduler is responsible only for scheduling entries. The pool remains responsible for creating, stopping, acquiring, and releasing connections.
+| Index | Element | Description |
+| --- | --- | --- |
+| `0` | `extra` | Scheduler-specific metadata associated with the connection. |
+| `1` | `bus` | The underlying connection. |
+| `2` | `setBroken` | Internal callback used by the pool to track an unavailable connection. |
+| `3` | `dispose` | Internal callback used to release the connection. |
+| `4` | `queued` | Indicates whether the entry is currently queued. |
+| `5` | `acquired` | Indicates whether the connection is currently acquired. |
+
+The scheduler is free to inspect the connection and use its `extra` metadata when making scheduling decisions.
+
+However, the `queued` and `acquired` flags, as well as the internal callbacks, are managed by the pool and must not be modified or invoked by the scheduler.
+
+The pool remains responsible for creating, starting, stopping, acquiring, and releasing connections.
+
+### Scheduler-specific metadata
+
+The optional `PoolExtraSym` method allows a scheduler to initialize metadata for each new connection:
+
+```ts
+export const PoolExtraSym: unique symbol = Symbol.for(
+  "@shinka-rpc/core:pool:initExtra",
+);
+```
+
+`PoolExtraSym` is publicly exported by `@shinka-rpc/core`.
+
+When creating a pool entry, the pool invokes the scheduler's initialization method, if present:
+
+```ts
+scheduler[PoolExtraSym]?.()
+```
+
+The returned value becomes the entry's `extra` field (`entry[0]`).
+
+If the method is not provided, the default value is `null`.
+
+The structure and meaning of this metadata are entirely scheduler-defined. The pool does not inspect or modify it.
+
+Each connection receives its own metadata instance, which remains associated with that connection throughout its lifetime, including subsequent acquisitions and releases.
+
+This allows schedulers to implement state-aware scheduling policies without maintaining a separate metadata map.
+
+For example, a scheduler could track the number of times a connection has been acquired:
+
+```ts
+import { Pool, PoolExtraSym } from "@shinka-rpc/core";
+
+type EntryExtra = {
+  acquisitions: number;
+};
+
+const scheduler = {
+  [PoolExtraSym](): EntryExtra {
+    return {
+      acquisitions: 0,
+    };
+  },
+
+  push(entry) {
+    // Add the entry to the scheduling mechanism.
+  },
+
+  async pop() {
+    // Retrieve the next available entry.
+    const entry = await getNextEntry();
+
+    entry[0].acquisitions++;
+
+    return entry;
+  },
+};
+```
+
+The metadata can also track cumulative acquisition time, recent usage, failure history, or other information relevant to the scheduling policy.
+
+For instance, a scheduler can prioritize connections that have been used less frequently or have accumulated less total acquisition time.
+
+The metadata is intentionally opaque to `Pool`: the scheduler determines its type, initialization, interpretation, and lifecycle.
+
+### Example: FIFO scheduler
+
+A scheduler can also be implemented using existing collection and concurrency primitives:
+
+```ts
+import { Pool } from "@shinka-rpc/core";
+import { FIFO } from "@shinka-rpc/collections";
+import { Asynq } from "@shinka-rpc/concurrency";
+
+const pool = new Pool({
+  outscope,
+  transport,
+  scheduler: new Asynq({
+    items: FIFO,
+    waiters: FIFO,
+  }),
+});
+```
+
+This example uses FIFO ordering for both available connections and waiting acquisition requests.
 
 ## Requests and data events
 
@@ -216,7 +331,7 @@ pool.addEventListener("disconnected", (bus) => {
 pool.addEventListener("error", console.error);
 ```
 
-These events are delegated to the underlying [`Hub`](./hub.md).
+These events are delegated to the underlying `Hub`.
 
 The pool manages connection recovery internally. A disconnected connection is not available for acquisition until it has been started again.
 
@@ -286,7 +401,10 @@ import { Asynq } from "@shinka-rpc/concurrency";
 const pool = new Pool({
   outscope,
   transport,
-  scheduler: new Asynq({ items: FIFO, waiters: FIFO }),
+  scheduler: new Asynq({
+    items: FIFO,
+    waiters: FIFO,
+  }),
 });
 
 pool.size.target = 5;
@@ -304,7 +422,7 @@ When the `using` block ends, the connection is returned to the pool and can be a
 
 ```ts
 type PoolProps<SO, TO, TC> = ClientProps<SO, TO, TC> & {
-  scheduler: IScheduler<PoolEntry<SO, TO>>;
+  scheduler: IScheduler<any>;
 };
 ```
 
@@ -334,6 +452,8 @@ Controls how available connections are selected and how pending `acquire()` call
 
 This option is required.
 
+See [Scheduler](#scheduler) for the scheduler contract and metadata initialization mechanism.
+
 ### `limon`
 
 Configures the optional Liveness Monitor for connections created by the pool.
@@ -351,6 +471,12 @@ See [Exclusive Lock documentation](../exclusive-lock.md).
 Specifies the default request timeout for connections created by the pool.
 
 If omitted, the package default is used.
+
+### `complete`
+
+Optional callback forwarded to the `Bus` instances created by the pool.
+
+See [Transport Context](./transport-context.md) for the callback signature, invocation timing, and context lifetime.
 
 ## API
 
@@ -437,19 +563,21 @@ pool.extra.someValue = value;
 
 `extra` is not interpreted by `@shinka-rpc/core`.
 
+This property is independent of `PoolEntry.extra`, which contains scheduler-specific metadata associated with an individual connection.
+
 ## Pool vs. Hub
 
 Both `Pool` and `Hub` manage multiple connections, but they solve different problems.
 
-|                      | `Hub`                    | `Pool`               |
-| -------------------- | ------------------------ | -------------------- |
-| Primary purpose      | Manage connections       | Reuse connections    |
-| Connection access    | Directly through `Bus`   | Through `acquire()`  |
-| Connection ownership | Application-managed      | Pool-managed         |
-| Scheduling           | Not required             | Required             |
-| Reuse                | Manual                   | Built in             |
-| Release              | `Bus.stop()` / lifecycle | `dispose()`          |
-| Typical use          | Connection management    | Concurrent workloads |
+| | `Hub` | `Pool` |
+| --- | --- | --- |
+| Primary purpose | Manage connections | Reuse connections |
+| Connection access | Directly through `Bus` | Through `acquire()` |
+| Connection ownership | Application-managed | Pool-managed |
+| Scheduling | Not required | Required |
+| Reuse | Manual | Built in |
+| Release | `Bus.stop()` / lifecycle | `dispose()` |
+| Typical use | Connection management | Concurrent workloads |
 
 A `Hub` is appropriate when the application needs to manage individual connections directly.
 
@@ -467,5 +595,6 @@ Use `Pool` directly when the application needs explicit control over:
 - connection acquisition;
 - connection reuse;
 - scheduling policy;
+- scheduler-specific connection metadata;
 - connection-level ownership;
 - shared request and event handlers.

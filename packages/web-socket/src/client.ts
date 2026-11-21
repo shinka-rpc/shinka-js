@@ -5,14 +5,15 @@ export const clientWebSocketTransport = (create: () => WebSocket) =>
     // WebSocket *REQUIRE* serialization
     if (opts.mode === "not-serialized") throw new Error("Invalid mode");
     const instance = create();
+    const instanceAddEventListener = instance.addEventListener.bind(instance);
     instance.binaryType = "arraybuffer";
-    instance.addEventListener("message", (e) => onRawData(e.data));
-    instance.addEventListener("close", onClosed);
+    instanceAddEventListener("message", (e) => onRawData(e.data));
+    instanceAddEventListener("close", onClosed);
     const close = async () => instance.close();
     const send = (data: any) => instance.send(data);
     await new Promise((resolve, reject) => {
-      instance.addEventListener("open", resolve);
-      instance.addEventListener("error", reject);
+      instanceAddEventListener("open", resolve);
+      instanceAddEventListener("error", reject);
     });
     return { send, close, instruction: {}, context: instance };
   }) satisfies TransportClient<any, undefined, void, WebSocket>;

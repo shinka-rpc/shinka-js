@@ -12,10 +12,12 @@ const { freeze: objectFreeze } = Object;
 export class Asynq<T> {
   #items: IQueue<T>;
   #waiters: IQueue<ResolveReject<T>>;
+  [Symbol.iterator]!: () => Iterator<T, void, void>;
 
   constructor({ items, waiters }: AsynqProps<T>) {
     this.#items = createOrUse(items);
     this.#waiters = createOrUse(waiters);
+    this[Symbol.iterator] = this.#items[Symbol.iterator];
     objectFreeze(this);
   }
 

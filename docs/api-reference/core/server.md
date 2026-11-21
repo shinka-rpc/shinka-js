@@ -197,7 +197,7 @@ See the [exclusive lock documentation](../exclusive-lock.md).
 
 Optional callback forwarded to the `Bus` instances created by the server.
 
-See the [`Bus` documentation](./bus.md) for details.
+See [Transport Context](./transport-context.md) for the callback signature, invocation timing, and context lifetime.
 
 ## Request handlers
 

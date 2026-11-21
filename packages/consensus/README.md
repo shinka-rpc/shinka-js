@@ -1,7 +1,6 @@
 # @shinka-rpc/consensus
 
 ![minzip](https://badgen.net/bundlejs/minzip/@shinka-rpc%2Fconsensus)
-[![install size](https://packagephobia.com/badge?p=@shinka-rpc/consensus@alpha)](https://packagephobia.com/result?p=@shinka-rpc/consensus@alpha)
 
 Symmetric RPC bus
 
